@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overall and New Pilots Chart</title>
+    <link rel="stylesheet" href="/styles_new_participants.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Overall and New Pilots Chart</h1>
+    <div id="chart-container">
+        <canvas id="participantsChart"></canvas>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const cumulativeParticipantsCount = JSON.parse('<%- cumulativeParticipantsCount %>');
+            const newParticipantsCount = JSON.parse('<%- newParticipantsCount %>');
+            const raceDates = JSON.parse('<%- raceDates %>');
+
+            const ctx = document.getElementById('participantsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: raceDates.map(date => new Date(date).toLocaleDateString()), // Форматируем дату
+                    datasets: [
+                        {
+                            label: 'Overall Pilots',
+                            data: cumulativeParticipantsCount,
+                            type: 'line',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 2,
+                            fill: false,
+                            yAxisID: 'y-axis-1'
+                        },
+                        {
+                            label: 'New Pilots',
+                            data: newParticipantsCount,
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y-axis-2'
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Race Date'
+                            }
+                        },
+                        'y-axis-1': {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Overall Pilots'
+                            },
+                            beginAtZero: true
+                        },
+                        'y-axis-2': {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'New Pilots'
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                drawOnChartArea: false // avoids overlapping with the first y-axis grid
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

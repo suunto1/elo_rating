@@ -1,0 +1,62 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #222222;
+    margin: 0;
+    padding: 0;
+}
+
+.track-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 20px;
+}
+
+.track {
+    background-color: rgb(227, 227, 227);
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    text-align: center;
+    height: 320px; /* Фиксированная высота блока */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* Начальное выравнивание сверху */
+    overflow: hidden; /* Скрыть переполнение */
+}
+
+.track img {
+    max-height: 60%; /* Ограничим максимальную высоту изображения */
+    width: auto;
+    object-fit: contain; /* Масштабирование изображения по размеру контейнера */
+    border-radius: 5px;
+}
+
+.track h2 {
+    margin: 5px 0;
+}
+
+.track-info {
+    margin-top: auto; /* Привязываем к нижней границе */
+    border-top: 2px solid #000000; /* Увеличиваем толщину черты */
+    padding-top: 10px; /* Отступ сверху для разделения */
+}
+
+.track-info p {
+    margin: 5px 0;
+}
+
+.track-info div {
+    display: flex;
+}
+
+.track-info strong {
+    min-width: 100px; /* Измените значение по необходимости */
+    text-align: left; /* Выравнивание по левому краю */
+    padding-right: 10px; /* Отступ для разделения текста */
+}
+
+.track-info p {
+    margin: 0 ;
+}

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles_pilots.css">
+    <title>Pilots Information</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+</head>
+<body>
+    <div class="header-container">
+        <h1>Pilots Information</h1>
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search for pilots...">
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th>Name</th>
+                        <th>ELO Rating</th>
+                        <th>Races</th>
+                        <th>Avg change</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% pilots.forEach((pilot, index) => { %>
+                        <tr data-pilot="<%= pilot.Name %>">
+                            <td><%= index + 1 %></td>
+                            <td class="pilot-name"><%= pilot.Name %></td>
+                            <td><%= pilot.EloRanking %></td>
+                            <td><%= pilot.RaceCount %></td>
+                            <td><%= pilot.AverageChange.toFixed(2) %></td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="chart-container">
+            <div id="pilot-name"></div>
+            <canvas id="eloChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('search-input');
+            const rows = document.querySelectorAll('tbody tr');
+            const pilotNameDiv = document.getElementById('pilot-name');
+            const ctx = document.getElementById('eloChart').getContext('2d');
+            let eloChart;
+    
+            // Функция для фильтрации строк таблицы на основе поиска
+            searchInput.addEventListener('input', function () {
+                const searchText = searchInput.value.toLowerCase();
+    
+                rows.forEach(row => {
+                    const pilotName = row.getAttribute('data-pilot').toLowerCase();
+                    if (pilotName.includes(searchText)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+    
+            rows.forEach(row => {
+                row.addEventListener('click', async function () {
+                    // Убираем класс selected у всех строк
+                    rows.forEach(r => r.classList.remove('selected'));
+    
+                    // Добавляем класс selected к текущей строке
+                    this.classList.add('selected');
+    
+                    const pilotName = this.getAttribute('data-pilot');
+                    pilotNameDiv.textContent = pilotName;
+    
+                    try {
+                        console.log(`Fetching data for pilot: ${pilotName}`);
+                        const response = await fetch(`/pilot/${encodeURIComponent(pilotName)}`);
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        const raceData = await response.json();
+                        console.log('Race data:', raceData);
+    
+                        const labels = [];
+                        const data = [];
+    
+                        raceData.forEach(race => {
+                            const date = new Date(race.Date);
+                            labels.push(date.toLocaleDateString('en-CA')); // Корректное отображение даты в формате YYYY-MM-DD
+                            data.push(race.CumulativeElo);
+                        });
+    
+                        console.log('Labels:', labels);
+                        console.log('Data:', data);
+    
+                        if (eloChart) {
+                            eloChart.destroy();
+                        }
+    
+                        eloChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: 'ELO Rating',
+                                    data: data,
+                                    borderColor: '#009879', // Изменяем цвет кривой на #009879
+                                    borderWidth: 2,
+                                    fill: false
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    x: {
+                                        type: 'time',
+                                        time: {
+                                            unit: 'day',
+                                            tooltipFormat: 'yyyy-MM-dd' // Формат подсказки
+                                        },
+                                        title: {
+                                            display: true,
+                                            text: 'Date'
+                                        }
+                                    },
+                                    y: {
+                                        title: {
+                                            display: true,
+                                            text: 'Rating'
+                                        },
+                                        beginAtZero: false
+                                    }
+                                }
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Error fetching race data:', error);
+                    }
+                });
+            });
+        });
+    </script>
+    
+    
+    
+</body>
+</html>

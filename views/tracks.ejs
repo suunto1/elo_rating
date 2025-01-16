@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Records</title>
+    <link rel="stylesheet" href="/styles_tracks.css">
+</head>
+<body>
+    <div class="track-container">
+        <% tracks.forEach(track => { %>
+        <div class="track">
+            <h2><%= track.TrackName %></h2>
+            <img src="/<%= track.Image %>" alt="<%= track.TrackName %>">
+            <div class="track-info">
+                <div>
+                    <strong>Qualifying:</strong>
+                    <strong><p><%= track.BestQualifyingLapTime %> &nbsp &nbsp &nbsp <%= track.BestQualifyingLapPilot %></p></strong>
+                </div>
+                <div>
+                    <strong>Race:</strong>
+                    <strong><p><%= track.BestRaceLapTime %> &nbsp &nbsp &nbsp <%= track.BestRaceLapPilot %></p></strong>
+                </div>
+            </div>
+        </div>
+        <% }) %>
+    </div>
+</body>
+</html>
