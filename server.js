@@ -19,8 +19,12 @@ app.set('view engine', 'ejs'); // Используем шаблонизатор 
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// app.get('/', (req, res) => {
+//     res.sendFile(__dirname + '/public/index.html');
+// });
+
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/public/index.html');
+    res.redirect('/pilots');
 });
 
 // Маршрут для страницы пилотов
