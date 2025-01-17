@@ -34,7 +34,7 @@ app.get('/test', (req, res) => {
 app.get('/pilots', async (req, res) => {
     let connection;
     try {
-        connection = await pool.getConnection();
+        // connection = await pool.getConnection();
 
         // Выполнение запроса к базе данных для получения информации о пилотах
         // const [rows] = await connection.execute(`
@@ -48,7 +48,7 @@ app.get('/pilots', async (req, res) => {
         //     ORDER BY p.EloRanking DESC
         // `);
 
-        console.log('Pilots data:', rows); // Логируем данные для проверки
+        // console.log('Pilots data:', rows); // Логируем данные для проверки
 
         // Отправка данных на страницу HTML
         res.render('pilots', { pilots: rows });
@@ -67,9 +67,9 @@ app.get('/pilot/:name', async (req, res) => {
     const pilotName = req.params.name;
     let connection;
     try {
-        connection = await pool.getConnection();
+        // connection = await pool.getConnection();
 
-        console.log(`Fetching race data for pilot: ${pilotName}`);
+        // console.log(`Fetching race data for pilot: ${pilotName}`);
 
         let initialEloRanking = 1500;
 
@@ -84,7 +84,7 @@ app.get('/pilot/:name', async (req, res) => {
         //     [pilotName]
         // );
 
-        console.log('Race data for pilot:', raceRows);
+        // console.log('Race data for pilot:', raceRows);
 
         let cumulativeElo = initialEloRanking;
         const raceData = raceRows.map(race => {
@@ -116,7 +116,7 @@ app.get('/pilot/:name', async (req, res) => {
 app.get('/new-participants', async (req, res) => {
     let connection;
     try {
-        connection = await pool.getConnection();
+        // connection = await pool.getConnection();
 
         // Получение всех участников гонок
         // const [rows] = await connection.execute(`
@@ -172,8 +172,8 @@ app.get('/new-participants', async (req, res) => {
 app.get('/tracks', async (req, res) => {
     let connection;
     try {
-        connection = await pool.getConnection();
-        console.log('Connected to database');
+        // connection = await pool.getConnection();
+        // console.log('Connected to database');
 
         // Выполнение запроса к базе данных для получения информации о трассах и путях к изображениям
         // const [rows] = await connection.execute(`
@@ -189,7 +189,7 @@ app.get('/tracks', async (req, res) => {
         //     ORDER BY tr.TrackName
         // `);
 
-        console.log('Tracks data:', rows); // Логируем данные для проверки
+        // console.log('Tracks data:', rows); // Логируем данные для проверки
 
         const tracks = rows.map(row => ({
             TrackName: row.TrackName,
