@@ -42,7 +42,7 @@ app.get('/pilots', async (req, res) => {
                 p.RaceCount, 
                 p.UUID, 
                 p.AverageChange 
-            FROM Pilots p 
+            FROM pilots p 
             ORDER BY p.EloRanking DESC
         `);
 
@@ -74,9 +74,9 @@ app.get('/pilot/:name', async (req, res) => {
         // Получение данных о гонках пилота
         const [raceRows] = await connection.execute(
             `SELECT r.StartDate as Date, rp.EloChange 
-             FROM RaceParticipants rp
-             JOIN Pilots p ON rp.PilotUUID = p.UUID
-             JOIN Races r ON rp.RaceUUID = r.UUID
+             FROM raceparticipants rp
+             JOIN pilots p ON rp.PilotUUID = p.UUID
+             JOIN races r ON rp.RaceUUID = r.UUID
              WHERE p.Name = ?
              ORDER BY r.StartDate`,
             [pilotName]
@@ -117,8 +117,8 @@ app.get('/new-participants', async (req, res) => {
         // Получение всех участников гонок
         const [rows] = await connection.execute(`
             SELECT rp.PilotUUID, rp.RaceUUID, r.StartDate 
-            FROM RaceParticipants rp
-            JOIN Races r ON rp.RaceUUID = r.UUID
+            FROM raceparticipants rp
+            JOIN races r ON rp.RaceUUID = r.UUID
             ORDER BY r.StartDate
         `);
 
@@ -180,8 +180,8 @@ app.get('/tracks', async (req, res) => {
                 tr.BestRaceLapTime,
                 tr.BestRaceLapPilot,
                 ti.ImagePath
-            FROM TrackRecords tr
-            LEFT JOIN TrackImages ti ON tr.TrackName = ti.TrackName
+            FROM trackrecords tr
+            LEFT JOIN trackimages ti ON tr.TrackName = ti.TrackName
             ORDER BY tr.TrackName
         `);
 
