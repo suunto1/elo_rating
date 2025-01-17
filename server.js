@@ -23,10 +23,6 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
 
-app.get('/test', (req, res) => {
-    res.render('test');
-});
-
 // Маршрут для страницы пилотов
 app.get('/pilots', async (req, res) => {
     console.log('Received request for /pilots');
