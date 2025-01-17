@@ -6,10 +6,11 @@ const port = process.env.PORT || 3000;
 
 // Настройки подключения к базе данных MySQL
 const dbConfig = {
-    host: 'sql303.infinityfree.com',
-    user: 'if0_38116263',
-    password: 'BoAEX3p44sYc',
-    database: 'if0_38116263_elo_rating',
+    host: 'mysql-11416919-suunto-ce35.b.aivencloud.com',
+    user: 'avnadmin',
+    password: 'AVNS_Ll9dDQhtH0Oh2WmTz4c',
+    database: 'defaultdb',
+    port: '13693'
 };
 
 const pool = mysql.createPool(dbConfig);
@@ -31,52 +32,52 @@ app.get('/test', (req, res) => {
 
 
 // Маршрут для страницы пилотов
-// app.get('/pilots', async (req, res) => {
-//     let connection;
-//     try {
-//         connection = await pool.getConnection();
+app.get('/pilots', async (req, res) => {
+    let connection;
+    try {
+        connection = await pool.getConnection();
 
-//         // Выполнение запроса к базе данных для получения информации о пилотах
-//         const [rows] = await connection.execute(`
-//             SELECT 
-//                 p.Name, 
-//                 p.EloRanking, 
-//                 p.RaceCount, 
-//                 p.UUID, 
-//                 p.AverageChange 
-//             FROM Pilots p 
-//             ORDER BY p.EloRanking DESC
-//         `);
+        // Выполнение запроса к базе данных для получения информации о пилотах
+        const [rows] = await connection.execute(`
+            SELECT 
+                p.Name, 
+                p.EloRanking, 
+                p.RaceCount, 
+                p.UUID, 
+                p.AverageChange 
+            FROM Pilots p 
+            ORDER BY p.EloRanking DESC
+        `);
 
-//         console.log('Pilots data:', rows); // Логируем данные для проверки
+        console.log('Pilots data:', rows); // Логируем данные для проверки
 
-//         // Отправка данных на страницу HTML
-//         res.render('pilots', { pilots: rows });
-//     } catch (error) {
-//         console.error('Error fetching data:', error);
-//         res.status(500).send('Error fetching data');
-//     } finally {
-//         if (connection) {
-//             connection.release();
-//         }
-//     }
-// });
+        // Отправка данных на страницу HTML
+        res.render('pilots', { pilots: rows });
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        res.status(500).send('Error fetching data');
+    } finally {
+        if (connection) {
+            connection.release();
+        }
+    }
+});
 
-app.get('/pilots', (req, res) => {
+app.get('/pilots', async (req, res) => {
     console.log('Received request for /pilots');
     try {
         // Комментируем запросы к базе данных для теста
-        // const [rows] = await connection.execute(`
-        //     SELECT 
-        //         p.Name, 
-        //         p.EloRanking, 
-        //         p.RaceCount, 
-        //         p.UUID, 
-        //         p.AverageChange 
-        //     FROM Pilots p 
-        //     ORDER BY p.EloRanking DESC
-        // `);
-        // console.log('Pilots data:', rows);
+        const [rows] = await connection.execute(`
+            SELECT 
+                p.Name, 
+                p.EloRanking, 
+                p.RaceCount, 
+                p.UUID, 
+                p.AverageChange 
+            FROM Pilots p 
+            ORDER BY p.EloRanking DESC
+        `);
+        console.log('Pilots data:', rows);
         res.render('pilots', { pilots: [] }); // Пустой массив для теста рендеринга
     } catch (error) {
         console.error('Error fetching data:', error);
@@ -88,26 +89,26 @@ app.get('/pilots', (req, res) => {
 // Маршрут для получения данных о конкретном пилоте
 app.get('/pilot/:name', async (req, res) => {
     const pilotName = req.params.name;
-    // let connection;
+    let connection;
     try {
-        // connection = await pool.getConnection();
+        connection = await pool.getConnection();
 
-        // console.log(`Fetching race data for pilot: ${pilotName}`);
+        console.log(`Fetching race data for pilot: ${pilotName}`);
 
         let initialEloRanking = 1500;
 
         // Получение данных о гонках пилота
-        // const [raceRows] = await connection.execute(
-        //     `SELECT r.StartDate as Date, rp.EloChange 
-        //      FROM RaceParticipants rp
-        //      JOIN Pilots p ON rp.PilotUUID = p.UUID
-        //      JOIN Races r ON rp.RaceUUID = r.UUID
-        //      WHERE p.Name = ?
-        //      ORDER BY r.StartDate`,
-        //     [pilotName]
-        // );
+        const [raceRows] = await connection.execute(
+            `SELECT r.StartDate as Date, rp.EloChange 
+             FROM RaceParticipants rp
+             JOIN Pilots p ON rp.PilotUUID = p.UUID
+             JOIN Races r ON rp.RaceUUID = r.UUID
+             WHERE p.Name = ?
+             ORDER BY r.StartDate`,
+            [pilotName]
+        );
 
-        // console.log('Race data for pilot:', raceRows);
+        console.log('Race data for pilot:', raceRows);
 
         let cumulativeElo = initialEloRanking;
         const raceData = raceRows.map(race => {
@@ -137,17 +138,17 @@ app.get('/pilot/:name', async (req, res) => {
 
 // Маршрут для страницы с данными о новых участниках
 app.get('/new-participants', async (req, res) => {
-    // let connection;
+    let connection;
     try {
-        // connection = await pool.getConnection();
+        connection = await pool.getConnection();
 
         // Получение всех участников гонок
-        // const [rows] = await connection.execute(`
-        //     SELECT rp.PilotUUID, rp.RaceUUID, r.StartDate 
-        //     FROM RaceParticipants rp
-        //     JOIN Races r ON rp.RaceUUID = r.UUID
-        //     ORDER BY r.StartDate
-        // `);
+        const [rows] = await connection.execute(`
+            SELECT rp.PilotUUID, rp.RaceUUID, r.StartDate 
+            FROM RaceParticipants rp
+            JOIN Races r ON rp.RaceUUID = r.UUID
+            ORDER BY r.StartDate
+        `);
 
         const races = {};
         const cumulativeParticipantsCount = [];
@@ -193,26 +194,26 @@ app.get('/new-participants', async (req, res) => {
 
 // Новый маршрут для страницы с данными о трассах
 app.get('/tracks', async (req, res) => {
-    // let connection;
+    let connection;
     try {
-        // connection = await pool.getConnection();
-        // console.log('Connected to database');
+        connection = await pool.getConnection();
+        console.log('Connected to database');
 
         // Выполнение запроса к базе данных для получения информации о трассах и путях к изображениям
-        // const [rows] = await connection.execute(`
-        //     SELECT 
-        //         tr.TrackName,
-        //         tr.BestQualifyingLapTime,
-        //         tr.BestQualifyingLapPilot,
-        //         tr.BestRaceLapTime,
-        //         tr.BestRaceLapPilot,
-        //         ti.ImagePath
-        //     FROM TrackRecords tr
-        //     LEFT JOIN TrackImages ti ON tr.TrackName = ti.TrackName
-        //     ORDER BY tr.TrackName
-        // `);
+        const [rows] = await connection.execute(`
+            SELECT 
+                tr.TrackName,
+                tr.BestQualifyingLapTime,
+                tr.BestQualifyingLapPilot,
+                tr.BestRaceLapTime,
+                tr.BestRaceLapPilot,
+                ti.ImagePath
+            FROM TrackRecords tr
+            LEFT JOIN TrackImages ti ON tr.TrackName = ti.TrackName
+            ORDER BY tr.TrackName
+        `);
 
-        // console.log('Tracks data:', rows); // Логируем данные для проверки
+        console.log('Tracks data:', rows); // Логируем данные для проверки
 
         const tracks = rows.map(row => ({
             TrackName: row.TrackName,
