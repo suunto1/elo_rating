@@ -37,16 +37,16 @@ app.get('/pilots', async (req, res) => {
         connection = await pool.getConnection();
 
         // Выполнение запроса к базе данных для получения информации о пилотах
-        const [rows] = await connection.execute(`
-            SELECT 
-                p.Name, 
-                p.EloRanking, 
-                p.RaceCount, 
-                p.UUID, 
-                p.AverageChange 
-            FROM Pilots p 
-            ORDER BY p.EloRanking DESC
-        `);
+        // const [rows] = await connection.execute(`
+        //     SELECT 
+        //         p.Name, 
+        //         p.EloRanking, 
+        //         p.RaceCount, 
+        //         p.UUID, 
+        //         p.AverageChange 
+        //     FROM Pilots p 
+        //     ORDER BY p.EloRanking DESC
+        // `);
 
         console.log('Pilots data:', rows); // Логируем данные для проверки
 
@@ -74,15 +74,15 @@ app.get('/pilot/:name', async (req, res) => {
         let initialEloRanking = 1500;
 
         // Получение данных о гонках пилота
-        const [raceRows] = await connection.execute(
-            `SELECT r.StartDate as Date, rp.EloChange 
-             FROM RaceParticipants rp
-             JOIN Pilots p ON rp.PilotUUID = p.UUID
-             JOIN Races r ON rp.RaceUUID = r.UUID
-             WHERE p.Name = ?
-             ORDER BY r.StartDate`,
-            [pilotName]
-        );
+        // const [raceRows] = await connection.execute(
+        //     `SELECT r.StartDate as Date, rp.EloChange 
+        //      FROM RaceParticipants rp
+        //      JOIN Pilots p ON rp.PilotUUID = p.UUID
+        //      JOIN Races r ON rp.RaceUUID = r.UUID
+        //      WHERE p.Name = ?
+        //      ORDER BY r.StartDate`,
+        //     [pilotName]
+        // );
 
         console.log('Race data for pilot:', raceRows);
 
@@ -119,12 +119,12 @@ app.get('/new-participants', async (req, res) => {
         connection = await pool.getConnection();
 
         // Получение всех участников гонок
-        const [rows] = await connection.execute(`
-            SELECT rp.PilotUUID, rp.RaceUUID, r.StartDate 
-            FROM RaceParticipants rp
-            JOIN Races r ON rp.RaceUUID = r.UUID
-            ORDER BY r.StartDate
-        `);
+        // const [rows] = await connection.execute(`
+        //     SELECT rp.PilotUUID, rp.RaceUUID, r.StartDate 
+        //     FROM RaceParticipants rp
+        //     JOIN Races r ON rp.RaceUUID = r.UUID
+        //     ORDER BY r.StartDate
+        // `);
 
         const races = {};
         const cumulativeParticipantsCount = [];
@@ -176,18 +176,18 @@ app.get('/tracks', async (req, res) => {
         console.log('Connected to database');
 
         // Выполнение запроса к базе данных для получения информации о трассах и путях к изображениям
-        const [rows] = await connection.execute(`
-            SELECT 
-                tr.TrackName,
-                tr.BestQualifyingLapTime,
-                tr.BestQualifyingLapPilot,
-                tr.BestRaceLapTime,
-                tr.BestRaceLapPilot,
-                ti.ImagePath
-            FROM TrackRecords tr
-            LEFT JOIN TrackImages ti ON tr.TrackName = ti.TrackName
-            ORDER BY tr.TrackName
-        `);
+        // const [rows] = await connection.execute(`
+        //     SELECT 
+        //         tr.TrackName,
+        //         tr.BestQualifyingLapTime,
+        //         tr.BestQualifyingLapPilot,
+        //         tr.BestRaceLapTime,
+        //         tr.BestRaceLapPilot,
+        //         ti.ImagePath
+        //     FROM TrackRecords tr
+        //     LEFT JOIN TrackImages ti ON tr.TrackName = ti.TrackName
+        //     ORDER BY tr.TrackName
+        // `);
 
         console.log('Tracks data:', rows); // Логируем данные для проверки
 
