@@ -16,23 +16,20 @@ const dbConfig = {
 const pool = mysql.createPool(dbConfig);
 
 app.set('view engine', 'ejs'); // Используем шаблонизатор EJS для отображения HTML
-// app.set('views', './views'); // Указываем папку для хранения шаблонов EJS
 app.set('views', path.join(__dirname, 'views'));
-// app.use(express.static('public')); // Делаем папку public доступной для статических файлов
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
 
-// В вашем серверном файле
 app.get('/test', (req, res) => {
     res.render('test');
 });
 
-
 // Маршрут для страницы пилотов
 app.get('/pilots', async (req, res) => {
+    console.log('Received request for /pilots');
     let connection;
     try {
         connection = await pool.getConnection();
@@ -62,29 +59,6 @@ app.get('/pilots', async (req, res) => {
         }
     }
 });
-
-app.get('/pilots', async (req, res) => {
-    console.log('Received request for /pilots');
-    try {
-        // Комментируем запросы к базе данных для теста
-        const [rows] = await connection.execute(`
-            SELECT 
-                p.Name, 
-                p.EloRanking, 
-                p.RaceCount, 
-                p.UUID, 
-                p.AverageChange 
-            FROM Pilots p 
-            ORDER BY p.EloRanking DESC
-        `);
-        console.log('Pilots data:', rows);
-        res.render('pilots', { pilots: [] }); // Пустой массив для теста рендеринга
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        res.status(500).send('Error fetching data');
-    }
-});
-
 
 // Маршрут для получения данных о конкретном пилоте
 app.get('/pilot/:name', async (req, res) => {
@@ -133,8 +107,6 @@ app.get('/pilot/:name', async (req, res) => {
         }
     }
 });
-
-
 
 // Маршрут для страницы с данными о новых участниках
 app.get('/new-participants', async (req, res) => {
@@ -192,7 +164,7 @@ app.get('/new-participants', async (req, res) => {
     }
 });
 
-// Новый маршрут для страницы с данными о трассах
+// Маршрут для страницы с данными о трассах
 app.get('/tracks', async (req, res) => {
     let connection;
     try {
