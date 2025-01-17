@@ -31,12 +31,41 @@ app.get('/test', (req, res) => {
 
 
 // Маршрут для страницы пилотов
-app.get('/pilots', async (req, res) => {
-    let connection;
-    try {
-        // connection = await pool.getConnection();
+// app.get('/pilots', async (req, res) => {
+//     // let connection;
+//     try {
+//         // connection = await pool.getConnection();
 
-        // Выполнение запроса к базе данных для получения информации о пилотах
+//         // Выполнение запроса к базе данных для получения информации о пилотах
+//         // const [rows] = await connection.execute(`
+//         //     SELECT 
+//         //         p.Name, 
+//         //         p.EloRanking, 
+//         //         p.RaceCount, 
+//         //         p.UUID, 
+//         //         p.AverageChange 
+//         //     FROM Pilots p 
+//         //     ORDER BY p.EloRanking DESC
+//         // `);
+
+//         // console.log('Pilots data:', rows); // Логируем данные для проверки
+
+//         // Отправка данных на страницу HTML
+//         res.render('pilots', { pilots: rows });
+//     } catch (error) {
+//         console.error('Error fetching data:', error);
+//         res.status(500).send('Error fetching data');
+//     } finally {
+//         if (connection) {
+//             connection.release();
+//         }
+//     }
+// });
+
+app.get('/pilots', (req, res) => {
+    console.log('Received request for /pilots');
+    try {
+        // Комментируем запросы к базе данных для теста
         // const [rows] = await connection.execute(`
         //     SELECT 
         //         p.Name, 
@@ -47,25 +76,19 @@ app.get('/pilots', async (req, res) => {
         //     FROM Pilots p 
         //     ORDER BY p.EloRanking DESC
         // `);
-
-        // console.log('Pilots data:', rows); // Логируем данные для проверки
-
-        // Отправка данных на страницу HTML
-        res.render('pilots', { pilots: rows });
+        // console.log('Pilots data:', rows);
+        res.render('pilots', { pilots: [] }); // Пустой массив для теста рендеринга
     } catch (error) {
         console.error('Error fetching data:', error);
         res.status(500).send('Error fetching data');
-    } finally {
-        if (connection) {
-            connection.release();
-        }
     }
 });
+
 
 // Маршрут для получения данных о конкретном пилоте
 app.get('/pilot/:name', async (req, res) => {
     const pilotName = req.params.name;
-    let connection;
+    // let connection;
     try {
         // connection = await pool.getConnection();
 
@@ -114,7 +137,7 @@ app.get('/pilot/:name', async (req, res) => {
 
 // Маршрут для страницы с данными о новых участниках
 app.get('/new-participants', async (req, res) => {
-    let connection;
+    // let connection;
     try {
         // connection = await pool.getConnection();
 
@@ -170,7 +193,7 @@ app.get('/new-participants', async (req, res) => {
 
 // Новый маршрут для страницы с данными о трассах
 app.get('/tracks', async (req, res) => {
-    let connection;
+    // let connection;
     try {
         // connection = await pool.getConnection();
         // console.log('Connected to database');
