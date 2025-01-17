@@ -8,7 +8,7 @@ const port = process.env.PORT || 3000;
 const dbConfig = {
     host: 'mysql-11416919-suunto-ce35.b.aivencloud.com',
     user: 'avnadmin',
-    password: process.env.DB_PASSWORD,
+    password: 'AVNS_Ll9dDQhtH0Oh2WmTz4c',
     database: 'defaultdb',
     port: '13693'
 };
