@@ -25,34 +25,35 @@ app.get('/test', (req, res) => {
 
 // Маршрут для страницы пилотов
 app.get('/pilots', async (req, res) => {
-    let connection;
-    try {
-        connection = await pool.getConnection();
+    res.render('pilots');
+    // let connection;
+    // try {
+    //     connection = await pool.getConnection();
 
-        // Выполнение запроса к базе данных для получения информации о пилотах
-        const [rows] = await connection.execute(`
-            SELECT 
-                p.Name, 
-                p.EloRanking, 
-                p.RaceCount, 
-                p.UUID, 
-                p.AverageChange 
-            FROM Pilots p 
-            ORDER BY p.EloRanking DESC
-        `);
+    //     // Выполнение запроса к базе данных для получения информации о пилотах
+    //     const [rows] = await connection.execute(`
+    //         SELECT 
+    //             p.Name, 
+    //             p.EloRanking, 
+    //             p.RaceCount, 
+    //             p.UUID, 
+    //             p.AverageChange 
+    //         FROM Pilots p 
+    //         ORDER BY p.EloRanking DESC
+    //     `);
 
-        console.log('Pilots data:', rows); // Логируем данные для проверки
+    //     console.log('Pilots data:', rows); // Логируем данные для проверки
 
-        // Отправка данных на страницу HTML
-        res.render('pilots', { pilots: rows });
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        res.status(500).send('Error fetching data');
-    } finally {
-        if (connection) {
-            connection.release();
-        }
-    }
+    //     // Отправка данных на страницу HTML
+    //     res.render('pilots', { pilots: rows });
+    // } catch (error) {
+    //     console.error('Error fetching data:', error);
+    //     res.status(500).send('Error fetching data');
+    // } finally {
+    //     if (connection) {
+    //         connection.release();
+    //     }
+    // }
 });
 
 // Маршрут для получения данных о конкретном пилоте
