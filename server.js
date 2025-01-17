@@ -9,7 +9,6 @@ const dbConfig = {
     user: 'if0_38116263',
     password: 'BoAEX3p44sYc',
     database: 'if0_38116263_elo_rating',
-    port: '3306'
 };
 
 const pool = mysql.createPool(dbConfig);
