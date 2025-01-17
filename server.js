@@ -1,5 +1,5 @@
 const express = require('express');
-// const path = require('path');
+const path = require('path');
 const mysql = require('mysql2/promise');
 const app = express();
 const port = process.env.PORT || 3000;
@@ -15,10 +15,10 @@ const dbConfig = {
 const pool = mysql.createPool(dbConfig);
 
 app.set('view engine', 'ejs'); // Используем шаблонизатор EJS для отображения HTML
-app.set('views', './views'); // Указываем папку для хранения шаблонов EJS
-// app.set('views', path.join(__dirname, 'views'));
-app.use(express.static('public')); // Делаем папку public доступной для статических файлов
-// app.use(express.static(path.join(__dirname, 'public')));
+// app.set('views', './views'); // Указываем папку для хранения шаблонов EJS
+app.set('views', path.join(__dirname, 'views'));
+// app.use(express.static('public')); // Делаем папку public доступной для статических файлов
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
