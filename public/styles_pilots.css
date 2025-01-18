@@ -36,9 +36,10 @@ body {
 
 .header-container {
     display: flex;
+    justify-content: flex-start;
     align-items: center;
-    margin-top: 1px; /* Измените значение в зависимости от высоты вашего меню */
-    padding-bottom: 1px;
+    margin-top: 10px; /* Измените значение в зависимости от высоты вашего меню */
+    padding: 10px 0;
     width: 44%; /* Установите ширину равной ширине .table-container */
 }
 
