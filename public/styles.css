@@ -6,6 +6,8 @@ body {
 }
 
 .menu {
+    display: flex;
+    justify-content: space-between; /* Размещаем элементы меню по обеим сторонам */
     background-color: #333;
     overflow: hidden;
     position: fixed; /* Меню будет оставаться на месте при прокрутке */
@@ -15,7 +17,6 @@ body {
 }
 
 .menu a {
-    float: left;
     display: block;
     color: white;
     text-align: center;
@@ -34,7 +35,6 @@ body {
 }
 
 .donate-button {
-    float: right; /* Размещаем кнопку справа */
     background-color: #ff5733; /* Цвет фона кнопки Donate */
     color: white; /* Цвет текста кнопки Donate */
     font-weight: bold; /* Жирный шрифт для кнопки Donate */
