@@ -36,9 +36,9 @@ body {
 
 .header-container {
     display: flex;
-    justify-content: center;
     align-items: center;
     margin-top: 10px; /* Измените значение в зависимости от высоты вашего меню */
+    width: 44%; /* Установите ширину равной ширине .table-container */
 }
 
 .header-title-search {
@@ -49,16 +49,16 @@ body {
 }
 
 h1 {
+    color: #ffffff;
     margin-right: 20px; /* Отступ справа для поля поиска */
     background-color: #222222;
     padding-top: 10px;
     padding-bottom: 10px;
-    color: #ffffff;
+    flex: 1; /* Позволяет заголовку занимать все доступное пространство */
 }
 
 .search-container {
-    position: absolute;
-    right: 0;
+    margin-left: auto; /* Размещаем поле поиска справа */
 }
 
 .search-container input {
