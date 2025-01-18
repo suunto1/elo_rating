@@ -4,14 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Track Records</title>
+    <link rel="stylesheet" href="/styles.css">
     <link rel="stylesheet" href="/styles_tracks.css">
 </head>
 <body>
-    <div class="menu">
-        <a href="/pilots">Pilot Rating Table</a>
-        <a href="/new-participants">User Growth Statistics</a>
-        <a href="/tracks">Track Records</a>
-    </div>
+    <%- include('partials/menu') %> <!-- Включаем меню -->
 
     <div class="track-container">
         <% tracks.forEach(track => { %>

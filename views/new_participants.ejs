@@ -4,15 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Overall and new pilots</title>
+    <link rel="stylesheet" href="/styles.css">
     <link rel="stylesheet" href="/styles_new_participants.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="menu">
-        <a href="/pilots">Pilot Rating Table</a>
-        <a href="/new-participants">User Growth Statistics</a>
-        <a href="/tracks">Track Records</a>
-    </div>
+    <%- include('partials/menu') %> <!-- Включаем меню -->
 
     <h2>Overall and new pilots</h2>
     <div id="chart-container">
