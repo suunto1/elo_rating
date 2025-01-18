@@ -3,6 +3,7 @@ body {
     background-color: #222222; /* Фон черный */
     color: #fff; /* Цвет текста белый для лучшего контраста */
     margin: 20px;
+    padding-top: 60px; /* Измените значение в зависимости от высоты вашего меню */
 }
 
 .menu {
@@ -11,6 +12,7 @@ body {
     position: fixed; /* Меню будет оставаться на месте при прокрутке */
     top: 0;
     width: 100%;
+    z-index: 1000; /* Убедитесь, что меню имеет высокий z-index */
 }
 
 .menu a {
@@ -33,12 +35,10 @@ body {
 }
 
 .header-container {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-top: 60px; /* Измените значение в зависимости от высоты вашего меню */
 }
 
 h1 {
