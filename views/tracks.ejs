@@ -33,15 +33,14 @@
     </div>
     
     <script>
-        // Получаем текущий URL и удаляем слеш в конце, если он есть
-        var currentUrl = window.location.pathname.replace(/\/$/, "");
+        // Получаем текущий URL
+        var currentUrl = window.location.pathname;
     
         // Функция для добавления класса active к соответствующему пункту меню
         function setActiveMenuItem() {
             var menuItems = document.querySelectorAll('.menu a');
             menuItems.forEach(function(item) {
-                var menuItemUrl = item.getAttribute('href').replace(/\/$/, "");
-                if (menuItemUrl === currentUrl) {
+                if (item.getAttribute('href') === currentUrl) {
                     item.classList.add('active');
                 }
             });
@@ -49,8 +48,7 @@
     
         // Вызываем функцию при загрузке страницы
         window.onload = setActiveMenuItem;
-    </script>
-    
-        
+    </script>  
+          
 </body>
 </html>
