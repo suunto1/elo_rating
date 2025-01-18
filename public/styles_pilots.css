@@ -52,8 +52,8 @@ h1 {
     color: #ffffff;
     margin-right: 20px; /* Отступ справа для поля поиска */
     background-color: #222222;
-    padding-top: 10px;
-    padding-bottom: 10px;
+    padding-top: 1px;
+    padding-bottom: 1px;
     flex: 1; /* Позволяет заголовку занимать все доступное пространство */
 }
 
