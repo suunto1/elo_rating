@@ -50,8 +50,9 @@ h1 {
 }
 
 .search-container {
+    margin-left: auto; /* Размещаем поле поиска справа от заголовка */
     margin-bottom: 20px;
-    margin-top: 30px; /* Измените значение в зависимости от высоты вашего меню */
+    margin-top: 0; /* Сбросим верхний отступ */
 }
 
 .search-container input {
