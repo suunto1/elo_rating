@@ -3,7 +3,7 @@ body {
     background-color: #222222; /* Черный фон */
     color: #fff; /* Белый цвет текста по умолчанию */
     margin: 20px;
-    padding-top: 30px; /* Измените значение в зависимости от высоты вашего меню */
+    padding-top: 10px; /* Измените значение в зависимости от высоты вашего меню */
 }
 
 .menu {
@@ -38,7 +38,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 30px; /* Измените значение в зависимости от высоты вашего меню */
+    margin-top: 10px; /* Измените значение в зависимости от высоты вашего меню */
 }
 
 h1 {
