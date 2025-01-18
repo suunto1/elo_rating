@@ -3,6 +3,7 @@ body {
     background-color: #222222;
     margin: 0;
     padding: 0;
+    padding-top: 30px; /* Измените значение в зависимости от высоты вашего меню */
 }
 
 .menu {
@@ -11,6 +12,7 @@ body {
     position: fixed; /* Меню будет оставаться на месте при прокрутке */
     top: 0;
     width: 100%;
+    z-index: 1000; /* Убедитесь, что меню имеет высокий z-index */
 }
 
 .menu a {
@@ -39,6 +41,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-top: 30px; /* Измените значение в зависимости от высоты вашего меню */
 }
 
 .track-container {
