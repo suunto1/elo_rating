@@ -36,7 +36,7 @@ body {
 
 .header-container {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     margin-top: 10px; /* Измените значение в зависимости от высоты вашего меню */
 }
