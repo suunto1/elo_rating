@@ -39,7 +39,7 @@ body {
     justify-content: flex-start;
     align-items: center;
     /* margin-top: 2px; Измените значение в зависимости от высоты вашего меню */
-    padding-top: 70px;
+    padding-top: 100px;
     padding: 1px 0;
     width: 44%; /* Установите ширину равной ширине .table-container */
 }
