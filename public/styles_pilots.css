@@ -35,32 +35,26 @@ body {
 }
 
 .header-container {
+    position: relative;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     margin-top: 10px; /* Измените значение в зависимости от высоты вашего меню */
 }
 
-.header-container h1 {
-    margin-right: auto; /* Отодвигаем заголовок вправо, чтобы место для поиска осталось справа */
-}
-
-.header-title-search {
-    display: flex;
-    align-items: center;
-    width: 44%; /* Установите ширину равной ширине .table-container */
-}
-
 h1 {
-    margin-right: 20px; /* Отступ справа для поля поиска */
+    color: #ffffff;
+    margin-bottom: 10px;
     background-color: #222222;
     padding-top: 10px;
     padding-bottom: 10px;
-    color: #ffffff;
 }
 
 .search-container {
-    margin-left: auto; /* Размещаем поле поиска справа */
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .search-container input {
