@@ -36,7 +36,9 @@ body {
 }
 
 .donate-button {
-    background-color: rgb(255, 255, 255); /* Цвет фона кнопки Donate */
-    color: rgb(229, 12, 12); /* Цвет текста кнопки Donate */
+    background-color: white; /* Цвет фона кнопки Donate */
+    color: black; /* Цвет текста кнопки Donate */
     font-weight: bold; /* Жирный шрифт для кнопки Donate */
+    border: 1px solid #333; /* Добавляем границу для кнопки */
 }
+
