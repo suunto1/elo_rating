@@ -38,7 +38,7 @@ body {
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    margin-top: 2px; /* Измените значение в зависимости от высоты вашего меню */
+    /* margin-top: 2px;
     padding: 1px 0;
     width: 44%; /* Установите ширину равной ширине .table-container */
 }
