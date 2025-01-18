@@ -54,13 +54,12 @@ h1 {
     color: #ffffff;
     margin-right: 20px; /* Отступ справа для поля поиска */
     background-color: #222222;
-    padding-top: 1px;
-    padding-bottom: 1px;
-    flex: 1; /* Позволяет заголовку занимать все доступное пространство */
+    padding: 20px 0;
 }
 
 .search-container {
-    margin-left: auto; /* Размещаем поле поиска справа */
+    /* margin-left: auto; Размещаем поле поиска справа */
+    margin: 0;
 }
 
 .search-container input {
