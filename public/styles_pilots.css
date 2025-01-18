@@ -51,6 +51,7 @@ h1 {
 
 .search-container {
     margin-bottom: 20px;
+    margin-top: 30px; /* Измените значение в зависимости от высоты вашего меню */
 }
 
 .search-container input {
