@@ -36,23 +36,26 @@ body {
 
 .header-container {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     margin-top: 10px; /* Измените значение в зависимости от высоты вашего меню */
 }
 
+.header-title-search {
+    display: flex;
+    align-items: center;
+}
+
 h1 {
     color: #ffffff;
-    margin-bottom: 10px;
+    margin-bottom: 10px; /* Отступ справа для поля поиска */
     background-color: #222222;
     padding-top: 10px;
     padding-bottom: 10px;
 }
 
 .search-container {
-    margin-left: auto; /* Размещаем поле поиска справа от заголовка */
-    margin-bottom: 20px;
-    margin-top: 0; /* Сбросим верхний отступ */
+    margin: 0; /* Сбросим верхний отступ */
 }
 
 .search-container input {
