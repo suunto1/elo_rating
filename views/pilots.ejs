@@ -158,20 +158,20 @@
     <script>
         // Получаем текущий URL
         var currentUrl = window.location.pathname;
-        
+    
         // Функция для добавления класса active к соответствующему пункту меню
         function setActiveMenuItem() {
             var menuItems = document.querySelectorAll('.menu a');
             menuItems.forEach(function(item) {
-                if (item.href.includes(currentUrl)) {
+                if (item.getAttribute('href') === currentUrl) {
                     item.classList.add('active');
                 }
             });
         }
-        
+    
         // Вызываем функцию при загрузке страницы
         window.onload = setActiveMenuItem;
-        </script>
+    </script>
         
     
 </body>
