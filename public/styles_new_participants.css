@@ -27,6 +27,11 @@ body {
     color: black;
 }
 
+.menu a.active {
+    background-color: #009879;
+    color: white;
+}
+
 h1 {
     text-align: center;
     color: #fff; /* Белый цвет текста для лучшего контраста */

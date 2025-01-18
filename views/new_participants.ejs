@@ -13,7 +13,7 @@
         <a href="/new-participants">User Growth Statistics</a>
         <a href="/tracks">Track Records</a>
     </div>
-    
+
     <h1>Overall and New Pilots Chart</h1>
     <div id="chart-container">
         <canvas id="participantsChart"></canvas>
@@ -86,5 +86,23 @@
             });
         });
     </script>
+    <script>
+        // Получаем текущий URL
+        var currentUrl = window.location.pathname;
+        
+        // Функция для добавления класса active к соответствующему пункту меню
+        function setActiveMenuItem() {
+            var menuItems = document.querySelectorAll('.menu a');
+            menuItems.forEach(function(item) {
+                if (item.href.includes(currentUrl)) {
+                    item.classList.add('active');
+                }
+            });
+        }
+        
+        // Вызываем функцию при загрузке страницы
+        window.onload = setActiveMenuItem;
+        </script>
+        
 </body>
 </html>

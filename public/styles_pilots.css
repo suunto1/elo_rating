@@ -27,6 +27,10 @@ body {
     color: black;
 }
 
+.menu a.active {
+    background-color: #009879;
+    color: white;
+}
 
 .header-container {
     display: flex;
