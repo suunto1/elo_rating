@@ -36,9 +36,13 @@ body {
 
 .header-container {
     display: flex;
-    justify-content: flex-start;
+    justify-content: space-between; /* Размещаем контент по обе стороны */
     align-items: center;
     margin-top: 10px; /* Измените значение в зависимости от высоты вашего меню */
+}
+
+.header-container h1 {
+    margin-right: auto; /* Отодвигаем заголовок вправо, чтобы место для поиска осталось справа */
 }
 
 .header-title-search {
@@ -55,7 +59,7 @@ h1 {
 }
 
 .search-container {
-    margin: 0; /* Сбросим верхний отступ */
+    margin-left: auto; /* Размещаем поле поиска справа */
 }
 
 .search-container input {
