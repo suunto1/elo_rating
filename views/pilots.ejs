@@ -130,14 +130,14 @@
                 eloChart.data.labels = data.labels;
                 eloChart.data.datasets = data.datasets;
     
-                // Обновляем график
-                eloChart.update();
-    
                 // Убираем текст по центру, если данные обновлены
                 if (eloChart.data.datasets.length > 0) {
                     eloChart.options.plugins.afterDraw = null; // Отключаем плагин, чтобы текст не отображался
                     ctx.clearRect(0, 0, eloChart.width, eloChart.height); // Очистить график перед обновлением
                 }
+    
+                // Обновляем график
+                eloChart.update();
             }
     
             rows.forEach(row => {
@@ -187,6 +187,11 @@
                     }
                 });
             });
+    
+            // Отображаем текст по центру, если график пустой при загрузке страницы
+            if (eloChart.data.datasets.length === 0) {
+                displayCenterText(eloChart, 'Click on the pilot to display the Elo rating');
+            }
         });
     </script>
     
