@@ -8,6 +8,20 @@
     <title>Pilots Information</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <style>
+        .search-container {
+            display: flex;
+            align-items: center;
+        }
+        .clear-button {
+            margin-left: 5px;
+            padding: 5px 10px;
+            background-color: #ff5733;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
     <%- include('partials/menu') %> <!-- Включаем меню -->
@@ -16,6 +30,7 @@
         <h2>КМАМК pilots</h2>
         <div class="search-container">
             <input type="text" id="search-input" placeholder="Search for pilots...">
+            <button class="clear-button" id="clear-button">Clear</button>
         </div>
     </div>
 
@@ -54,6 +69,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const searchInput = document.getElementById('search-input');
+            const clearButton = document.getElementById('clear-button');
             const rows = document.querySelectorAll('tbody tr');
             const pilotNameDiv = document.getElementById('pilot-name');
             const ctx = document.getElementById('eloChart').getContext('2d');
@@ -71,6 +87,12 @@
                         row.style.display = 'none';
                     }
                 });
+            });
+    
+            // Функция для очистки поля поиска
+            clearButton.addEventListener('click', function () {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
             });
     
             rows.forEach(row => {
