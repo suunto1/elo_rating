@@ -12,11 +12,12 @@ body {
     top: 0;
     width: 100%;
     z-index: 1000; /* Убедитесь, что меню имеет высокий z-index */
+    display: flex; /* Используем flexbox для выравнивания элементов */
+    justify-content: space-between; /* Пространство между элементами */
+    align-items: center; /* Выравнивание по центру по вертикали */
 }
 
 .menu a {
-    float: left;
-    display: block;
     color: white;
     text-align: center;
     padding: 14px 16px;
@@ -34,7 +35,6 @@ body {
 }
 
 .donate-button {
-    float: right; /* Размещаем кнопку справа */
     background-color: #ff5733; /* Цвет фона кнопки Donate */
     color: white; /* Цвет текста кнопки Donate */
     font-weight: bold; /* Жирный шрифт для кнопки Donate */
