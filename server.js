@@ -160,6 +160,7 @@ app.get('/new-participants', async (req, res) => {
     }
 });
 
+
 // Маршрут для страницы с данными о трассах
 app.get('/tracks', async (req, res) => {
     let connection;
