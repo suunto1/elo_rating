@@ -23,15 +23,6 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
 
-app.use((req, res, next) => {
-    if (req.path.substr(-1) === '/' && req.path.length > 1) {
-        const query = req.url.slice(req.path.length);
-        res.redirect(301, req.path.slice(0, -1) + query);
-    } else {
-        next();
-    }
-});
-
 // Маршрут для страницы пилотов
 app.get('/pilots', async (req, res) => {
     console.log('Received request for /pilots');
