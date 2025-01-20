@@ -11,7 +11,6 @@ body {
     overflow: hidden;
     position: fixed; /* Меню будет оставаться на месте при прокрутке */
     top: 0;
-    width: 100%;
 }
 
 .left-menu {
@@ -45,12 +44,11 @@ body {
 }
 
 .site-logo {
-    width: 50px; /* Настройте ширину логотипа по вашему усмотрению */
-    height: auto; /* Автоматически подстраивать высоту пропорционально ширине */
+    width: auto;
+    height: 16px;
+    vertical-align: middle; /* Вертикальное выравнивание по середине */
 }
 
 .logo-link {
     padding: 0; /* Убираем отступы */
-    display: flex;
-    align-items: center; /* Выравнивание по центру вертикали */
 }
