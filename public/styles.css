@@ -42,14 +42,8 @@ body {
     /* border: 1px solid #333; Добавляем границу для кнопки */
 }
 
-.right-menu {
-    display: flex;
-    align-items: center;
-}
-
 .test-version {
-    color: rgb(193, 193, 193);
-    margin-left: 1500px; /* настройте отступ по вашему усмотрению */
+    margin-left: 50px; /* настройте отступ по вашему усмотрению */
 }
 
 
