@@ -2,7 +2,7 @@ body {
     font-family: Arial, sans-serif;
     background-color: #222222;
     margin: 20px;
-    padding-top: 40px; /* Измените значение в зависимости от высоты вашего меню */
+    padding-top: 50px; /* Измените значение в зависимости от высоты вашего меню */
 }
 
 .header-container {
