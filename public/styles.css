@@ -47,3 +47,7 @@ body {
     height: 16px;
 }
 
+.logo-link {
+    padding: 2px 16px; /* Задайте свои отступы */
+}
+
