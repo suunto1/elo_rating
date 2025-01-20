@@ -15,6 +15,7 @@ body {
 
 .left-menu {
     display: flex;
+    align-items: center; /* Выравнивание по центру вертикали */
 }
 
 .menu a {
@@ -45,9 +46,9 @@ body {
 .site-logo {
     width: auto;
     height: 16px;
+    vertical-align: middle; /* Вертикальное выравнивание по середине */
 }
 
 .logo-link {
-    padding: 2px 2px; /* Задайте свои отступы */
+    padding: 0; /* Убираем отступы */
 }
-
