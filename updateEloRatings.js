@@ -71,7 +71,7 @@ async function executeQuery(connection, query, params) {
     }
 }
 
-// Функция для определения коэффициента K с учетом сплита
+// Функция для определения коэффициента K с учетом сплита(коэффициента гонки)
 function determineK(participants, split) {
     let baseK;
     if (participants <= 10) {
@@ -80,7 +80,7 @@ function determineK(participants, split) {
         baseK = 20 + ((participants - 10) / 10) * 30; // Линейная интерполяция с увеличением на 30 за каждые 10 участников
     }
 
-    return split === 1 ? baseK : baseK * 0.75; // Для сплита 2 коэффициент уменьшен
+    return baseK * split; // Умножение baseK на значение split(коэффициент гонки)
 }
 
 
@@ -334,7 +334,7 @@ async function addRaceResults() {
             const trackName = fileData[1]?.[headers.indexOf('Track Name')]?.trim() || null;
             const startDate = convertDate(fileData[1]?.[headers.indexOf('Start Date')] || '');
             const raceClass = fileData[1]?.[headers.indexOf('Class')]?.trim() || null;
-            const split = parseInt(fileData[1]?.[headers.indexOf('Split')], 10) || null;
+            const split = parseFloat(fileData[1]?.[headers.indexOf('Split')]) || null;
             const bestQualifyingLapTime = fileData[1]?.[headers.indexOf('Best Qualifying Lap Time')] || null;
             const bestQualifyingLapPilot = fileData[1]?.[headers.indexOf('Best Qualifying Lap Pilot')] || null;
             const bestRaceLapTime = fileData[1]?.[headers.indexOf('Best Race Lap Time')] || null;
