@@ -1,18 +1,9 @@
-body {
-    font-family: Arial, sans-serif;
-    background-color: #222222; /* Черный фон */
-    color: #fff; /* Белый цвет текста по умолчанию */
-    margin: 20px;
-    padding-top: 10px; /* Измените значение в зависимости от высоты вашего меню */
-}
-
 .header-container {
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    /* margin-top: 2px; Измените значение в зависимости от высоты вашего меню */
-    margin-top: 16px;
-    padding: 1px 0;
+    margin-top: 0px;
+    padding: 0px;
     width: 44%; /* Установите ширину равной ширине .table-container */
 }
 
@@ -27,7 +18,7 @@ h2 {
     color: #ffffff;
     margin-right: 20px; /* Отступ справа для поля поиска */
     background-color: #222222;
-    padding: 1px 0;
+    
 }
 
 .search-container {
@@ -49,7 +40,7 @@ h2 {
 }
 
 .table-container {
-    max-height: 900px;
+    max-height: 840px;
     overflow-y: auto;
     width: 44%; /* Устанавливаем ширину контейнера таблицы */
 }

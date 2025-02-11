@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const mysql = require('mysql2/promise');
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 
 // Настройки подключения к базе данных MySQL
 const dbConfig = {
@@ -205,6 +205,59 @@ app.get('/tracks', async (req, res) => {
         }
     }
 });
+
+//Маршрут для получения всех событий через API 
+// для динамического добавления данных о событиях через клиентский JavaScript
+app.get('/api/events', async (req, res) => {
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const [rows] = await connection.execute(`
+            SELECT id, date, description 
+            FROM events 
+            ORDER BY date
+        `);
+
+        res.json({ events: rows });
+    } catch (error) {
+        console.error('Error fetching events:', error);
+        res.status(500).send('Error fetching events');
+    } finally {
+        if (connection) {
+            connection.release();
+        }
+    }
+});
+
+
+// Маршрут для отображения страницы календаря:
+app.get('/calendar', async (req, res) => {
+    let connection;
+    try {
+        connection = await pool.getConnection();
+
+        // Получение всех событий из базы данных
+        const [rows] = await connection.execute(`
+            SELECT id, date, description 
+            FROM events 
+            ORDER BY date
+        `);
+
+        console.log('Events data:', rows); // Логируем данные для проверки
+
+        // Отправка данных на страницу HTML
+        res.render('calendar', { events: rows });
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        res.status(500).send('Error fetching data');
+    } finally {
+        if (connection) {
+            connection.release();
+        }
+    }
+});
+
+
 
 // Запуск сервера
 app.listen(port, () => {

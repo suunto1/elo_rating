@@ -1,7 +1,9 @@
 body {
     font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
+    margin: 20px;
+    padding: 0px;
+    background-color: #222222; /*Фон черный */
+    padding-top: 40px; /*Измените значение в зависимости от высоты вашего меню */
 }
 
 .menu {
@@ -9,8 +11,10 @@ body {
     justify-content: space-between;
     background-color: #333;
     overflow: hidden;
-    position: fixed; /* Меню будет оставаться на месте при прокрутке */
+    position: fixed; 
     top: 0;
+    width: 100%;
+    z-index: 1000;
 }
 
 .left-menu {
@@ -51,4 +55,36 @@ body {
 
 .logo-link {
     padding: 0; /* Убираем отступы */
+}
+
+/* Стили для календаря */
+#calendar {
+    max-width: 55%; /* Устанавливаем максимальную ширину */
+    margin: auto; /* Центрируем календарь */
+    padding: 20px; /* Добавляем отступы */
+    background-color: #333;; /* Фон календаря */
+    border-radius: 8px; /* Закругленные углы */
+    box-shadow: 0 2px 4px rgba(3, 210, 96, 0.1); /* Тень для календаря */
+    color: rgb(255, 255, 255);
+    box-shadow: 0 0 10px rgb(0, 223, 193); /* Опционально: тень */
+    
+}
+
+/* Стили для ячеек календаря */
+.fc-day-grid-event .fc-content, .fc-day-grid-event .fc-title {
+    white-space: normal !important; /* Важно для принудительного переноса */
+    word-wrap: break-word !important; /* Переносит длинные слова */
+    word-break: break-word !important; /* Переносит текст */
+    overflow-wrap: break-word !important; /* Переносит длинные слова */
+}
+
+/* Стили для выделения сегодняшней даты */
+.fc-today {
+    background-color: #ffeb3b; /* Жёлтый цвет для выделения */
+    color: black; /* Чёрный цвет текста для лучшей читабельности */
+}
+
+/* Дополнительно: Стили для текста внутри квадрата */
+.fc-today .fc-day-number, .fc-today .fc-content {
+    color: black; /* Чёрный цвет текста */
 }
