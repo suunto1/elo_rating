@@ -106,6 +106,19 @@ body {
     color: white; /* Цвет текста белый */
 }
 
+.discord-links a{
+    display: flex;
+    gap: 5px; /* Отступ между логотипами */
+    align-items: center; /* Центровка по вертикали */
+    justify-content: center; /* Центровка по горизонтали */
+    margin-left: 135px; /* Отступ слева от Discord логотипов */
+    padding: 1px;
+}
+
+.discord-logo {
+    height: 40px; /* Уменьшаем высоту логотипов */
+}
+
 #nearest-event {
     display: flex;
     align-items: center;
