@@ -101,22 +101,27 @@ body {
 .right-menu {
     display: flex;
     align-items: center;
-    padding-left: 20px; /* Отступ слева от кнопки Donate */
-    padding-right: 20px; /* Добавим отступ справа */
+    justify-content: center;
     color: white; /* Цвет текста белый */
+    padding-left: 20px;
 }
 
-.discord-links a{
+.discord-links{
+    position: absolute;
+    right: 40px;
     display: flex;
-    gap: 5px; /* Отступ между логотипами */
-    align-items: center; /* Центровка по вертикали */
-    justify-content: center; /* Центровка по горизонтали */
-    margin-left: 135px; /* Отступ слева от Discord логотипов */
-    padding: 1px;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 5px;
+}
+
+.discord-links a {
+    display: inline-block;
+    padding: 2px;
 }
 
 .discord-logo {
-    height: 40px; /* Уменьшаем высоту логотипов */
+    max-width: 45px;
 }
 
 #nearest-event {
