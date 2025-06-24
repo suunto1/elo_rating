@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,98 +11,130 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.31/moment-timezone-with-data.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.31/moment-timezone-with-data.min.js"></script>
 </head>
+
 <body>
-    <%- include('partials/menu') %> <!-- Включаем меню -->
-    <div id="chart-container">
-        <canvas id="participantsChart"></canvas>
-    </div>
+    <%- include('partials/menu') %>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const cumulativeParticipantsCount = JSON.parse('<%- cumulativeParticipantsCount %>');
-            const newParticipantsCount = JSON.parse('<%- newParticipantsCount %>');
-            const raceDates = JSON.parse('<%- raceDates %>');
+        <div class="container">
+            <aside class="sidebar-left">
 
-            const ctx = document.getElementById('participantsChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: raceDates.map(date => new Date(date).toLocaleDateString()), // Форматируем дату
-                    datasets: [
-                        {
-                            label: 'Overall Pilots',
-                            data: cumulativeParticipantsCount,
-                            type: 'line',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 2,
-                            fill: false,
-                            yAxisID: 'y-axis-1'
-                        },
-                        {
-                            label: 'New Pilots',
-                            data: newParticipantsCount,
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            borderWidth: 1,
-                            yAxisID: 'y-axis-2'
-                        }
-                    ]
-                },
-                options: {
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Race Date'
+            </aside>
+
+            <main>
+                <div id="chart-container">
+                    <canvas id="participantsChart"></canvas>
+                </div>
+                <%- include('partials/partners') %>
+            </main>
+
+            <aside class="sidebar-right">
+
+            </aside>
+
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const cumulativeParticipantsCount = JSON.parse('<%- cumulativeParticipantsCount %>');
+                const newParticipantsCount = JSON.parse('<%- newParticipantsCount %>');
+                const raceDates = JSON.parse('<%- raceDates %>');
+
+                const ctx = document.getElementById('participantsChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: raceDates.map(date => new Date(date).toLocaleDateString()), // Форматируем дату
+                        datasets: [
+                            {
+                                label: 'Overall Pilots',
+                                data: cumulativeParticipantsCount,
+                                type: 'line',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 2,
+                                fill: false,
+                                yAxisID: 'y-axis-1'
+                            },
+                            {
+                                label: 'New Pilots',
+                                data: newParticipantsCount,
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                borderWidth: 1,
+                                yAxisID: 'y-axis-2'
                             }
-                        },
-                        'y-axis-1': {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: 'Overall Pilots'
+                        ]
+                    },
+                    options: {
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Race Date'
+                                },
+                                grid: { // <-- ЗДЕСЬ ИЗМЕНИТЬ ЦВЕТ ВЕРТИКАЛЬНОЙ СЕТКИ
+                                                color: 'rgba(255, 255, 255, 0.1)' // Пример: светло-серый с прозрачностью
+                                            },
+                                            ticks: {
+                                                color: 'rgb(235, 235, 235)'
+                                            }
                             },
-                            beginAtZero: true
-                        },
-                        'y-axis-2': {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
+                            'y-axis-1': {
+                                type: 'linear',
                                 display: true,
-                                text: 'New Pilots'
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Overall Pilots'
+                                },
+                                beginAtZero: true,
+                                grid: { // <-- ЗДЕСЬ ИЗМЕНИТЬ ЦВЕТ ВЕРТИКАЛЬНОЙ СЕТКИ
+                                                color: 'rgba(255, 255, 255, 0.1)' // Пример: светло-серый с прозрачностью
+                                            },
+                                            ticks: {
+                                                color: 'rgb(235, 235, 235)'
+                                            }
                             },
-                            beginAtZero: true,
-                            grid: {
-                                drawOnChartArea: false // avoids overlapping with the first y-axis grid
+                            'y-axis-2': {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'New Pilots'
+                                },
+                                beginAtZero: true,
+                                grid: { // <-- ЗДЕСЬ ИЗМЕНИТЬ ЦВЕТ ВЕРТИКАЛЬНОЙ СЕТКИ
+                                                color: 'rgba(255, 255, 255, 0.1)' // Пример: светло-серый с прозрачностью
+                                            },
+                                            ticks: {
+                                                color: 'rgb(235, 235, 235)'
+                                            }
                             }
                         }
                     }
-                }
+                });
             });
-        });
-    </script>
-    <script>
-        // Получаем текущий URL
-        var currentUrl = window.location.pathname;
-    
-        // Функция для добавления класса active к соответствующему пункту меню
-        function setActiveMenuItem() {
-            var menuItems = document.querySelectorAll('.menu a');
-            menuItems.forEach(function(item) {
-                if (item.getAttribute('href') === currentUrl) {
-                    item.classList.add('active');
-                }
-            });
-        }
-    
-        // Вызываем функцию при загрузке страницы
-        window.onload = setActiveMenuItem;
-    </script>
-        
+        </script>
+        <script>
+            // Получаем текущий URL
+            var currentUrl = window.location.pathname;
+
+            // Функция для добавления класса active к соответствующему пункту меню
+            function setActiveMenuItem() {
+                var menuItems = document.querySelectorAll('.menu a');
+                menuItems.forEach(function (item) {
+                    if (item.getAttribute('href') === currentUrl) {
+                        item.classList.add('active');
+                    }
+                });
+            }
+
+            // Вызываем функцию при загрузке страницы
+            window.onload = setActiveMenuItem;
+        </script>
+        <%- include('partials/footer') %>
 </body>
+
 </html>

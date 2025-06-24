@@ -24,7 +24,23 @@ document.addEventListener("DOMContentLoaded", function() {
                     },
                     editable: false,
                     firstDay: 1,
-                    events: events
+                    events: events,
+                    eventColor: '#3c5ca8',
+                    eventTextColor: 'rgb(221, 221, 221)',
+
+                    dayRender: function(date, cell) {
+                        if (moment().isSame(date, 'day')) {
+                            cell.css('background-color', '#3c5ca8');
+                        }
+                    },
+
+                    // viewRender: function(view, element) {
+                    //     element.find('.fc-day-header').css('color', 'rgb(235, 235, 235)');
+                    //     element.find('.fc-center h2').css('color', 'rgb(235, 235, 235)');
+                    //     element.find('.fc-button').css('color', 'rgb(235, 235, 235)');
+                    //     element.find('.fc-button').css('background-color', 'transparent');
+                    //     element.find('.fc-button').css('border-color', 'transparent');
+                    // }
                 });
 
                 setActiveMenuItem();

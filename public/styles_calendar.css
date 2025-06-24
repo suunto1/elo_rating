@@ -4,5 +4,10 @@
     border-style: solid;
     border-width: 1px;
     padding: 0px;
-    width: 100%;
+    max-width: 70%;
+    margin: auto;
+}
+
+#calendar {
+    color: rgb(225, 225, 225);   
 }

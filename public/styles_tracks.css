@@ -1,54 +1,57 @@
-.track-container {
+.tracks-wrapper {
+    width: 100%;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px; /* Отступ между трассами */
-    padding: 0px;
+    gap: 10px;
 }
 
 .track {
-    background-color: rgb(227, 227, 227);
-    border: 1px solid #ddd;
+    background-color: #4d4d4d;
+    border: 1px solid #5b5b5b;
     border-radius: 5px;
     padding: 10px;
     text-align: center;
-    height: 320px; /* Фиксированная высота блока */
+    height: 320px;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start; /* Начальное выравнивание сверху */
-    overflow: hidden; /* Скрыть переполнение */
+    justify-content: flex-start;
+    overflow: hidden;
 }
 
 .track img {
-    max-height: 60%; /* Ограничим максимальную высоту изображения */
+    max-height: 60%;
     width: auto;
-    object-fit: contain; /* Масштабирование изображения по размеру контейнера */
+    object-fit: contain;
     border-radius: 5px;
 }
 
 .track h2 {
     margin: 5px 0;
+    color: #E0E0E0;
 }
 
 .track-info {
-    margin-top: auto; /* Привязываем к нижней границе */
-    border-top: 2px solid #000000; /* Увеличиваем толщину черты */
-    padding-top: 10px; /* Отступ сверху для разделения */
+    margin-top: auto;
+    border-top: 2px solid #E0E0E0;
+    padding-top: 10px;
+    color: #E0E0E0;
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 5px 50px;
+    align-items: baseline;
+    text-align: left;
 }
 
-.track-info p {
-    margin: 5px 0;
+.track-info .label {
+    text-align: left;
+    font-weight: bold;
 }
 
-.track-info div {
-    display: flex;
+.track-info .time {
+    text-align: left;
+    white-space: nowrap;
 }
 
-.track-info strong {
-    min-width: 100px; /* Измените значение по необходимости */
-    text-align: left; /* Выравнивание по левому краю */
-    padding-right: 10px; /* Отступ для разделения текста */
-}
-
-.track-info p {
-    margin: 0 ;
+.track-info .pilot-name {
+    text-align: left; 
 }

@@ -1,26 +1,44 @@
-<body>
-    <div class="menu">
-        <div class="left-menu">
-            <a href="/" class="logo-link"><img src="/images/logo.png" alt="Site Logo" class="site-logo"></a>
-            <div class="menu-items">
-                <a href="/pilots">Рейтинг водіїв</a>
-                <a href="/new-participants">Динамiка користувачів</a>
-                <a href="/tracks">Рекорди трас</a>
-                <a href="/calendar">Календар</a>
-                <a href="https://send.monobank.ua/jar/8jRFWi2zbt" target="_blank" class="donate-button">Donate</a>
-            </div>
-            <div class="right-menu">
-                <div id="nearest-event">
-                    <span id="event-label">Найближча подія:</span>
-                    <span id="event-title"></span>
-                    <span id="event-date"></span>
+<% var activeMenu=typeof activeMenu !=='undefined' ? activeMenu : '' ; %>
+
+    <body>
+        <div class="menu-container">
+            <div class="menu">
+                <a href="/" class="logo-link"><img src="/images/logo.png" alt="Site Logo" class="site-logo"></a>
+
+                <div id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link <%= activeMenu === 'pilots' ? 'active' : '' %>" href="/pilots">Рейтинг
+                                водіїв</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <%= activeMenu === 'new-participants' ? 'active' : '' %>"
+                                href="/new-participants">Динамiка користувачів</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <%= activeMenu === 'tracks' ? 'active' : '' %>" href="/tracks">Рекорди
+                                трас</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <%= activeMenu === 'calendar' ? 'active' : '' %>"
+                                href="/calendar">Календар</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="https://send.monobank.ua/jar/8jRFWi2zbt" target="_blank"
+                                class="donate-button">Donate</a>
+                        </li>
+                        <!-- <li class="nav-item dropdown">
+                        <a class="dropbtn no-underline">Статистика</a>
+                        <div class="dropdown-content">
+                            <a href="/pilots">Рейтинг водіїв</a>
+                            <a href="/new-participants">Кількість учасників</a>
+                            <a href="/tracks">Рекорди трас</a>
+                        </div>
+                    </li> -->
+                    </ul>
                 </div>
-            </div>
-            <div class="discord-links">
-                <a href="https://discord.gg/QH6UWRMnFK" target="_blank"><img src="/images/KMAMKSimracingLogo.png" alt="KMAMK SimRacing" class="discord-logo" title="Discord KMAMK SimRacing"></a>
-                <a href="https://discord.gg/JsCbEcq8bx" target="_blank"><img src="/images/ProFormulaLogo.png" alt="ProFormula" class="discord-logo" title="Discord ProFormula"></a>
+
             </div>
         </div>
-    </div>
-    <script src="/main.js"></script>
-</body>
+        <!-- <script src="/main.js"></script> -->
+    </body>

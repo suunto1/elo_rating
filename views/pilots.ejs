@@ -1,179 +1,281 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/styles.css">
-    <link rel="stylesheet" href="/styles_pilots.css">
-    <link rel="icon" href="/favicon.png" type="image/png">
-    <title>КМАМК Sim Racing Drivers</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.31/moment-timezone-with-data.min.js"></script>
+  <meta charset="UTF-8" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+    rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/styles_pilots.css" />
+  <link rel="icon" href="/favicon.png" type="image/png" />
+  <title>КМАМК Sim Racing Drivers</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.31/moment-timezone-with-data.min.js"></script>
 </head>
+
 <body>
-    <%- include('partials/menu') %> <!-- Включаем меню -->
-
-    <div class="header-container">
-        <h2>КМАМК Sim Racing Drivers</h2>
-        <div class="search-container">
-            <input type="text" id="search-input" placeholder="Пошук...">
-        </div>
-    </div>
-
+  <%- include('partials/menu') %>
     <div class="container">
-        <div class="table-container">
+      <aside class="sidebar-left"></aside>
+      <main>
+        <div class="header-container">
+          <div class="search-container">
+            <input type="text" id="search-input" placeholder="Пошук..." />
+          </div>
+        </div>
+        <div class="content-container">
+          <div class="table-container">
             <table>
-                <thead>
-                    <tr>
-                        <th>Position</th>
-                        <th>Name</th>
-                        <th>ELO Rating</th>
-                        <th>Races</th>
-                        <th>Avg change</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% pilots.forEach((pilot, index) => { %>
-                        <tr data-pilot="<%= pilot.Name %>">
-                            <td><%= index + 1 %></td>
-                            <td class="pilot-name"><%= pilot.Name %></td>
-                            <td><%= pilot.EloRanking %></td>
-                            <td><%= pilot.RaceCount %></td>
-                            <td><%= pilot.AverageChange.toFixed(2) %></td>
-                        </tr>
-                    <% }) %>
-                </tbody>
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Name</th>
+                  <th>ELO Rating</th>
+                  <th>Races</th>
+                  <th>Avg. change</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% pilots.forEach((pilot, index)=> { %>
+                  <tr data-pilot="<%= pilot.Name %>">
+                    <td>
+                      <%= index + 1 %>
+                    </td>
+                    <td class="pilot-name">
+                      <%= pilot.Name %>
+                    </td>
+                    <td>
+                      <%= pilot.EloRanking %>
+                    </td>
+                    <td>
+                      <%= pilot.RaceCount %>
+                    </td>
+                    <td>
+                      <%= pilot.AverageChange.toFixed(2) %>
+                    </td>
+                  </tr>
+                  <% }) %>
+              </tbody>
             </table>
-        </div>
-
-        <div id="chart-container">
+          </div>
+          <div id="chart-container">
             <div id="pilot-name"></div>
+            <div class="chart-placeholder">
+              Оберіть водія для відображення рейтингу
+            </div>
             <canvas id="eloChart"></canvas>
+            <div id="pilot-details-info">
+              <div class="pilot-stats-grid">
+                <div class="stat-card">
+                  <span class="stat-label">Стартів</span>
+                  <span class="stat-value" id="stats-starts">0</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">Перемог</span>
+                  <span class="stat-value" id="stats-wins">0</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">Подіумів (1-3)</span>
+                  <span class="stat-value" id="stats-podium">0</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">Top 5</span>
+                  <span class="stat-value" id="stats-top5">0</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">Top 10</span>
+                  <span class="stat-value" id="stats-top10">0</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">% подіумів</span>
+                  <span class="stat-value" id="stats-podium-rate">0%</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+        <%- include('partials/partners') %>
+      </main>
+      <aside class="sidebar-right"></aside>
     </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const searchInput = document.getElementById("search-input");
+        const rows = document.querySelectorAll("tbody tr");
+        const pilotNameDiv = document.getElementById("pilot-name");
+        const ctx = document.getElementById("eloChart").getContext("2d");
+        let eloChart;
+        const chartPlaceholder = document.querySelector(".chart-placeholder");
+        const pilotDetailsInfo = document.getElementById("pilot-details-info");
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const searchInput = document.getElementById('search-input');
-            const rows = document.querySelectorAll('tbody tr');
-            const pilotNameDiv = document.getElementById('pilot-name');
-            const ctx = document.getElementById('eloChart').getContext('2d');
-            let eloChart;
-    
-            // Функция для фильтрации строк таблицы на основе поиска
-            searchInput.addEventListener('input', function () {
-                const searchText = searchInput.value.toLowerCase();
-    
-                rows.forEach(row => {
-                    const pilotName = row.getAttribute('data-pilot').toLowerCase();
-                    if (pilotName.includes(searchText)) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-            });
-    
-            rows.forEach(row => {
-                row.addEventListener('click', async function () {
-                    // Убираем класс selected у всех строк
-                    rows.forEach(r => r.classList.remove('selected'));
-    
-                    // Добавляем класс selected к текущей строке
-                    this.classList.add('selected');
-    
-                    const pilotName = this.getAttribute('data-pilot');
-                    pilotNameDiv.textContent = pilotName;
-    
-                    try {
-                        console.log(`Fetching data for pilot: ${pilotName}`);
-                        const response = await fetch(`/pilot/${encodeURIComponent(pilotName)}`);
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        const raceData = await response.json();
-                        console.log('Race data:', raceData);
-    
-                        const labels = [];
-                        const data = [];
-    
-                        raceData.forEach(race => {
-                            const date = new Date(race.Date);
-                            labels.push(date.toLocaleDateString('en-CA')); // Корректное отображение даты в формате YYYY-MM-DD
-                            data.push(race.CumulativeElo);
-                        });
-    
-                        console.log('Labels:', labels);
-                        console.log('Data:', data);
-    
-                        if (eloChart) {
-                            eloChart.destroy();
-                        }
-    
-                        eloChart = new Chart(ctx, {
-                            type: 'line',
-                            data: {
-                                labels: labels,
-                                datasets: [{
-                                    label: 'ELO Rating',
-                                    data: data,
-                                    borderColor: '#009879', // Изменяем цвет кривой на #009879
-                                    borderWidth: 2,
-                                    fill: false
-                                }]
-                            },
-                            options: {
-                                scales: {
-                                    x: {
-                                        type: 'time',
-                                        time: {
-                                            unit: 'day',
-                                            tooltipFormat: 'yyyy-MM-dd' // Формат подсказки
-                                        },
-                                        title: {
-                                            display: true,
-                                            text: 'Date'
-                                        }
-                                    },
-                                    y: {
-                                        title: {
-                                            display: true,
-                                            text: 'Rating'
-                                        },
-                                        beginAtZero: false
-                                    }
-                                }
-                            }
-                        });
-                    } catch (error) {
-                        console.error('Error fetching race data:', error);
-                    }
-                });
-            });
+        // Функция для фильтрации строк таблицы на основе поиска
+        searchInput.addEventListener("input", function () {
+          const searchText = searchInput.value.toLowerCase();
+          rows.forEach((row) => {
+            const pilotName = row.getAttribute("data-pilot").toLowerCase();
+            if (pilotName.includes(searchText)) {
+              row.style.display = "";
+            } else {
+              row.style.display = "none";
+            }
+          });
         });
-    </script>
-    
-    <script>
-        // Получаем текущий URL
-        var currentUrl = window.location.pathname;
-    
-        // Функция для добавления класса active к соответствующему пункту меню
-        function setActiveMenuItem() {
-            var menuItems = document.querySelectorAll('.menu a');
-            menuItems.forEach(function(item) {
-                if (item.getAttribute('href') === currentUrl) {
-                    item.classList.add('active');
-                }
-            });
+
+        rows.forEach((row) => {
+          row.addEventListener("click", async function () {
+            // Убираем класс selected у всех строк
+            rows.forEach((r) => r.classList.remove("selected"));
+            // Добавляем класс selected к текущей строке
+            this.classList.add("selected");
+
+            const pilotName = this.getAttribute("data-pilot");
+            pilotNameDiv.textContent = pilotName;
+
+            if (chartPlaceholder) {
+              chartPlaceholder.style.display = "none"; // Скрываем плейсхолдер
+            }
+            // Показываем блок с дополнительной информацией
+            if (pilotDetailsInfo) {
+              pilotDetailsInfo.style.display = "block";
+            }
+
+            try {
+              console.log(`Fetching data for pilot: ${pilotName}`);
+              const response = await fetch(
+                `/pilot/${encodeURIComponent(pilotName)}`
+              );
+              if (!response.ok) {
+                throw new Error("Network response was not ok");
+              }
+              const data = await response.json(); // Принимаем оба объекта: eloChartData и stats
+              console.log("Fetched data:", data);
+
+              const eloChartData = data.eloChartData;
+              const pilotStats = data.stats;
+
+              // Обновляем статистику, используя полученные данные
+              document.getElementById("stats-starts").textContent = pilotStats.starts;
+              document.getElementById("stats-wins").textContent = pilotStats.wins;
+              document.getElementById("stats-podium").textContent = pilotStats.podiums;
+              document.getElementById("stats-top5").textContent = pilotStats.top5;
+              document.getElementById("stats-top10").textContent = pilotStats.top10;
+              document.getElementById("stats-podium-rate").textContent = `${pilotStats.podiumRate}%`;
+
+              // Обновляем график ELO
+              const labels = [];
+              const chartData = [];
+              eloChartData.forEach((race) => {
+                const date = new Date(race.Date);
+                labels.push(date.toLocaleDateString("en-CA")); // Корректное отображение даты в формате YYYY-MM-DD
+                chartData.push(race.CumulativeElo);
+              });
+
+              if (eloChart) {
+                eloChart.destroy();
+              }
+              eloChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                  labels: labels,
+                  datasets: [
+                    {
+                      label: "ELO Rating",
+                      data: chartData,
+                      borderColor: "red", // Цвет графика
+                      backgroundColor: "rgba(255, 0, 0, 0.2)",
+                      borderWidth: 2,
+                      fill: true,
+                    },
+                  ],
+                },
+                options: {
+                  scales: {
+                    x: {
+                      type: "time",
+                      time: {
+                        unit: "day",
+                        tooltipFormat: "yyyy-MM-dd", // Формат подсказки
+                      },
+                      title: {
+                        display: true,
+                        text: "Date",
+                      },
+                      grid: {
+                        // <-- ЗДЕСЬ ИЗМЕНИТЬ ЦВЕТ ВЕРТИКАЛЬНОЙ СЕТКИ
+                        color: "rgba(255, 255, 255, 0.1)", // Пример: светло-серый с прозрачностью
+                      },
+                      ticks: {
+                        color: "rgb(235, 235, 235)",
+                      },
+                    },
+                    y: {
+                      title: {
+                        display: true,
+                        text: "Rating",
+                      },
+                      beginAtZero: false,
+                      grid: {
+                        // <-- ЗДЕСЬ ИЗМЕНИТЬ ЦВЕТ ВЕРТИКАЛЬНОЙ СЕТКИ
+                        color: "rgba(255, 255, 255, 0.1)", // Пример: светло-серый с прозрачностью
+                      },
+                      ticks: {
+                        color: "rgb(235, 235, 235)",
+                      },
+                    },
+                  },
+                },
+              });
+            } catch (error) {
+              console.error("Error fetching race data:", error);
+              if (chartPlaceholder) {
+                chartPlaceholder.style.display = "flex";
+              }
+              if (pilotDetailsInfo) {
+                pilotDetailsInfo.style.display = "none";
+              }
+              // Сброс статистики при ошибке
+              document.getElementById("stats-starts").textContent = "0";
+              document.getElementById("stats-wins").textContent = "0";
+              document.getElementById("stats-podium").textContent = "0";
+              document.getElementById("stats-top5").textContent = "0";
+              document.getElementById("stats-top10").textContent = "0";
+              document.getElementById("stats-podium-rate").textContent = "0%";
+            }
+          });
+        });
+        // При загрузке страницы, если график еще не инициализирован (т.е. пилот не выбран),
+        // убедимся, что плейсхолдер виден, а блок информации скрыт.
+        if (chartPlaceholder && !eloChart) {
+          chartPlaceholder.style.display = "flex";
         }
-    
-        // Вызываем функцию при загрузке страницы
-        window.onload = setActiveMenuItem;
+        if (pilotDetailsInfo) {
+          pilotDetailsInfo.style.display = "none";
+        }
+      });
     </script>
-        
-    
+    <script>
+      // Получаем текущий URL
+      var currentUrl = window.location.pathname;
+      // Функция для добавления класса active к соответствующему пункту меню
+      function setActiveMenuItem() {
+        var menuItems = document.querySelectorAll(".menu a");
+        menuItems.forEach(function (item) {
+          if (item.getAttribute("href") === currentUrl) {
+            item.classList.add("active");
+          }
+        });
+      }
+      // Вызываем функцию при загрузке страницы
+      window.onload = setActiveMenuItem;
+    </script>
+    <%- include('partials/footer') %>
 </body>
+
 </html>

@@ -1,7 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Рекорди трас</title>
     <link rel="stylesheet" href="/styles.css">
@@ -9,49 +17,69 @@
     <link rel="icon" href="/favicon.png" type="image/png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.31/moment-timezone-with-data.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.31/moment-timezone-with-data.min.js"></script>
 </head>
+
 <body>
     <%- include('partials/menu') %> <!-- Включаем меню -->
 
-    <div class="track-container">
-        <% tracks.forEach(track => { %>
-        <div class="track">
-            <h2><%= track.TrackName %></h2>
-            <img src="/<%= track.Image %>" alt="<%= track.TrackName %>">
-            <div class="track-info">
-                <div>
-                    <strong>Qualifying:</strong>
-                    <strong><p><%= track.BestQualifyingLapTime %> &nbsp &nbsp &nbsp <%= track.BestQualifyingLapPilot %></p></strong>
+        <div class="container">
+            <aside class="sidebar-left"></aside>
+
+            <main>
+                <div class="tracks-wrapper">
+                    <% tracks.forEach(track=> { %>
+                        <div class="track">
+                            <h2>
+                                <%= track.TrackName %>
+                            </h2>
+                            <img src="/<%= track.Image %>" alt="<%= track.TrackName %>">
+                            <div class="track-info">
+                                <span class="label">Qualifying:</span>
+                                <span class="time">
+                                    <%= track.BestQualifyingLapTime %>
+                                </span>
+                                <span class="pilot-name">
+                                    <%= track.BestQualifyingLapPilot %>
+                                </span>
+
+                                <span class="label">Race:</span>
+                                <span class="time">
+                                    <%= track.BestRaceLapTime %>
+                                </span>
+                                <span class="pilot-name">
+                                    <%= track.BestRaceLapPilot %>
+                                </span>
+                            </div>
+                        </div>
+                        <% }) %>
                 </div>
-                <div>
-                    <strong>Race:</strong>
-                    <strong><p><%= track.BestRaceLapTime %> &nbsp &nbsp &nbsp <%= track.BestRaceLapPilot %></p></strong>
-                </div>
-            </div>
+                <%- include('partials/partners') %>
+            </main>
+
+            <aside class="sidebar-right"></aside>
         </div>
-        <% }) %>
-    </div>
-    
-    <script>
-        // Получаем текущий URL и удаляем слеш в конце, если он есть
-        var currentUrl = window.location.pathname.replace(/\/$/, "");
-    
-        // Функция для добавления класса active к соответствующему пункту меню
-        function setActiveMenuItem() {
-            var menuItems = document.querySelectorAll('.menu a');
-            menuItems.forEach(function(item) {
-                var menuItemUrl = item.getAttribute('href').replace(/\/$/, "");
-                if (menuItemUrl === currentUrl) {
-                    item.classList.add('active');
-                }
-            });
-        }
-    
-        // Вызываем функцию при загрузке страницы
-        window.onload = setActiveMenuItem;
-    </script>
-    
-        
+
+        <script>
+            // Получаем текущий URL и удаляем слеш в конце, если он есть
+            var currentUrl = window.location.pathname.replace(/\/$/, "");
+
+            // Функция для добавления класса active к соответствующему пункту меню
+            function setActiveMenuItem() {
+                var menuItems = document.querySelectorAll('.menu a');
+                menuItems.forEach(function (item) {
+                    var menuItemUrl = item.getAttribute('href').replace(/\/$/, "");
+                    if (menuItemUrl === currentUrl) {
+                        item.classList.add('active');
+                    }
+                });
+            }
+
+            // Вызываем функцию при загрузке страницы
+            window.onload = setActiveMenuItem;
+        </script>
+        <%- include('partials/footer') %>
 </body>
+
 </html>
