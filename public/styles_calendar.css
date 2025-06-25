@@ -11,3 +11,19 @@
 #calendar {
     color: rgb(225, 225, 225);   
 }
+
+.fc-event.highlighted-event {
+    border: 3px solid #ff0000 !important;
+    background-color: rgba(255, 0, 0, 0.2) !important;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.7) !important;
+    transition: all 0.3s ease-in-out;
+}
+
+.fc-event.highlighted-event .fc-content {
+    color: #ffffff !important;
+    font-weight: bold !important;
+}
+
+.fc-toolbar {
+    padding: 10px 10px 0px 10px;
+}

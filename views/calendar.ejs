@@ -25,27 +25,27 @@
 </head>
 
 <body>
-    <%- include('partials/menu') %> <!-- Включаем меню -->
+    <%- include('partials/menu', { activeMenu: 'calendar' }) %>
 
-        <div class="container">
-            <aside class="sidebar-left">
+    <div class="container">
+        <aside class="sidebar-left">
 
-            </aside>
+        </aside>
 
-            <main>
-                <div id="chart-container">
-                    <div id="calendar"></div>
-                </div>
+        <main>
+            <div id="chart-container">
+                <div id="calendar"></div>
+            </div>
 
-                <%- include('partials/partners') %>
-            </main>
+            <%- include('partials/partners') %>
+        </main>
 
-            <aside class="sidebar-right">
+        <aside class="sidebar-right">
 
-            </aside>
+        </aside>
 
-        </div>
-        <%- include('partials/footer') %>
+    </div>
+    <%- include('partials/footer') %>
 </body>
 
 </html>

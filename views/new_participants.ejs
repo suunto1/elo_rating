@@ -13,6 +13,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script
         src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.31/moment-timezone-with-data.min.js"></script>
+    <script src="/main.js"></script>
 </head>
 
 <body>
@@ -45,7 +46,7 @@
                 new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: raceDates.map(date => new Date(date).toLocaleDateString()), // Форматируем дату
+                        labels: raceDates.map(date => new Date(date).toLocaleDateString()),
                         datasets: [
                             {
                                 label: 'Overall Pilots',
@@ -73,12 +74,12 @@
                                     display: true,
                                     text: 'Race Date'
                                 },
-                                grid: { // <-- ЗДЕСЬ ИЗМЕНИТЬ ЦВЕТ ВЕРТИКАЛЬНОЙ СЕТКИ
-                                                color: 'rgba(255, 255, 255, 0.1)' // Пример: светло-серый с прозрачностью
-                                            },
-                                            ticks: {
-                                                color: 'rgb(235, 235, 235)'
-                                            }
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: 'rgb(235, 235, 235)'
+                                }
                             },
                             'y-axis-1': {
                                 type: 'linear',
@@ -89,12 +90,12 @@
                                     text: 'Overall Pilots'
                                 },
                                 beginAtZero: true,
-                                grid: { // <-- ЗДЕСЬ ИЗМЕНИТЬ ЦВЕТ ВЕРТИКАЛЬНОЙ СЕТКИ
-                                                color: 'rgba(255, 255, 255, 0.1)' // Пример: светло-серый с прозрачностью
-                                            },
-                                            ticks: {
-                                                color: 'rgb(235, 235, 235)'
-                                            }
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: 'rgb(235, 235, 235)'
+                                }
                             },
                             'y-axis-2': {
                                 type: 'linear',
@@ -105,12 +106,12 @@
                                     text: 'New Pilots'
                                 },
                                 beginAtZero: true,
-                                grid: { // <-- ЗДЕСЬ ИЗМЕНИТЬ ЦВЕТ ВЕРТИКАЛЬНОЙ СЕТКИ
-                                                color: 'rgba(255, 255, 255, 0.1)' // Пример: светло-серый с прозрачностью
-                                            },
-                                            ticks: {
-                                                color: 'rgb(235, 235, 235)'
-                                            }
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: 'rgb(235, 235, 235)'
+                                }
                             }
                         }
                     }
@@ -118,10 +119,7 @@
             });
         </script>
         <script>
-            // Получаем текущий URL
             var currentUrl = window.location.pathname;
-
-            // Функция для добавления класса active к соответствующему пункту меню
             function setActiveMenuItem() {
                 var menuItems = document.querySelectorAll('.menu a');
                 menuItems.forEach(function (item) {
@@ -130,8 +128,6 @@
                     }
                 });
             }
-
-            // Вызываем функцию при загрузке страницы
             window.onload = setActiveMenuItem;
         </script>
         <%- include('partials/footer') %>

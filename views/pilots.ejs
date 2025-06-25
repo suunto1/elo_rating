@@ -18,6 +18,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.31/moment-timezone-with-data.min.js"></script>
+  <script src="/main.js"></script>
 </head>
 
 <body>
@@ -115,7 +116,6 @@
         const chartPlaceholder = document.querySelector(".chart-placeholder");
         const pilotDetailsInfo = document.getElementById("pilot-details-info");
 
-        // Функция для фильтрации строк таблицы на основе поиска
         searchInput.addEventListener("input", function () {
           const searchText = searchInput.value.toLowerCase();
           rows.forEach((row) => {
@@ -130,18 +130,16 @@
 
         rows.forEach((row) => {
           row.addEventListener("click", async function () {
-            // Убираем класс selected у всех строк
             rows.forEach((r) => r.classList.remove("selected"));
-            // Добавляем класс selected к текущей строке
             this.classList.add("selected");
 
             const pilotName = this.getAttribute("data-pilot");
             pilotNameDiv.textContent = pilotName;
 
             if (chartPlaceholder) {
-              chartPlaceholder.style.display = "none"; // Скрываем плейсхолдер
+              chartPlaceholder.style.display = "none";
             }
-            // Показываем блок с дополнительной информацией
+
             if (pilotDetailsInfo) {
               pilotDetailsInfo.style.display = "block";
             }
@@ -154,13 +152,12 @@
               if (!response.ok) {
                 throw new Error("Network response was not ok");
               }
-              const data = await response.json(); // Принимаем оба объекта: eloChartData и stats
+              const data = await response.json();
               console.log("Fetched data:", data);
 
               const eloChartData = data.eloChartData;
               const pilotStats = data.stats;
 
-              // Обновляем статистику, используя полученные данные
               document.getElementById("stats-starts").textContent = pilotStats.starts;
               document.getElementById("stats-wins").textContent = pilotStats.wins;
               document.getElementById("stats-podium").textContent = pilotStats.podiums;
@@ -168,12 +165,11 @@
               document.getElementById("stats-top10").textContent = pilotStats.top10;
               document.getElementById("stats-podium-rate").textContent = `${pilotStats.podiumRate}%`;
 
-              // Обновляем график ELO
               const labels = [];
               const chartData = [];
               eloChartData.forEach((race) => {
                 const date = new Date(race.Date);
-                labels.push(date.toLocaleDateString("en-CA")); // Корректное отображение даты в формате YYYY-MM-DD
+                labels.push(date.toLocaleDateString("en-CA"));
                 chartData.push(race.CumulativeElo);
               });
 
@@ -188,7 +184,7 @@
                     {
                       label: "ELO Rating",
                       data: chartData,
-                      borderColor: "red", // Цвет графика
+                      borderColor: "red",
                       backgroundColor: "rgba(255, 0, 0, 0.2)",
                       borderWidth: 2,
                       fill: true,
@@ -201,15 +197,14 @@
                       type: "time",
                       time: {
                         unit: "day",
-                        tooltipFormat: "yyyy-MM-dd", // Формат подсказки
+                        tooltipFormat: "yyyy-MM-dd",
                       },
                       title: {
                         display: true,
                         text: "Date",
                       },
                       grid: {
-                        // <-- ЗДЕСЬ ИЗМЕНИТЬ ЦВЕТ ВЕРТИКАЛЬНОЙ СЕТКИ
-                        color: "rgba(255, 255, 255, 0.1)", // Пример: светло-серый с прозрачностью
+                        color: "rgba(255, 255, 255, 0.1)",
                       },
                       ticks: {
                         color: "rgb(235, 235, 235)",
@@ -222,8 +217,7 @@
                       },
                       beginAtZero: false,
                       grid: {
-                        // <-- ЗДЕСЬ ИЗМЕНИТЬ ЦВЕТ ВЕРТИКАЛЬНОЙ СЕТКИ
-                        color: "rgba(255, 255, 255, 0.1)", // Пример: светло-серый с прозрачностью
+                        color: "rgba(255, 255, 255, 0.1)",
                       },
                       ticks: {
                         color: "rgb(235, 235, 235)",
@@ -240,7 +234,7 @@
               if (pilotDetailsInfo) {
                 pilotDetailsInfo.style.display = "none";
               }
-              // Сброс статистики при ошибке
+
               document.getElementById("stats-starts").textContent = "0";
               document.getElementById("stats-wins").textContent = "0";
               document.getElementById("stats-podium").textContent = "0";
@@ -250,8 +244,6 @@
             }
           });
         });
-        // При загрузке страницы, если график еще не инициализирован (т.е. пилот не выбран),
-        // убедимся, что плейсхолдер виден, а блок информации скрыт.
         if (chartPlaceholder && !eloChart) {
           chartPlaceholder.style.display = "flex";
         }
@@ -261,9 +253,8 @@
       });
     </script>
     <script>
-      // Получаем текущий URL
       var currentUrl = window.location.pathname;
-      // Функция для добавления класса active к соответствующему пункту меню
+
       function setActiveMenuItem() {
         var menuItems = document.querySelectorAll(".menu a");
         menuItems.forEach(function (item) {
@@ -272,7 +263,6 @@
           }
         });
       }
-      // Вызываем функцию при загрузке страницы
       window.onload = setActiveMenuItem;
     </script>
     <%- include('partials/footer') %>

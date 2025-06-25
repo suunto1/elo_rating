@@ -19,10 +19,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script
         src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.31/moment-timezone-with-data.min.js"></script>
+    <script src="/main.js"></script>
 </head>
 
 <body>
-    <%- include('partials/menu') %> <!-- Включаем меню -->
+    <%- include('partials/menu') %>
 
         <div class="container">
             <aside class="sidebar-left"></aside>
@@ -62,10 +63,7 @@
         </div>
 
         <script>
-            // Получаем текущий URL и удаляем слеш в конце, если он есть
             var currentUrl = window.location.pathname.replace(/\/$/, "");
-
-            // Функция для добавления класса active к соответствующему пункту меню
             function setActiveMenuItem() {
                 var menuItems = document.querySelectorAll('.menu a');
                 menuItems.forEach(function (item) {
@@ -76,7 +74,6 @@
                 });
             }
 
-            // Вызываем функцию при загрузке страницы
             window.onload = setActiveMenuItem;
         </script>
         <%- include('partials/footer') %>
