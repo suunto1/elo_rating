@@ -1,8 +1,181 @@
+.hall-of-fame-wrapper {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+}
+
+.hall-of-fame-wrapper > div {
+    flex: 1;
+}
+
+.hall-of-fame-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Відступ між категоріями в правій колонці */
+    flex-basis: 50%;
+}
+
+.hall-of-fame-category {
+    background-color: #4d4d4d;
+    border: 1px solid #5b5b5b;
+    border-radius: 5px;
+    padding: 10px 15px;
+    color: #E0E0E0;
+    text-align: left;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 100%;
+}
+
+.hall-of-fame-category h3 {
+    margin-top: 0;
+    color: #f0a020;
+    font-size: 1.3em;
+    margin-bottom: 5px;
+    border-bottom: 1px dashed #6b6b6b;
+    padding-bottom: 5px;
+}
+
+.hall-of-fame-category ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.hall-of-fame-category li {
+    margin-bottom: 5px;
+    font-size: 0.95em;
+    line-height: 1.4;
+    padding: 5px 0;
+    border-bottom: 1px dotted #6b6b6b;
+}
+
+.hall-of-fame-category li:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.hall-of-fame-category li > div {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: flex-start;
+    width: 100%;
+    gap: 15px;
+}
+
+.top-pilots-section {
+    margin-bottom: 20px;
+    padding: 5px 20px 20px 20px;
+    background-color: #333;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.top-pilots-section h2 {
+    text-align: center;
+    color: #E0E0E0;
+    font-size: 20px;
+    border-bottom: 2px solid #5b5b5b;
+    padding-bottom: 10px;
+}
+
+.top-pilots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.top-pilots-category {
+    background-color: #4d4d4d;
+    border: 1px solid #5b5b5b;
+    border-radius: 5px;
+    padding: 10px 15px;
+    color: #E0E0E0;
+    text-align: left;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.top-pilots-category h3 {
+    margin-top: 0;
+    color: #f0a020;
+    font-size: 1.3em;
+    margin-bottom: 12px;
+    border-bottom: 1px dashed #6b6b6b;
+    padding-bottom: 5px;
+}
+
+.pilot-name-text {
+    font-weight: bold;
+    white-space: nowrap;
+    min-width: 120px;
+    flex-shrink: 0;
+}
+
+.pilot-value-text {
+    flex-grow: 1;
+    text-align: right;
+    min-width: 30px;
+}
+
+.top-pilots-category ol {
+    list-style: decimal;
+    padding-left: 25px;
+    margin: 0;
+}
+
+.top-pilots-category li {
+    margin-bottom: 8px;
+    font-size: 0.95em;
+    line-height: 1.4;
+    padding-left: 10px;
+}
+
+.top-pilots-category li > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    width: 100%;
+}
+
+.top-pilots-category li:last-child {
+    margin-bottom: 0;
+}
+
+.section-divider {
+    width: 80%;
+    height: 3px;
+    background: linear-gradient(to right, transparent, #f0a020, transparent);
+    margin: 40px auto;
+    border-radius: 5px;
+}
+
+@media (min-width: 769px) {
+    .hall-of-fame-wrapper {
+        flex-direction: row;
+    }
+}
+
+@media (max-width: 768px) {
+    .top-pilots-grid {
+        grid-template-columns: 1fr;
+    }
+    .tracks-wrapper {
+        grid-template-columns: 1fr;
+    }
+    .track {
+        height: auto;
+    }
+    .hall-of-fame-wrapper {
+        flex-direction: column;
+    }
+}
+
 .tracks-wrapper {
     width: 100%;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    gap: 20px;
 }
 
 .track {
@@ -23,16 +196,18 @@
     width: auto;
     object-fit: contain;
     border-radius: 5px;
+    filter: invert(100%)
 }
 
 .track h2 {
     margin: 5px 0;
-    color: #E0E0E0;
+    color: #f0a020;
+    border-bottom: 1px dashed #6b6b6b;
 }
 
 .track-info {
     margin-top: auto;
-    border-top: 2px solid #E0E0E0;
+    border-top: 1px dashed #6b6b6b;
     padding-top: 10px;
     color: #E0E0E0;
     display: grid;

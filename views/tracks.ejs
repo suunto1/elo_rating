@@ -29,32 +29,357 @@
             <aside class="sidebar-left"></aside>
 
             <main>
-                <div class="tracks-wrapper">
-                    <% tracks.forEach(track=> { %>
-                        <div class="track">
-                            <h2>
-                                <%= track.TrackName %>
-                            </h2>
-                            <img src="/<%= track.Image %>" alt="<%= track.TrackName %>">
-                            <div class="track-info">
-                                <span class="label">Qualifying:</span>
-                                <span class="time">
-                                    <%= track.BestQualifyingLapTime %>
-                                </span>
-                                <span class="pilot-name">
-                                    <%= track.BestQualifyingLapPilot %>
-                                </span>
-
-                                <span class="label">Race:</span>
-                                <span class="time">
-                                    <%= track.BestRaceLapTime %>
-                                </span>
-                                <span class="pilot-name">
-                                    <%= track.BestRaceLapPilot %>
-                                </span>
+                <div class="top-pilots-section">
+                    <h2>Зал слави</h2>
+                    <div class="hall-of-fame-wrapper">
+                        <div class="hall-of-fame-category">
+                            <h3>Багаторазові Чемпіони та Призери</h3>
+                            <ul>
+                                <li>
+                                    <div class="pilot-line">
+                                        <span class="pilot-name-text">Pavlo Polovchuk</span>
+                                        <span class="pilot-value-text">Срібний Призер KMAMK GT3 Sprint Championship
+                                            2023<br>Срібний Призер KMAMK GT3 Endurance Championship 2023<br>Срібний
+                                            Призер KMAMK GT3 Endurance Championship 2024<br>Срібний Призер KMAMK Ferrari
+                                            Challenge 2024<br>Бронзовий Призер KMAMK GT3 Sprint Championship
+                                            2024<br>Чемпіон KMAMK GT4 Spring Championship 2025</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="pilot-line">
+                                        <span class="pilot-name-text">Andrii Pozdniakov</span>
+                                        <span class="pilot-value-text">Володар Кубку KMAMK Ferrari Challenge
+                                            2024<br>Володар Кубку KMAMK Porsche SuperCup 2024<br>Чемпіон KMAMK GT3
+                                            Sprint Championship 2024<br>Чемпіон KMAMK GT3 Endurance Championship
+                                            2024<br>Срібний призер KMAMK GT4 Spring Championship 2025</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="pilot-line">
+                                        <span class="pilot-name-text">Dominik Khoroshavin</span>
+                                        <span class="pilot-value-text">Чемпіон KMAMK GT3 Endurance Championship
+                                            2021<br>KMAMK GT3 Sprint Championship 2023</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="pilot-line">
+                                        <span class="pilot-name-text">Kostiantyn Romanenko</span>
+                                        <span class="pilot-value-text">Чемпіон KMAMK GT3 Sprint Championship
+                                            2021<br>KMAMK GT3 Endurance Championship 2023</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="pilot-line">
+                                        <span class="pilot-name-text">Pavlo Denysenko</span>
+                                        <span class="pilot-value-text">Чемпіон KMAMK WTCR Championship S2
+                                            2021<br>Срібний Призер KMAMK x DRS GT4 2023</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="pilot-line">
+                                        <span class="pilot-name-text">Artem Makarov</span>
+                                        <span class="pilot-value-text">Володар Кубку WarmUp League AC Autumn Series
+                                            2021<br>Володар Кубку WarmUp League AC Autumn Series 2022</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="pilot-line">
+                                        <span class="pilot-name-text">Oleh Pitcik</span>
+                                        <span class="pilot-value-text">Бронзовий Призер KMAMK GT3 Sprint Championship
+                                            2021<br>Бронзовий Призер KMAMK GT3 Sprint Championship 2023</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="pilot-line">
+                                        <span class="pilot-name-text">Oleksandr Kniazhytsyn</span>
+                                        <span class="pilot-value-text">Переможець етапу регулярного чемпіонату КМАМК
+                                            SimRacing<br>Бронзовий призер Чемпіонату KMAMK GT4 Spring Championship
+                                            2025</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="pilot-line">
+                                        <span class="pilot-name-text">Yurii Kit</span>
+                                        <span class="pilot-value-text">Володар Кубку Warm Up League TCX Winter Cup
+                                            2023<br>Переможець етапу регулярного чемпіонату КМАМК SimRacing</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="pilot-line">
+                                        <span class="pilot-name-text">Eugene Borodai</span>
+                                        <span class="pilot-value-text">Срібний Призер KMAMK GT3 Sprint Championship
+                                            2024<br>Бронзовий призер KMAMK GT3 Endurance Championship 2024</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="hall-of-fame-column">
+                            <div class="hall-of-fame-category">
+                                <h3>Чемпіони KMAMK GT Endurance Championship</h3>
+                                <ul>
+                                    <li>
+                                        <div class="pilot-line">
+                                            <span class="pilot-name-text">Yevhen Artemenko</span>
+                                            <span class="pilot-value-text">Бронзовий Призер KMAMK GT3 Endurance
+                                                Championship 2021</span>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="pilot-line">
+                                            <span class="pilot-name-text">Andrey Shumarin</span>
+                                            <span class="pilot-value-text">Переможець KMAMK GT3 Endurance Championship
+                                                (2 спліт) 2024 </span>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="hall-of-fame-category">
+                                <h3>Чемпіони KMAMK GT Sprint Championship</h3>
+                                <ul>
+                                    <li>
+                                        <div class="pilot-line">
+                                            <span class="pilot-name-text">Victor Shyrokonіs</span>
+                                            <span class="pilot-value-text">Переможець KMAMK GT3 Sprint Championship (2
+                                                спліт) 2024</span>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="pilot-line">
+                                            <span class="pilot-name-text">Viktor Abramov</span>
+                                            <span class="pilot-value-text">Переможець KMAMK GT4 Spring Championship (2
+                                                спліт) 2025</span>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="hall-of-fame-category">
+                                <h3>Чемпіони WarmUp League</h3>
+                                <ul>
+                                    <li>
+                                        <div class="pilot-line">
+                                            <span class="pilot-name-text">Yehor Zvuzdetskyi</span>
+                                            <span class="pilot-value-text">Володар Кубку WarmUp League GT3 Spring Series
+                                                2023</span>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="pilot-line">
+                                            <span class="pilot-name-text">Oleksii Panchenko</span>
+                                            <span class="pilot-value-text">Володар Кубку WarmUp League GT3 Summer Cup
+                                                2023</span>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="pilot-line">
+                                            <span class="pilot-name-text">Tymofii Istomin</span>
+                                            <span class="pilot-value-text">Володар Кубку WarmUp League GT4 Spring Cup
+                                                2024</span>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="pilot-line">
+                                            <span class="pilot-name-text">Yevhen Sayko</span>
+                                            <span class="pilot-value-text">Володар Кубку WarmUp League GT3 Summer Cup
+                                                2024</span>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="pilot-line">
+                                            <span class="pilot-name-text">Oleksandr Berkunskyi</span>
+                                            <span class="pilot-value-text">Володар Кубку WarmUp League GT3 Winter Cup
+                                                2024</span>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="pilot-line">
+                                            <span class="pilot-name-text">Andrii Tereshchenko</span>
+                                            <span class="pilot-value-text">Володар Кубку Warm Up League GT3 Spring Cup
+                                                2025</span>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="hall-of-fame-category">
+                                <h3>Переможці етапів регулярного чемпіонату</h3>
+                                <ul>
+                                    <li>
+                                        <div class="pilot-line">
+                                            <span class="pilot-name-text">Andrii Vorona</span>
+                                            <span class="pilot-value-text">Переможець етапу регулярного чемпіонату КМАМК
+                                                SimRacing</span>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="pilot-line">
+                                            <span class="pilot-name-text">Glib Dzygar</span>
+                                            <span class="pilot-value-text">Переможець етапу регулярного чемпіонату КМАМК
+                                                SimRacing</span>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="pilot-line">
+                                            <span class="pilot-name-text">Ruslan Bezuhlov</span>
+                                            <span class="pilot-value-text">Переможець етапу регулярного чемпіонату КМАМК
+                                                SimRacing</span>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="pilot-line">
+                                            <span class="pilot-name-text">Artem Khorolsky</span>
+                                            <span class="pilot-value-text">Переможець етапу регулярного чемпіонату КМАМК
+                                                SimRacing</span>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="hall-of-fame-category">
+                                <h3>Переможцi iнших змагань</h3>
+                                <ul>
+                                    <li>
+                                        <div class="pilot-line">
+                                            <span class="pilot-name-text">Nikita Shaposhnik</span>
+                                            <span class="pilot-value-text">Чемпіон KMAMK WTCR Championship S1
+                                                2021</span>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="pilot-line">
+                                            <span class="pilot-name-text">Oleksandr Borodai</span>
+                                            <span class="pilot-value-text">Чемпіон KMAMK x DRS GT4 2023</span>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="pilot-line">
+                                            <span class="pilot-name-text">Nazar Khrushch</span>
+                                            <span class="pilot-value-text">Бронзовий Призер KMAMK x DRS GT4 2023</span>
+                                        </div>
+                                    </li>
+                                </ul>
                             </div>
                         </div>
-                        <% }) %>
+                    </div>
+                </div>
+                <div class="section-divider"></div>
+                <div class="top-pilots-section">
+                    <h2>Топ 15</h2>
+                    <div class="top-pilots-grid">
+                        <div class="top-pilots-category">
+                            <h3>Гонок</h3>
+                            <ol>
+                                <% topRaceCountPilots.forEach(pilot=> { %>
+                                    <li>
+                                        <div>
+                                            <span class="pilot-name-text">
+                                                <%= pilot.Name %>
+                                            </span> <span class="pilot-value-text">
+                                                <%= pilot.RaceCount %>
+                                            </span>
+                                        </div>
+                                    </li>
+                                    <% }) %>
+                            </ol>
+                        </div>
+
+                        <div class="top-pilots-category">
+                            <h3>Перемог</h3>
+                            <ol>
+                                <% topWinsPilots.forEach(pilot=> { %>
+                                    <li>
+                                        <div>
+                                            <span class="pilot-name-text">
+                                                <%= pilot.Name %>
+                                            </span> <span class="pilot-value-text">
+                                                <%= pilot.Wins %>
+                                            </span>
+                                        </div>
+                                    </li>
+                                    <% }) %>
+                            </ol>
+                        </div>
+
+                        <div class="top-pilots-category">
+                            <h3>Подіумів</h3>
+                            <ol>
+                                <% topPodiumsPilots.forEach(pilot=> { %>
+                                    <li>
+                                        <div>
+                                            <span class="pilot-name-text">
+                                                <%= pilot.Name %>
+                                            </span> <span class="pilot-value-text">
+                                                <%= pilot.Podiums %>
+                                            </span>
+                                        </div>
+                                    </li>
+                                    <% }) %>
+                            </ol>
+                        </div>
+
+                        <div class="top-pilots-category">
+                            <h3>Поул-позицій</h3>
+                            <ol>
+                                <% topPolesPilots.forEach(pilot=> { %>
+                                    <li>
+                                        <div>
+                                            <span class="pilot-name-text">
+                                                <%= pilot.Name %>
+                                            </span> <span class="pilot-value-text">
+                                                <%= pilot.PoleCount %>
+                                            </span>
+                                        </div>
+                                    </li>
+                                    <% }) %>
+                            </ol>
+                        </div>
+
+                        <div class="top-pilots-category">
+                            <h3>Найшвидших кіл в гонках</h3>
+                            <ol>
+                                <% topFastestLapsPilots.forEach(pilot=> { %>
+                                    <li>
+                                        <div>
+                                            <span class="pilot-name-text">
+                                                <%= pilot.Name %>
+                                            </span> <span class="pilot-value-text">
+                                                <%= pilot.FastestLapCount %>
+                                            </span>
+                                        </div>
+                                    </li>
+                                    <% }) %>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-divider"></div>
+                <div class="top-pilots-section">
+                    <h2>Рекорди кіл</h2>
+                    <div class="tracks-wrapper">
+                        <% tracks.forEach(track=> { %>
+                            <div class="track">
+                                <h2>
+                                    <%= track.TrackName %>
+                                </h2>
+                                <img src="/<%= track.Image %>" alt="<%= track.TrackName %>">
+                                <div class="track-info">
+                                    <span class="label">Qualifying:</span>
+                                    <span class="time">
+                                        <%= track.BestQualifyingLapTime %>
+                                    </span>
+                                    <span class="pilot-name">
+                                        <%= track.BestQualifyingLapPilot %>
+                                    </span>
+
+                                    <span class="label">Race:</span>
+                                    <span class="time">
+                                        <%= track.BestRaceLapTime %>
+                                    </span>
+                                    <span class="pilot-name">
+                                        <%= track.BestRaceLapPilot %>
+                                    </span>
+                                </div>
+                            </div>
+                            <% }) %>
+                    </div>
                 </div>
                 <%- include('partials/partners') %>
             </main>

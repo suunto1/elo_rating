@@ -140,6 +140,8 @@
               chartPlaceholder.style.display = "none";
             }
 
+            document.getElementById("eloChart").style.display = "";
+
             if (pilotDetailsInfo) {
               pilotDetailsInfo.style.display = "block";
             }
@@ -192,12 +194,37 @@
                   ],
                 },
                 options: {
+                  maintainAspectRatio: false,
+                  responsive: true,
+                  interaction: {
+                    mode: 'index',
+                    intersect: false,
+                  },
+                  plugins: {
+                    tooltip: {
+                      mode: 'index',
+                      intersect: false,
+                      callbacks: {
+                        // Додаємо кастомний заголовок і футер для підказки
+                        title: function (context) {
+                          return `Дата: ${context[0].label}`;
+                        },
+                        label: function (context) {
+                          return `Рейтинг: ${context.parsed.y}`;
+                        },
+                        footer: function (context) {
+                          // Ви можете додати додаткову інформацію тут, якщо потрібно
+                          return '';
+                        }
+                      }
+                    }
+                  },
                   scales: {
                     x: {
                       type: "time",
                       time: {
                         unit: "day",
-                        tooltipFormat: "yyyy-MM-dd",
+                        tooltipFormat: "dd.MM.yyyy",
                       },
                       title: {
                         display: true,
@@ -234,6 +261,8 @@
               if (pilotDetailsInfo) {
                 pilotDetailsInfo.style.display = "none";
               }
+
+              document.getElementById("eloChart").style.display = "none";
 
               document.getElementById("stats-starts").textContent = "0";
               document.getElementById("stats-wins").textContent = "0";

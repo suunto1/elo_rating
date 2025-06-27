@@ -50,7 +50,6 @@ body {
     flex: 1;
     display: flex;
     justify-content: center;
-    /* margin-left: -50px; */
 }
 
 a:link,
@@ -112,55 +111,51 @@ a:focus {
     vertical-align: middle;
 }
 
-/* Полоса предстоящего события */
 .event-strip-container {
    display: flex;
-   justify-content: center; /* Центрирование по горизонтали */
+   justify-content: center;
    width: 100%;
    padding: 5px 5px;
-   background-color: rgba(33, 37, 41, 0.8); /* Более темный фон с прозрачностью */
-   border-bottom: 1px solid rgba(70, 70, 70, 0.5); /* Тонкая нижняя граница */
-   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Небольшая тень */
-   margin-bottom: 20px; /* Отступ снизу от основного контента */
+   background-color: rgba(33, 37, 41, 0.8);
+   border-bottom: 1px solid rgba(70, 70, 70, 0.5);
+   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .event-strip-content {
    display: flex;
    align-items: center;
    justify-content: center;
-   gap: 20px; /* Расстояние между элементами */
-   max-width: 960px; /* Максимальная ширина для центрирования контента */
+   gap: 20px;
+   max-width: 960px;
    width: 100%;
 }
 
 .event-strip-label {
    font-weight: bold;
-   color: #adb5bd; /* Светло-серый цвет */
+   color: #adb5bd;
    font-size: 14px;
 }
 
 .event-strip-title {
     font-weight: 600;
     font-size: 14px;
-    cursor: pointer; /* Курсор-указатель для обозначения кликабельности */
+    cursor: pointer;
     text-align: center;
     white-space: normal;
-    transition: color 0.2s ease-in-out, text-decoration 0.2s ease-in-out; /* Добавляем transition для text-decoration */
+    transition: color 0.2s ease-in-out, text-decoration 0.2s ease-in-out;
 }
 
 .event-strip-title:hover {
-    color: #ffffff; /* Белый цвет при наведении */
-    text-decoration: underline; /* Подчеркивание при наведении */
+    color: #ffffff;
+    text-decoration: underline;
 }
 
 .event-strip-date {
    font-weight: normal;
-   color: #ced4da; /* Светло-серый цвет даты */
+   color: #ced4da;
    font-size: 16px;
 }
-/* Конец полосы под меню */
 
-/* Основной контент */
 .container {
     display: flex;
     flex-direction: row;
@@ -218,7 +213,6 @@ main {
     color: rgb(223, 0, 59);
 }
 
-/* fooder*/
 .footer-logo {
     height: 50px;
     vertical-align: middle;
@@ -343,9 +337,7 @@ ul.footer-nav {
     margin-top: 40px;
     text-align: center;
 }
-/* fooder end*/
 
-/* partners */
 .wrap {
     max-width: 100%;
     margin: auto;
@@ -380,7 +372,6 @@ ul.footer-nav {
     background: linear-gradient(to left, rgb(0, 0, 0), transparent);
 }
 
-/* Анимация прокрутки */
 .items {
     flex-shrink: 0;
     display: flex;
@@ -435,4 +426,3 @@ ul.footer-nav {
         }
     }
 }
-/* partners end*/

@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
     console.log("DOMContentLoaded fired.");
 
     let nearestEventClickListener = null;
@@ -42,19 +42,28 @@ document.addEventListener("DOMContentLoaded", function() {
                     eventTextColor: 'rgb(221, 221, 221)',
                     timeFormat: ' ',
 
-                    dayRender: function(date, cell) {
+                    dayRender: function (date, cell) {
                         if (moment().isSame(date, 'day')) {
                             cell.css('background-color', '#3c5ca8');
                         }
                     },
-                    eventRender: function(event, element) {
-                        console.log(`EventRender: Event ID: ${event.id}, Highlight ID: ${highlightId}, Title: ${event.title}`); // Отладка
+                    eventRender: function (event, element) {
+                        // Получаем текущую дату и дату начала события
+                        const now = moment();
+                        const eventStart = moment(event.start);
+
+                        // Проверяем, является ли событие прошедшим (прошло его время начала)
+                        if (eventStart.isBefore(now)) {
+                            element.addClass('past-event');
+                        }
+
+                        // Логика для подсветки события из URL (оставляем без изменений)
                         if (highlightId && event.id == highlightId) {
                             element.addClass('highlighted-event');
                             console.log(`!!! EVENT HIGHLIGHTED: ${event.title} (ID: ${event.id})`); // Отладка
                         }
                     },
-                    eventClick: function(event, jsEvent, view) {
+                    eventClick: function (event, jsEvent, view) {
                         // alert('Event: ' + event.title); // Пример использования
                     }
                 });
@@ -130,7 +139,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             console.log("Removed old nearestEventClickListener.");
                         }
 
-                        nearestEventClickListener = function() {
+                        nearestEventClickListener = function () {
                             window.location.href = `/calendar?highlightEvent=${nearestEvent.id}`;
                             console.log(`Navigating to: /calendar?highlightEvent=${nearestEvent.id}`);
                         };

@@ -26,7 +26,6 @@
     background-color: rgba(46, 49, 53, 0.7); 
 }
 
-/* Стили для текста-плейсхолдера ( "Пошук..." ) */
 .search-container input::placeholder {
     color: #9b9b9b;
     opacity: 1;
@@ -50,26 +49,24 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 20px;
+    font-size: 15px;
     color: #ccc;
     background-color: rgba(26, 28, 32, 1);
     z-index: 5;
     text-align: center;
     padding: 20px;
     box-sizing: border-box;
+    flex-grow: 1;
 }
 
-/* Стили для контейнера карточек */
 .pilot-stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
-    margin-top: 20px;
     justify-content: center;
     width: 100%;
 }
 
-/* Стили для каждой карточки статистики */
 .stat-card {
     background-color: rgba(46, 49, 53, 0.7);
     border-radius: 8px;
@@ -114,7 +111,8 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    height: auto;
+    max-height: 728px;
+    padding-bottom: 10px;
 }
 
 #pilot-details-info {
@@ -180,27 +178,19 @@ tbody tr.selected {
 
 #eloChart {
     width: 100%;
-    flex-grow: 1;
     height: auto;
+    height: 400px;
+    max-height: 520px;
 }
 
-/* Стили для кнопки "Показать детали" */
-/* Опционально: медиа-запросы для адаптивности, если нужно меньшее количество колонок на маленьких экранах */
-/* Перенастроим медиа-запросы под 3 колонки */
 @media (max-width: 992px) {
-
-    /* Например, 2 колонки на планшетах */
     .pilot-stats-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
 @media (max-width: 600px) {
-
-    /* 1 колонка на мобильных */
     .pilot-stats-grid {
         grid-template-columns: 1fr;
     }
 }
-
-/* Стили для кнопки "Показать детали" */
