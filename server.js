@@ -195,20 +195,20 @@ app.get("/tracks", async (req, res) => {
     console.log("Tracks data fetched successfully.");
 
     const [topRaceCountPilots] = await connection.execute(
-      'SELECT Name, RaceCount FROM Pilots ORDER BY RaceCount DESC LIMIT 15'
+      'SELECT Name, RaceCount FROM pilots ORDER BY RaceCount DESC LIMIT 15'
     );
 
     const [topWinsPilots] = await connection.execute(
-      'SELECT Name, Wins FROM Pilots ORDER BY Wins DESC LIMIT 15'
+      'SELECT Name, Wins FROM pilots ORDER BY Wins DESC LIMIT 15'
     );
 
     const [topPodiumsPilots] = await connection.execute(
-      'SELECT Name, Podiums FROM Pilots ORDER BY Podiums DESC LIMIT 15'
+      'SELECT Name, Podiums FROM pilots ORDER BY Podiums DESC LIMIT 15'
     );
 
     const [topPolesPilots] = await connection.execute(
       `SELECT BestQualifyingLapPilot AS Name, COUNT(UUID) AS PoleCount
-             FROM TrackRecords
+             FROM trackrecords
              WHERE BestQualifyingLapPilot IS NOT NULL AND BestQualifyingLapPilot != ''
              GROUP BY BestQualifyingLapPilot
              ORDER BY PoleCount DESC
@@ -217,7 +217,7 @@ app.get("/tracks", async (req, res) => {
 
     const [topFastestLapsPilots] = await connection.execute(
       `SELECT BestRaceLapPilot AS Name, COUNT(UUID) AS FastestLapCount
-             FROM TrackRecords
+             FROM trackrecords
              WHERE BestRaceLapPilot IS NOT NULL AND BestRaceLapPilot != ''
              GROUP BY BestRaceLapPilot
              ORDER BY FastestLapCount DESC
