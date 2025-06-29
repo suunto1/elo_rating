@@ -4,19 +4,21 @@
         <div class="menu-container">
             <div class="menu">
                 <a href="/" class="logo-link"><img src="/images/logo.png" alt="Site Logo" class="site-logo"></a>
-
                 <div id="navbarNav">
                     <ul class="navbar-nav">
                         <li class="nav-item">
                             <a class="nav-link <%= activeMenu === 'pilots' ? 'active' : '' %>" href="/pilots">Рейтинг
-                                водіїв</a>
+                            </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link <%= activeMenu === 'new-participants' ? 'active' : '' %>"
-                                href="/new-participants">Динамiка користувачів</a>
+                                href="/new-participants">Учасники</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link <%= activeMenu === 'tracks' ? 'active' : '' %>" href="/tracks">Топ</a>
+                            <a class="nav-link <%= activeMenu === 'tracks' ? 'active' : '' %>" href="/tracks">
+                                <img src="/images/iconsPod.png" alt="Кубок" class="cup-icon">
+                                Топ
+                            </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link <%= activeMenu === 'calendar' ? 'active' : '' %>"
@@ -30,12 +32,15 @@
                 </div>
             </div>
         </div>
-
         <div id="upcoming-event-strip" class="event-strip-container">
             <div class="event-strip-content">
                 <span class="event-strip-label">Найближча подія:</span>
                 <span id="event-title" class="event-strip-title">Загрузка...</span>
                 <span id="event-date" class="event-strip-date"></span>
+                <a href="https://www.thesimgrid.com/communities/kmamksimracing" target="_blank"
+                    rel="noopener noreferrer" class="simgrid-button">
+                    <img src="/images/Logo-SimGrid.png" alt="SimGrid" class="simgrid-icon">
+                </a>
             </div>
         </div>
     </body>

@@ -259,7 +259,7 @@ app.get("/api/events", async (req, res) => {
   try {
     connection = await pool.getConnection();
     const [rows] = await connection.execute(`
-            SELECT id, date, description
+            SELECT id, date, description, url
             FROM events
             ORDER BY date
         `);
@@ -279,7 +279,7 @@ app.get("/calendar", async (req, res) => {
   try {
     connection = await pool.getConnection();
     const [rows] = await connection.execute(`
-            SELECT id, date, description
+            SELECT id, date, description, url
             FROM events
             ORDER BY date
         `);

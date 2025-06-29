@@ -70,17 +70,29 @@ a:focus {
     padding: 0;
 }
 
+.cup-icon {
+    height: 23px;
+    width: auto;
+    margin-right: 8px;
+    transform: translateY(-2px);
+}
+
+.nav-link.active .cup-icon {
+    filter: none;
+}
+
 .navbar-nav .nav-link {
     font-family: 'Inter', sans-serif;
     font-size: 18px;
-    background-color: rgb(49, 49, 49);
+    background-color: rgb(56, 56, 56);
     border-radius: 6px;
     padding: 20px 22px;
     font-weight: 600;
     letter-spacing: 0.5px;
     transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, background-color 0.3s, color 0.3s, border-color 0.3s;
-    display: inline-block;
-    vertical-align: middle;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border: 1px solid rgb(70, 70, 70);
     margin-right: 10px;
 }
@@ -112,28 +124,28 @@ a:focus {
 }
 
 .event-strip-container {
-   display: flex;
-   justify-content: center;
-   width: 100%;
-   padding: 5px 5px;
-   background-color: rgba(33, 37, 41, 0.8);
-   border-bottom: 1px solid rgba(70, 70, 70, 0.5);
-   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 5px 5px;
+    background-color: rgba(33, 37, 41, 0.8);
+    border-bottom: 1px solid rgba(70, 70, 70, 0.5);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .event-strip-content {
-   display: flex;
-   align-items: center;
-   justify-content: center;
-   gap: 20px;
-   max-width: 960px;
-   width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    max-width: 960px;
+    width: 100%;
 }
 
 .event-strip-label {
-   font-weight: bold;
-   color: #adb5bd;
-   font-size: 14px;
+    font-weight: bold;
+    color: #adb5bd;
+    font-size: 14px;
 }
 
 .event-strip-title {
@@ -151,9 +163,9 @@ a:focus {
 }
 
 .event-strip-date {
-   font-weight: normal;
-   color: #ced4da;
-   font-size: 16px;
+    font-weight: normal;
+    color: #ced4da;
+    font-size: 16px;
 }
 
 .container {
@@ -210,7 +222,7 @@ main {
 
 #event-date {
     font-weight: bold;
-    color: rgb(223, 0, 59);
+    color: #ff2614;
 }
 
 .footer-logo {
@@ -302,13 +314,74 @@ ul.footer-nav {
     margin-right: 10px;
 }
 
-.discord-icon,
-.insta-icon,
-.youtube-icon,
-.facebook-icon,
+.discord-icon {
+    width: 38px;
+}
+
+.insta-icon {
+    width: 37px;
+}
+
+.youtube-icon {
+    width: 40px;
+}
+
+.facebook-icon {
+    width: 33px;
+}
+
+.twitter-icon,
 .twitch-icon,
 .patreon-icon {
     width: 30px;
+    height: auto;
+    display: block;
+    align-items: center;
+    transition: transform 0.1s ease-in-out;
+}
+
+.discord-button,
+.insta-button,
+.youtube-button,
+.facebook-button,
+.twitter-button,
+.twitch-button,
+.patreon-button {
+    display: flex;
+    align-items: center;
+    transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+}
+
+.discord-button:hover,
+.insta-button:hover,
+.youtube-button:hover,
+.facebook-button:hover,
+.twitter-button:hover,
+.twitch-button:hover,
+.patreon-button:hover {
+    transform: scale(1.2);
+}
+
+.simgrid-button {
+    display: flex;
+    align-items: center;
+    transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+}
+
+.simgrid-icon {
+    width: 85px;
+    height: auto;
+    display: block;
+    align-items: center;
+    transition: transform 0.1s ease-in-out;
+}
+
+.simgrid-button:hover {
+    transform: scale(1.1);
+}
+
+.simgrid-button:hover .simgrid-icon {
+    filter: brightness(1.2);
 }
 
 .firstpage-items1,

@@ -20,7 +20,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 const events = data.events.map(event => ({
                     id: event.id,
                     title: event.description,
-                    start: moment.tz(event.date, 'Europe/Kiev').format('YYYY-MM-DDTHH:mm:ss')
+                    start: moment.tz(event.date, 'Europe/Kiev').format('YYYY-MM-DDTHH:mm:ss'),
+                    // Add the URL here, assuming your API provides a 'url' field for each event
+                    url: event.url
                 }));
                 console.log("Processed events for FullCalendar:", events);
 
@@ -48,23 +50,26 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                     },
                     eventRender: function (event, element) {
-                        // Получаем текущую дату и дату начала события
                         const now = moment();
                         const eventStart = moment(event.start);
 
-                        // Проверяем, является ли событие прошедшим (прошло его время начала)
                         if (eventStart.isBefore(now)) {
                             element.addClass('past-event');
                         }
 
-                        // Логика для подсветки события из URL (оставляем без изменений)
                         if (highlightId && event.id == highlightId) {
                             element.addClass('highlighted-event');
-                            console.log(`!!! EVENT HIGHLIGHTED: ${event.title} (ID: ${event.id})`); // Отладка
+                            console.log(`!!! EVENT HIGHLIGHTED: ${event.title} (ID: ${event.id})`);
                         }
                     },
-                    eventClick: function (event, jsEvent, view) {
-                        // alert('Event: ' + event.title); // Пример использования
+                    eventClick: function (events, jsEvent, view) {
+                        if (events.url) {
+                            jsEvent.preventDefault();
+                            window.open(events.url, '_blank');
+                            console.log(`Navigating to event URL in a new tab: ${events.url}`);
+                        } else {
+                            console.warn(`Для '${events.title}' (ID: ${events.id}) не знайдено URL.`);
+                        }
                     }
                 });
 
@@ -110,7 +115,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 const events = data.events.map(event => ({
                     id: event.id,
                     title: event.description,
-                    start: moment.tz(event.date, 'Europe/Kiev').format('YYYY-MM-DDTHH:mm:ss')
+                    start: moment.tz(event.date, 'Europe/Kiev').format('YYYY-MM-DDTHH:mm:ss'),
+                    url: event.url
                 }));
                 console.log("All events from API for nearest:", events);
 
@@ -126,39 +132,69 @@ document.addEventListener("DOMContentLoaded", function () {
                 const upcomingEventStrip = document.getElementById('upcoming-event-strip');
                 const eventTitle = document.getElementById('event-title');
                 const eventDate = document.getElementById('event-date');
+                const simgridButton = upcomingEventStrip ? upcomingEventStrip.querySelector('.simgrid-button') : null;
 
+                if (eventTitle && eventDate) {
                 if (nearestEvent) {
                     eventTitle.textContent = nearestEvent.title;
                     eventDate.textContent = moment(nearestEvent.start).format('DD MMM');
-                    upcomingEventStrip.style.display = 'flex';
-                    console.log("Upcoming event strip updated and visible.");
+                    console.log("Upcoming event strip updated with event data.");
+
+                    if (simgridButton) {
+                        if (nearestEvent.url) {
+                            simgridButton.href = nearestEvent.url;
+                            simgridButton.style.display = '';
+                            simgridButton.target = '_blank';
+                            console.log(`SimGrid button URL updated to: ${nearestEvent.url}`);
+                        } else {
+                            simgridButton.href = '#';
+                            simgridButton.style.display = 'none';
+                            console.warn(`URL for '${nearestEvent.title}' (ID: ${nearestEvent.id}) not found. Hiding button.`);
+                        }
+                    }
 
                     if (eventTitle) {
                         if (nearestEventClickListener) {
                             eventTitle.removeEventListener('click', nearestEventClickListener);
-                            console.log("Removed old nearestEventClickListener.");
                         }
-
                         nearestEventClickListener = function () {
                             window.location.href = `/calendar?highlightEvent=${nearestEvent.id}`;
                             console.log(`Navigating to: /calendar?highlightEvent=${nearestEvent.id}`);
                         };
                         eventTitle.addEventListener('click', nearestEventClickListener);
-                        console.log("Added new nearestEventClickListener.");
+                        console.log("Added new event click listener for title.");
                     }
 
                 } else {
                     eventTitle.textContent = "Наразі немає майбутніх подій";
                     eventDate.textContent = "";
-                    upcomingEventStrip.style.display = 'none';
-                    console.log("No nearest event found. Upcoming event strip hidden.");
+                    console.log("No nearest event found. Displaying default message.");
+
+                    if (simgridButton) {
+                        simgridButton.href = '#';
+                        simgridButton.style.display = 'none';
+                        console.log("SimGrid button hidden as there are no upcoming events.");
+                    }
                 }
+                
+                if (upcomingEventStrip) {
+                    upcomingEventStrip.style.display = 'flex';
+                }
+            } else {
+                console.error("HTML elements for upcoming event strip not found!");
+            }
             })
             .catch(error => {
                 console.error('Error fetching nearest event:', error);
-                document.getElementById('event-title').textContent = "Помилка завантаження подій";
-                document.getElementById('event-date').textContent = "";
-                document.getElementById('upcoming-event-strip').style.display = 'none';
+                if (document.getElementById('event-title')) {
+                    document.getElementById('event-title').textContent = "Помилка завантаження подій";
+                }
+                if (document.getElementById('event-date')) {
+                    document.getElementById('event-date').textContent = "";
+                }
+                if (document.getElementById('upcoming-event-strip')) {
+                    document.getElementById('upcoming-event-strip').style.display = 'none';
+                }
                 console.log("Error occurred. Upcoming event strip hidden.");
             });
     }

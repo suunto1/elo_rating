@@ -38,3 +38,15 @@
     color: #e5e5e5;
     font-weight: normal;
 }
+
+.fc-event[href] {
+    cursor: pointer;
+}
+
+.fc-event {
+    cursor: pointer;
+}
+
+.fc-event:hover .fc-title {
+    text-decoration: underline;
+}

@@ -11,7 +11,7 @@
 .hall-of-fame-column {
     display: flex;
     flex-direction: column;
-    gap: 20px; /* Відступ між категоріями в правій колонці */
+    gap: 20px;
     flex-basis: 50%;
 }
 
