@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>КМАМК Sim Racing</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #f4f4f4; 
+            color: #333; 
+        }
+        h1, h2, h3 { 
+            color: #0056b3; 
+        }
+        ul { 
+            list-style-type: none; 
+            padding: 0; 
+        }
+        li { 
+            background-color: #fff; 
+            margin-bottom: 5px; 
+            padding: 8px 12px; 
+            border-radius: 4px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+        }
+        p { 
+            margin-bottom: 5px; 
+        }
+        .section { 
+            background-color: #e9e9e9; 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+        }
+
+        .analytics-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .analytics-row .section {
+            flex: 1;
+            min-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Статистика відвідувань</h1>
+
+    <div class="section">
+        <h3>Унікальні відвідувачі (за анонімізованими IP)</h3>
+        <p>За весь час: <strong><%= uniqueVisitorsCount %></strong></p>
+        <h4>Поточні періоди:</h4>
+        <ul>
+            <li>За сьогодні: <strong><%= uniqueVisitorsTodayCount %></strong></li>
+            <li>За цей тиждень: <strong><%= uniqueVisitorsThisWeekCount %></strong></li>
+            <li>За цей місяць: <strong><%= uniqueVisitorsThisMonthCount %></strong></li>
+        </ul>
+        <h4>Минулі періоди:</h4>
+        <ul>
+            <li>За минулий тиждень: <strong><%= uniqueVisitorsLastWeekCount %></strong></li>
+            <li>За минулий місяць: <strong><%= uniqueVisitorsLastMonthCount %></strong></li>
+            <li>За минулий рік: <strong><%= uniqueVisitorsLastYearCount %></strong></li>
+        </ul>
+    </div>
+    
+    <div class="analytics-row">  <div class="section">
+            <h2>Унікальні відвідування за сторінками</h2>
+            <ul>
+                <% viewsByPage.forEach(page => { %>
+                    <li><%= page.page_url %>: <strong><%= page.count %></strong> унікальних переглядів</li>
+                <% }); %>
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h2>Унікальні відвідування за країнами</h2>
+            <ul>
+                <% viewsByCountry.forEach(country => { %>
+                    <li><%= country.country %>: <strong><%= country.count %></strong> унікальних відвідувачів</li>
+                <% }); %>
+            </ul>
+        </div>
+    </div> </body>
+</html>

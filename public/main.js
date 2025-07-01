@@ -1,6 +1,8 @@
 document.addEventListener("DOMContentLoaded", function () {
     console.log("DOMContentLoaded fired.");
 
+    trackPageView();
+
     let nearestEventClickListener = null;
 
     updateNearestEvent();
@@ -21,7 +23,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     id: event.id,
                     title: event.description,
                     start: moment.tz(event.date, 'Europe/Kiev').format('YYYY-MM-DDTHH:mm:ss'),
-                    // Add the URL here, assuming your API provides a 'url' field for each event
                     url: event.url
                 }));
                 console.log("Processed events for FullCalendar:", events);
@@ -199,3 +200,22 @@ document.addEventListener("DOMContentLoaded", function () {
             });
     }
 });
+
+function trackPageView() {
+    fetch('/track-view', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    })
+    .then(response => {
+        if (!response.ok) {
+            console.error('Failed to track page view');
+        } else {
+            console.log('Page view tracked successfully');
+        }
+    })
+    .catch(error => {
+        console.error('Error sending tracking data:', error);
+    });
+}
