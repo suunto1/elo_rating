@@ -12,15 +12,8 @@ const dbConfig = {
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
-  port: parseInt(process.env.DB_PORT, 10),
-  ssl: {
-        rejectUnauthorized: false 
-    }
+  port: process.env.DB_PORT
 };
-
-console.log('--- Final dbConfig object ---');
-console.log(dbConfig); // Выводим весь объект dbConfig
-console.log('-----------------------------');
 
 const pool = mysql.createPool(dbConfig);
 
