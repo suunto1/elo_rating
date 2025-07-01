@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require("express");
 const path = require("path");
 const mysql = require("mysql2/promise");
@@ -6,11 +8,11 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const dbConfig = {
-  host: 'mysql-11416919-suunto-ce35.b.aivencloud.com',
-  user: 'avnadmin',
-  password: 'AVNS_Ll9dDQhtH0Oh2WmTz4c',
-  database: 'defaultdb',
-  port: '13693',
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE,
+  port: process.env.DB_PORT
 };
 
 const pool = mysql.createPool(dbConfig);
