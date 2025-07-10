@@ -2,9 +2,8 @@ const mysql = require("mysql2/promise");
 const xlsx = require("xlsx");
 const fs = require("fs");
 const path = require("path");
-// =================================================================================================
-// НАСТРОЙКИ БАЗЫ ДАННЫХ
-// =================================================================================================
+const { v4: uuidv4 } = require('uuid');
+
 const dbConfig = {
   host: "localhost",
   user: "root",
@@ -12,9 +11,7 @@ const dbConfig = {
   database: "elo_ranking",
 };
 const INITIAL_ELO = 1500; // Начальный ELO рейтинг для новых пилотов
-// =================================================================================================
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (без изменений, кроме removePilotEloAtRace, где мы убрали EloAtRace)
-// =================================================================================================
+
 async function executeQuery(connection, sql, params) {
   try {
     const [rows] = await connection.execute(sql, params);
@@ -123,55 +120,87 @@ async function insertRaceParticipant(
     [competitionUUID, raceUUID, pilotUUID, place, INITIAL_ELO, 0] // Начальное EloAtRace и EloChange = 0, они будут обновлены позже
   );
 }
+
 async function addNewRace(connection, newRace, competitionUUID) {
-  const existingRaceQuery = `
+  // Эта проверка на существование гонки по параметрам остается.
+  // Если гонка с такими же параметрами уже есть, мы ее не добавляем снова.
+  const existingRaceQueryCheck = `
         SELECT UUID FROM Races
-        WHERE TrackName = ? AND StartDate = ? AND Class = ? AND Split = ? AND CompetitionUUID = ?
-    `;
-  const [existingRace] = await connection.execute(existingRaceQuery, [
+        WHERE TrackName = ? AND StartDate = ? AND Class = ? AND Split = ? AND CompetitionUUID = ?`;
+
+  // --- ЛОГ 1: Что мы ищем перед INSERT ---
+  console.log(`[addNewRace] Проверяем существующую гонку с параметрами:
+        Трек: '${newRace.TrackName}'
+        Дата: '${newRace.StartDate}'
+        Класс: '${newRace.Class}'
+        Сплит: ${newRace.Split}
+        Соревнование UUID: '${competitionUUID}'`
+  );
+
+  const [existingRace] = await connection.execute(existingRaceQueryCheck, [
     newRace.TrackName,
     newRace.StartDate,
     newRace.Class,
     newRace.Split,
     competitionUUID,
   ]);
+
   if (existingRace.length > 0) {
-    console.log(
-      `Гонка ${newRace.TrackName} (${newRace.Class}, Split ${newRace.Split}) на ${newRace.StartDate} уже существует.`
-    );
-    return existingRace[0].UUID;
+    // --- ЛОГ 2: Если гонка уже найдена ---
+    console.log(`[addNewRace] Гонка ${newRace.TrackName} (${newRace.Class}, Split ${newRace.Split}) на ${newRace.StartDate} уже существует. UUID: ${existingRace[0].UUID}`);
+    return existingRace[0].UUID; // Возвращаем UUID уже существующей гонки
   }
+
+  // Если гонка не найдена, переходим к вставке
+  console.log("[addNewRace] Гонка не найдена в базе данных. Попытка вставить новую гонку.");
+
+  // --- ЛОГ 3: Данные для вставки ---
+  console.log("[addNewRace] Данные, которые будут вставлены:", {
+    competitionUUID: competitionUUID,
+    TrackName: newRace.TrackName,
+    StartDate: newRace.StartDate,
+    Class: newRace.Class,
+    Split: newRace.Split,
+    BestQualifyingLapTime: newRace.BestQualifyingLapTime,
+    BestQualifyingLapPilot: newRace.BestQualifyingLapPilot,
+    BestRaceLapTime: newRace.BestRaceLapTime,
+    BestRaceLapPilot: newRace.BestRaceLapPilot,
+  });
+
+  // *** ГЕНЕРИРУЕМ UUID В NODE.JS ***
+  const generatedRaceUUID = uuidv4();
+  console.log(`[addNewRace] Генерируем новый UUID для гонки: ${generatedRaceUUID}`);
+
   const insertRaceQuery = `
         INSERT INTO Races (UUID, CompetitionUUID, TrackName, StartDate, Class, Split, BestQualifyingLapTime, BestQualifyingLapPilot, BestRaceLapTime, BestRaceLapPilot)
-        VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
-  await executeQuery(connection, insertRaceQuery, [
-    competitionUUID,
-    newRace.TrackName,
-    newRace.StartDate,
-    newRace.Class,
-    newRace.Split,
-    newRace.BestQualifyingLapTime,
-    newRace.BestQualifyingLapPilot,
-    newRace.BestRaceLapTime,
-    newRace.BestRaceLapPilot,
-  ]);
-  const [newRaceRow] = await executeQuery(connection, existingRaceQuery, [
-    newRace.TrackName,
-    newRace.StartDate,
-    newRace.Class,
-    newRace.Split,
-    competitionUUID,
-  ]);
-  if (newRaceRow.length > 0) {
-    console.log(
-      `Добавлена новая гонка: ${newRace.TrackName} (${newRace.Class}, Split ${newRace.Split}) на ${newRace.StartDate}`
-    );
-    return newRaceRow[0].UUID;
-  } else {
-    throw new Error("Ошибка при добавлении новой гонки.");
+  try {
+    const [insertResult] = await connection.execute(insertRaceQuery, [
+      generatedRaceUUID, // Используем сгенерированный UUID
+      competitionUUID,
+      newRace.TrackName,
+      newRace.StartDate,
+      newRace.Class,
+      newRace.Split,
+      newRace.BestQualifyingLapTime,
+      newRace.BestQualifyingLapPilot,
+      newRace.BestRaceLapTime,
+      newRace.BestRaceLapPilot,
+    ]);
+    // ЛОГ: Проверяем результат INSERT
+    console.log("[addNewRace] Результат INSERT:", insertResult); // Это покажет affectedRows, insertId и т.д.
+    console.log("[addNewRace] Запрос INSERT для новой гонки выполнен успешно.");
+  } catch (insertError) {
+    console.error(`[addNewRace] ОШИБКА при выполнении INSERT запроса: ${insertError.message}`);
+    throw new Error(`Ошибка при вставке новой гонки: ${insertError.message}`);
   }
+
+  // После успешной вставки, мы уже знаем UUID, так что не нужно делать повторный SELECT.
+  console.log(`Добавлена новая гонка: ${newRace.TrackName} для класса ${newRace.Class} и сплита ${newRace.Split}`);
+  return generatedRaceUUID; // Возвращаем только что сгенерированный UUID
 }
+
 function determineK(participants, split) {
   if (split === 1) {
     // Pro
@@ -197,8 +226,8 @@ async function updatePilotStatistics(connection, pilotUUID) {
   // Получаем все гонки для пилота, чтобы рассчитать статистику
   const [pilotRaces] = await connection.execute(
     `SELECT rp.Place
-         FROM RaceParticipants rp
-         WHERE rp.PilotUUID = ?`,
+          FROM RaceParticipants rp
+          WHERE rp.PilotUUID = ?`,
     [pilotUUID]
   );
   let wins = 0;
@@ -293,8 +322,7 @@ async function updateEloRankings(connection, raceUUID, split) {
       raceUUID,
     ]);
     console.log(
-      `Обновлен ELO рейтинг для пилота: ${
-        pilot.Name
+      `Обновлен ELO рейтинг для пилота: ${pilot.Name
       }, Новый ELO: ${newElo.toFixed(2)}, Изменение ELO: ${eloChange.toFixed(
         2
       )}`
@@ -303,25 +331,35 @@ async function updateEloRankings(connection, raceUUID, split) {
   // Обновление среднего изменения ELO для каждого пилота
   for (let pilot of eloRows) {
     const averageChangeQuery = `
-            SELECT AVG(EloChange) as AverageChange
-            FROM RaceParticipants
-            WHERE PilotUUID = ?`;
+          SELECT AVG(EloChange) as AverageChange
+          FROM RaceParticipants
+          WHERE PilotUUID = ?`;
     const averageChangeResult = await executeQuery(
-      connection,
-      averageChangeQuery,
-      [pilot.UUID]
+        connection,
+        averageChangeQuery,
+        [pilot.UUID]
     );
-    const averageChange = averageChangeResult[0].AverageChange;
+
+    let averageChange;
+    if (averageChangeResult && averageChangeResult.length > 0 && averageChangeResult[0].AverageChange !== undefined) {
+        // Пробуем преобразовать к числу, если оно не null
+        averageChange = parseFloat(averageChangeResult[0].AverageChange);
+        if (isNaN(averageChange)) {
+            averageChange = 0; // Если преобразование не удалось, устанавливаем 0
+        }
+    } else {
+        averageChange = 0; // Если результатов нет или они undefined
+    }
+    
     const updateAverageChangeQuery =
-      "UPDATE Pilots SET AverageChange = ? WHERE UUID = ?";
+        "UPDATE Pilots SET AverageChange = ? WHERE UUID = ?";
     await executeQuery(connection, updateAverageChangeQuery, [
-      averageChange,
-      pilot.UUID,
+        averageChange,
+        pilot.UUID,
     ]);
     console.log(
-      `Обновлено среднее изменение ELO для пилота: ${
-        pilot.Name
-      }, Среднее изменение ELO: ${averageChange ? averageChange.toFixed(2) : 0}`
+        `Обновлено среднее изменение ELO для пилота: ${pilot.Name
+        }, Среднее изменение ELO: ${averageChange.toFixed(2)}`
     );
   }
   console.log("Elo ratings updated successfully!");
@@ -378,33 +416,24 @@ async function addRaceResultsForClass(
   }
   console.log("Race results added successfully!");
   await updateEloRankings(connection, raceUUID, split);
-  // =================================================================================================
-  // ИЗМЕНЕНИЕ: Теперь обновляем статистику ТОЛЬКО для пилотов текущей гонки
-  // =================================================================================================
+
   for (const pilotUUID of pilotsInThisRaceUUIDs) {
-    // Используем собранный список
     await updatePilotStatistics(connection, pilotUUID);
   }
-  // =================================================================================================
-  // КОНЕЦ ИЗМЕНЕНИЯ
-  // =================================================================================================
+
 }
-// =================================================================================================
-// НОВАЯ ГЛАВНАЯ ФУНКЦИЯ ДЛЯ ОДНОРАЗОВОГО ПОЛНОГО ОБНОВЛЕНИЯ СТАТИСТИКИ
-// =================================================================================================
+
 async function calculateAllPilotsStatistics() {
-  const connection = await mysql.createConnection(dbConfig); // Используем pool.getConnection() для пула
+  const connection = await mysql.createConnection(dbConfig);
   try {
     await connection.beginTransaction();
     console.log("Запуск полного пересчета статистики для всех пилотов...");
-    // Получаем UUID всех пилотов из базы данных
     const [allPilots] = await connection.execute("SELECT UUID FROM Pilots");
     if (allPilots.length === 0) {
       console.log("В базе данных нет пилотов для обновления статистики.");
       await connection.commit();
       return;
     }
-    // Пересчитываем статистику для каждого пилота
     for (const pilot of allPilots) {
       await updatePilotStatistics(connection, pilot.UUID);
     }
@@ -420,16 +449,14 @@ async function calculateAllPilotsStatistics() {
     await connection.rollback();
   } finally {
     if (connection) {
-      await connection.end(); // Прямое соединение закрываем через end()
+      await connection.end();
     }
   }
 }
-// =================================================================================================
-// КОНЕЦ НОВОЙ ГЛАВНОЙ ФУНКЦИИ
-// =================================================================================================
-// Основная функция добавления результатов гонок (Остается почти без изменений)
+
+
 async function addRaceResults() {
-  const connection = await mysql.createConnection(dbConfig); // Используем createConnection для транзакции
+  const connection = await mysql.createConnection(dbConfig);
   const folderPath = "./xlsx_files_new"; // Путь к папке с xlsx файлами
   const filesData = readXlsxFiles(folderPath);
   try {
@@ -482,7 +509,8 @@ async function addRaceResults() {
         isNaN(split)
       ) {
         console.error("Ошибка: Одно или несколько обязательных полей пусты.");
-        continue; // Пропускаем итерацию, если одно из обязательных полей пусто
+        await connection.rollback(); // Откатываем транзакцию при ошибке
+        continue; // Продолжаем обрабатывать следующий файл
       }
       const raceResults = fileData
         .slice(1)
@@ -501,7 +529,7 @@ async function addRaceResults() {
             `Ошибка: Дубли пилота найдены в результатах гонки. Дублирующийся пилот: ${result.PilotName}. Гонка: ${competitionName}, ${trackName}, ${startDate}, Класс: ${raceClass}, Сплит: ${split}`
           );
           await connection.rollback();
-          return; // Остановить вставку всех данных и выйти из функции
+          throw new Error(`Дубли пилота найдены в файле: ${competitionName}, ${trackName}, ${startDate}`); // Пробрасываем ошибку, чтобы остановить процесс
         }
         pilotNamesSet.add(result.PilotName);
       }
@@ -562,17 +590,17 @@ async function addRaceResults() {
       const baseTrackName = trackName.replace(/\s*\(.*\)$/, "").trim(); // Удаляем суффиксы
       const [existingTrack] = await connection.execute(
         `
-                SELECT * FROM TrackRecords WHERE TrackName = ?
-            `,
+            SELECT * FROM TrackRecords WHERE TrackName = ?
+          `,
         [baseTrackName]
       );
       if (existingTrack.length === 0) {
         // Вставляем новое время круга, если трассы еще нет в базе
         await connection.execute(
           `
-                    INSERT INTO TrackRecords (TrackName, BestQualifyingLapTime, BestQualifyingLapPilot, BestRaceLapTime, BestRaceLapPilot)
-                    VALUES (?, ?, ?, ?, ?)
-                `,
+              INSERT INTO TrackRecords (TrackName, BestQualifyingLapTime, BestQualifyingLapPilot, BestRaceLapTime, BestRaceLapPilot)
+              VALUES (?, ?, ?, ?, ?)
+            `,
           [
             baseTrackName,
             bestQualifyingLapTime,
@@ -592,8 +620,8 @@ async function addRaceResults() {
           updateQueries.push(
             connection.execute(
               `
-                        UPDATE TrackRecords SET BestQualifyingLapTime = ?, BestQualifyingLapPilot = ? WHERE TrackName = ?
-                    `,
+                  UPDATE TrackRecords SET BestQualifyingLapTime = ?, BestQualifyingLapPilot = ? WHERE TrackName = ?
+                `,
               [bestQualifyingLapTime, bestQualifyingLapPilot, baseTrackName]
             )
           );
@@ -607,8 +635,8 @@ async function addRaceResults() {
           updateQueries.push(
             connection.execute(
               `
-                        UPDATE TrackRecords SET BestRaceLapTime = ?, BestRaceLapPilot = ? WHERE TrackName = ?
-                    `,
+                  UPDATE TrackRecords SET BestRaceLapTime = ?, BestRaceLapPilot = ? WHERE TrackName = ?
+                `,
               [bestRaceLapTime, bestRaceLapPilot, baseTrackName]
             )
           );
@@ -621,6 +649,7 @@ async function addRaceResults() {
   } catch (error) {
     console.error("Error adding race results, rolling back:", error);
     await connection.rollback();
+    throw error; // Пробрасываем ошибку, чтобы вызывающая функция могла ее поймать
   } finally {
     if (connection) {
       await connection.end(); // Прямое соединение закрываем через end()
@@ -628,23 +657,38 @@ async function addRaceResults() {
   }
 }
 // =================================================================================================
+// НОВАЯ ФУНКЦИЯ: processAllData
+// =================================================================================================
+async function processAllData() {
+  try {
+    console.log("Запуск процесса: Сначала добавление результатов гонок...");
+    await addRaceResults(); // Сначала запускаем addRaceResults
+    console.log("Добавление результатов гонок завершено. Запуск полного пересчета статистики пилотов...");
+    await calculateAllPilotsStatistics(); // Затем запускаем calculateAllPilotsStatistics
+    console.log("Все операции успешно завершены.");
+  } catch (error) {
+    console.error("Произошла ошибка во время обработки данных:", error);
+  }
+}
+
+// =================================================================================================
 // КАК ЗАПУСКАТЬ:
 //
 // 1. Для одноразового полного пересчета всей статистики для всех пилотов:
-//    Запустите в командной строке:
-//    node updateEloRatings.js calculateAll
+//     Запустите в командной строке:
+//     node updateEloRatings.js calculateAll
 //
-// 2. Для стандартного обновления данных из XLSX-файлов и инкрементального обновления статистики (только для пилотов из этих файлов):
-//    Запустите в командной строке:
-//    node updateEloRatings.js updateRaces
+// 2. Для стандартного обновления данных из XLSX-файлов и полного пересчета статистики:
+//     Запустите в командной строке:
+//     node updateEloRatings.js processAll
 //
-//    ИЛИ, если запуск без аргументов, по умолчанию будет updateRaces
-//    node updateEloRatings.js
+//     ИЛИ, если запуск без аргументов, по умолчанию будет processAll
+//     node updateEloRatings.js
 // =================================================================================================
 const operation = process.argv[2]; // Получаем третий аргумент командной строки
+
 if (operation === "calculateAll") {
   calculateAllPilotsStatistics();
-} else {
-  // По умолчанию или если передан 'updateRaces'
-  addRaceResults();
+} else if (operation === "processAll" || operation === undefined) { // Изменено здесь
+  processAllData();
 }
