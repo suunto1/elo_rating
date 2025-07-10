@@ -21,35 +21,31 @@
     <script
         src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.31/moment-timezone-with-data.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs/plugin/utc"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs/plugin/timezone"></script>
-    <script src="https://cdn.jsdelivr.jsdelivr.net/npm/chartjs-adapter-dayjs"></script>
     <script src="/main.js"></script>
 </head>
 
 <body>
     <%- include('partials/menu', { activeMenu: 'calendar' }) %>
 
-        <div class="container">
-            <aside class="sidebar-left">
+    <div class="container">
+        <aside class="sidebar-left">
 
-            </aside>
+        </aside>
 
-            <main>
-                <div id="chart-container">
-                    <div id="calendar"></div>
-                </div>
+        <main>
+            <div id="chart-container">
+                <div id="calendar"></div>
+            </div>
 
-                <%- include('partials/partners') %>
-            </main>
+            <%- include('partials/partners') %>
+        </main>
 
-            <aside class="sidebar-right">
+        <aside class="sidebar-right">
 
-            </aside>
+        </aside>
 
-        </div>
-        <%- include('partials/footer') %>
+    </div>
+    <%- include('partials/footer') %>
 </body>
 
 </html>
