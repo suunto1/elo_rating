@@ -47,12 +47,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     dayRender: function (date, cell) {
                         if (moment().isSame(date, 'day')) {
-                            cell.css('background-color', '#3c5ca8');
+                            cell.css({
+                                'background-color': 'rgb(230, 230, 230)'
+                            });
                         }
                     },
                     eventRender: function (event, element) {
-                        const now = moment();
-                        const eventStart = moment(event.start);
+                        const now = moment().tz('Europe/Kiev').startOf('day');
+                        const eventStart = moment(event.start).tz('Europe/Kiev').startOf('day');
 
                         if (eventStart.isBefore(now)) {
                             element.addClass('past-event');
@@ -121,12 +123,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 }));
                 console.log("All events from API for nearest:", events);
 
-                const now = moment();
-                const upcomingEvents = events.filter(event => moment(event.start).isAfter(now));
+                const now = moment().tz('Europe/Kiev').startOf('day');
+                const upcomingEvents = events.filter(event => moment(event.start).tz('Europe/Kiev').startOf('day').isSameOrAfter(now));
                 console.log("Upcoming events:", upcomingEvents);
 
                 const nearestEvent = upcomingEvents.reduce((prev, curr) => {
-                    return moment(curr.start).isAfter(now) && (!prev || moment(curr.start).isBefore(prev.start)) ? curr : prev;
+                    const currStart = moment(curr.start);
+                    const prevStart = prev ? moment(prev.start) : null;
+
+                    if (!prev || currStart.isBefore(prevStart)) {
+                        return curr;
+                    }
+                    return prev;
                 }, null);
                 console.log("Nearest event found:", nearestEvent);
 
@@ -136,54 +144,54 @@ document.addEventListener("DOMContentLoaded", function () {
                 const simgridButton = upcomingEventStrip ? upcomingEventStrip.querySelector('.simgrid-button') : null;
 
                 if (eventTitle && eventDate) {
-                if (nearestEvent) {
-                    eventTitle.textContent = nearestEvent.title;
-                    eventDate.textContent = moment(nearestEvent.start).format('DD MMM');
-                    console.log("Upcoming event strip updated with event data.");
+                    if (nearestEvent) {
+                        eventTitle.textContent = nearestEvent.title;
+                        eventDate.textContent = moment(nearestEvent.start).format('DD MMM');
+                        console.log("Upcoming event strip updated with event data.");
 
-                    if (simgridButton) {
-                        if (nearestEvent.url) {
-                            simgridButton.href = nearestEvent.url;
-                            simgridButton.style.display = '';
-                            simgridButton.target = '_blank';
-                            console.log(`SimGrid button URL updated to: ${nearestEvent.url}`);
-                        } else {
+                        if (simgridButton) {
+                            if (nearestEvent.url) {
+                                simgridButton.href = nearestEvent.url;
+                                simgridButton.style.display = '';
+                                simgridButton.target = '_blank';
+                                console.log(`SimGrid button URL updated to: ${nearestEvent.url}`);
+                            } else {
+                                simgridButton.href = '#';
+                                simgridButton.style.display = 'none';
+                                console.warn(`URL для '${nearestEvent.title}' (ID: ${nearestEvent.id}) не знайдено. Приховую кнопку.`);
+                            }
+                        }
+
+                        if (eventTitle) {
+                            if (nearestEventClickListener) {
+                                eventTitle.removeEventListener('click', nearestEventClickListener);
+                            }
+                            nearestEventClickListener = function () {
+                                window.location.href = `/calendar?highlightEvent=${nearestEvent.id}`;
+                                console.log(`Navigating to: /calendar?highlightEvent=${nearestEvent.id}`);
+                            };
+                            eventTitle.addEventListener('click', nearestEventClickListener);
+                            console.log("Added new event click listener for title.");
+                        }
+
+                    } else {
+                        eventTitle.textContent = "Наразі немає майбутніх подій";
+                        eventDate.textContent = "";
+                        console.log("No nearest event found. Displaying default message.");
+
+                        if (simgridButton) {
                             simgridButton.href = '#';
                             simgridButton.style.display = 'none';
-                            console.warn(`URL for '${nearestEvent.title}' (ID: ${nearestEvent.id}) not found. Hiding button.`);
+                            console.log("SimGrid button hidden as there are no upcoming events.");
                         }
                     }
 
-                    if (eventTitle) {
-                        if (nearestEventClickListener) {
-                            eventTitle.removeEventListener('click', nearestEventClickListener);
-                        }
-                        nearestEventClickListener = function () {
-                            window.location.href = `/calendar?highlightEvent=${nearestEvent.id}`;
-                            console.log(`Navigating to: /calendar?highlightEvent=${nearestEvent.id}`);
-                        };
-                        eventTitle.addEventListener('click', nearestEventClickListener);
-                        console.log("Added new event click listener for title.");
+                    if (upcomingEventStrip) {
+                        upcomingEventStrip.style.display = 'flex';
                     }
-
                 } else {
-                    eventTitle.textContent = "Наразі немає майбутніх подій";
-                    eventDate.textContent = "";
-                    console.log("No nearest event found. Displaying default message.");
-
-                    if (simgridButton) {
-                        simgridButton.href = '#';
-                        simgridButton.style.display = 'none';
-                        console.log("SimGrid button hidden as there are no upcoming events.");
-                    }
+                    console.error("HTML elements for upcoming event strip not found!");
                 }
-                
-                if (upcomingEventStrip) {
-                    upcomingEventStrip.style.display = 'flex';
-                }
-            } else {
-                console.error("HTML elements for upcoming event strip not found!");
-            }
             })
             .catch(error => {
                 console.error('Error fetching nearest event:', error);
