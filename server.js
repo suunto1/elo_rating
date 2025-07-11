@@ -154,6 +154,7 @@ async (identifier, profile, done) => {
             });
         } else {
             console.log("[SteamStrategy] New Steam user. Creating new entry in `users` table.");
+
             const [insertResult] = await connection.execute(
                 `INSERT INTO users (steam_id_64, username, first_name, last_name, pilot_uuid, last_login_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
                 [steamId64, steamDisplayName, '', '', pilotUuidToLink]
@@ -183,10 +184,10 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser()); // Не обязателен, если express-session уже обрабатывает куки
+app.use(cookieParser());
 
 // Настройка MySQL Session Store
-const sessionStore = new MySQLStore({}, pool); // Используем ваш существующий пул
+const sessionStore = new MySQLStore({}, pool);
 
 // Настройка сессий
 app.use(session({
@@ -210,13 +211,20 @@ app.use((req, res, next) => {
     console.log(`[res.locals.user Middleware] req.user (before processing):`, req.user);
 
     if (req.isAuthenticated() && req.user) {
-        if (req.user.first_name && req.user.last_name) {
+        // Если first_name и last_name заполнены, используем их для username
+        if (req.user.first_name && req.user.first_name.trim().length > 0 &&
+            req.user.last_name && req.user.last_name.trim().length > 0) {
             res.locals.user = {
                 ...req.user,
-                username: `${req.user.first_name} ${req.user.last_name}`
+                username: `${req.user.first_name.trim()} ${req.user.last_name.trim()}`
             };
         } else {
-            res.locals.user = req.user;
+            // Если first_name/last_name не заполнены, используем username из базы (Steam Display Name)
+            // Убедимся, что username всегда является строкой
+            res.locals.user = {
+                ...req.user,
+                username: req.user.username || '' // Fallback to empty string if username is null/undefined
+            };
         }
         console.log(`[res.locals.user Middleware] res.locals.user (after processing):`, res.locals.user);
     } else {
@@ -235,14 +243,13 @@ const checkUsernameCompletion = async (req, res, next) => {
     // Дополнительная проверка, чтобы избежать ошибки, если req.user действительно undefined
     if (!req.user) {
         console.warn("[checkUsernameCompletion] req.user is undefined despite isAuthenticated() potentially being true. Skipping check.");
-        // Здесь мы просто пропускаем, если req.user undefined.
-        // Если isAuthenticated() TRUE, а req.user UNDEFINED, это указывает на проблему с сессией/десериализацией.
-        // Перенаправление на /auth/steam будет обработано в маршрутах ниже, если пользователь не авторизован.
         return next();
     }
     
     // Если пользователь авторизован, но у него не заполнены first_name ИЛИ last_name
-    if (req.isAuthenticated() && (!req.user.first_name || !req.user.last_name)) {
+    // Используем .trim().length > 0 для надежной проверки на пустые строки
+    if (req.isAuthenticated() && (!req.user.first_name || req.user.first_name.trim().length === 0 ||
+                                  !req.user.last_name || req.user.last_name.trim().length === 0)) {
         // И он пытается получить доступ к любой странице, кроме /complete-profile, /auth/steam, /auth/steam/return, /logout
         if (req.path !== '/complete-profile' && req.path !== '/auth/steam' && req.path !== '/auth/steam/return' && req.path !== '/logout') {
             console.log(`[checkUsernameCompletion] Redirecting user ${req.user.id} to /complete-profile as first_name or last_name is missing.`);
@@ -264,7 +271,10 @@ app.get('/auth/steam/return',
     async (req, res) => {
         console.log(`[auth/steam/return] Successful authentication. req.user:`, req.user);
 
-        if (!req.user.first_name || !req.user.last_name) {
+        // Проверяем, заполнено ли имя пользователя (first_name и last_name)
+        // Используем .trim().length > 0 для надежной проверки на пустые строки
+        if (!req.user.first_name || req.user.first_name.trim().length === 0 ||
+            !req.user.last_name || req.user.last_name.trim().length === 0) {
             console.log(`[auth/steam/return] User ${req.user.id} needs to complete profile. Redirecting to /complete-profile.`);
             return res.redirect('/complete-profile');
         }
@@ -318,10 +328,21 @@ app.get('/complete-profile', (req, res) => {
     console.log(`[complete-profile GET] isAuthenticated(): ${req.isAuthenticated()}`);
     console.log(`[complete-profile GET] req.user:`, req.user);
 
-    if (!req.isAuthenticated() || (req.user && req.user.first_name && req.user.last_name)) {
-        console.log(`[complete-profile GET] User is already completed or not authenticated. Redirecting to /.`);
+    // Если пользователь не авторизован, перенаправляем на главную
+    if (!req.isAuthenticated()) {
+        console.log(`[complete-profile GET] User not authenticated. Redirecting to /.`);
         return res.redirect('/');
     }
+
+    // Если пользователь авторизован И его имя И фамилия УЖЕ ЗАПОЛНЕНЫ, перенаправляем на главную
+    // Используем .trim().length > 0 для надежной проверки на пустые строки
+    if (req.user.first_name && req.user.first_name.trim().length > 0 &&
+        req.user.last_name && req.user.last_name.trim().length > 0) {
+        console.log(`[complete-profile GET] User ${req.user.id} already completed profile. Redirecting to /.`);
+        return res.redirect('/');
+    }
+
+    // Иначе, рендерим страницу заполнения профиля
     res.render('complete_profile', { 
         message: null, 
         messageType: null, 
@@ -336,7 +357,7 @@ app.post('/complete-profile', async (req, res) => {
     console.log(`[complete-profile POST] isAuthenticated(): ${req.isAuthenticated()}`);
     console.log(`[complete-profile POST] req.user:`, req.user);
 
-    if (!req.isAuthenticated() || (req.user && req.user.first_name && req.user.last_name)) {
+    if (!req.isAuthenticated() || (req.user && req.user.first_name && req.user.last_name && req.user.first_name.trim().length > 0 && req.user.last_name.trim().length > 0)) {
         return res.status(403).json({ message: "У вас немає прав для виконання цієї дії або профіль вже заповнений." });
     }
 
@@ -541,7 +562,8 @@ app.get("/profile", async (req, res) => {
         return res.redirect('/auth/steam');
     }
 
-    if (!req.user.first_name || !req.user.last_name) {
+    if (!req.user.first_name || req.user.first_name.trim().length === 0 ||
+        !req.user.last_name || req.user.last_name.trim().length === 0) {
         console.log(`[Profile GET] User ${req.user.id} needs to complete profile. Redirecting to /complete-profile.`);
         return res.redirect('/complete-profile');
     }
@@ -691,7 +713,7 @@ app.post("/profile/:pilotName", async (req, res) => {
 
         if (iRacingCustomerId) {
             if (!/^[0-9]+$/.test(iRacingCustomerId)) {
-                errorMessage += 'Поле "iRacing Customer ID" повинно містити лише цифри.\n';
+                errorMessage += 'Поле "iRacing Customer ID" повинно містити лише цифры.\n';
             }
         }
 
