@@ -5,11 +5,11 @@ const MySQLStore = require('express-mysql-session')(session);
 const express = require("express");
 const path = require("path");
 const mysql = require("mysql2/promise");
-const geoip = require('geoip-lite'); // Не используется в этом фрагменте, но оставлено
+const geoip = require('geoip-lite');
 const fs = require('fs');
 const passport = require('passport');
 const SteamStrategy = require('passport-steam').Strategy;
-const cookieParser = require('cookie-parser'); // Используется express-session, но оставлено для совместимости
+const cookieParser = require('cookie-parser');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -19,14 +19,12 @@ const multer = require('multer');
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         const uploadPath = 'public/avatars/';
-        // Создаем директорию, если она не существует
         if (!fs.existsSync(uploadPath)) {
             fs.mkdirSync(uploadPath, { recursive: true });
         }
         cb(null, uploadPath);
     },
     filename: function (req, file, cb) {
-        // Генерируем уникальное имя файла
         cb(null, Date.now() + '-' + file.originalname);
     }
 });
@@ -55,7 +53,6 @@ const STEAM_RETURN_URL = process.env.STEAM_RETURN_URL;
 const SESSION_SECRET = process.env.SESSION_SECRET;
 const STEAM_REALM = process.env.STEAM_REALM;
 
-// Проверка наличия обязательных переменных окружения
 if (!STEAM_API_KEY || !STEAM_RETURN_URL || !SESSION_SECRET || !STEAM_REALM) {
     console.error('FATAL ERROR: STEAM_API_KEY, STEAM_RETURN_URL, SESSION_SECRET, or STEAM_REALM is not defined. Please set it in your .env file.');
     process.exit(1);
@@ -63,8 +60,7 @@ if (!STEAM_API_KEY || !STEAM_RETURN_URL || !SESSION_SECRET || !STEAM_REALM) {
 
 // Настройка Passport.js
 passport.serializeUser((user, done) => {
-    // В сессию сохраняем ID пользователя из нашей таблицы `users` (primary key)
-    // `user.id` здесь - это `id` из вашей таблицы `users`
+    console.log(`[serializeUser] Serializing user ID: ${user.id}`);
     done(null, user.id);
 });
 
@@ -73,8 +69,6 @@ passport.deserializeUser(async (id, done) => {
     let connection;
     try {
         connection = await pool.getConnection();
-        // Ищем пользователя по ID из таблицы `users`
-        // Добавляем `first_name` и `last_name` для использования в EJS
         const [rows] = await connection.execute(
             `SELECT id, steam_id_64, pilot_uuid, username, first_name, last_name, is_admin FROM users WHERE id = ?`,
             [id]
@@ -82,13 +76,13 @@ passport.deserializeUser(async (id, done) => {
         const user = rows[0];
         if (user) {
             console.log(`[deserializeUser] User ${user.id} found. Username: ${user.username}, Pilot UUID: ${user.pilot_uuid}`);
-            done(null, user); // Пользователь найден и доступен в req.user
+            done(null, user);
         } else {
-            console.warn(`User with ID ${id} not found during deserialization.`);
-            done(null, false); // Пользователь не найден, сессия недействительна
+            console.warn(`[deserializeUser] User with ID ${id} NOT found in DB. Setting req.user to false.`);
+            done(null, false);
         }
     } catch (error) {
-        console.error("Error deserializing user:", error);
+        console.error("[deserializeUser] Error deserializing user:", error);
         done(error, null);
     } finally {
         if (connection) connection.release();
@@ -101,63 +95,54 @@ passport.use(new SteamStrategy({
     apiKey: STEAM_API_KEY
 },
 async (identifier, profile, done) => {
-    const steamId64 = profile.id; // SteamID64
-    const steamDisplayName = profile.displayName; // Имя пользователя из Steam
+    const steamId64 = profile.id;
+    const steamDisplayName = profile.displayName;
+    console.log(`[SteamStrategy] Authenticating Steam ID: ${steamId64}, Display Name: ${steamDisplayName}`);
     let connection;
     try {
         connection = await pool.getConnection();
 
-        // 1. Проверяем, существует ли пользователь с таким Steam ID в нашей таблице `users`
         const [userRows] = await connection.execute(
             `SELECT id, steam_id_64, pilot_uuid, username, first_name, last_name, is_admin FROM users WHERE steam_id_64 = ?`,
             [steamId64]
         );
         let user = userRows[0];
-        let pilotUuidToLink = null; // Для хранения UUID пилота, если найден
+        let pilotUuidToLink = null;
 
-        // 2. Ищем существующего пилота по SteamId в таблице `pilots`
-        // Это необходимо для Сценария 1 (если user.pilot_uuid === NULL) и Сценария 2 (для нового пользователя)
         const [pilotRows] = await connection.execute(
-            `SELECT UUID FROM pilots WHERE steam_id_64 = ?`, // Использование steam_id_64 из схемы pilots
+            `SELECT UUID FROM pilots WHERE steam_id_64 = ?`,
             [steamId64]
         );
         if (pilotRows.length > 0) {
             pilotUuidToLink = pilotRows[0].UUID;
-            console.log(`Found existing pilot UUID ${pilotUuidToLink} for Steam ID ${steamId64}`);
+            console.log(`[SteamStrategy] Found existing pilot UUID ${pilotUuidToLink} for Steam ID ${steamId64}`);
         }
 
         if (user) {
-            // Сценарий 1: Пользователь найден в `users`
-            console.log("Existing user found in `users` table:", user.id);
-
-            // Если user.pilot_uuid NULL, но мы нашли соответствующего пилота, связываем
+            console.log("[SteamStrategy] Existing user found in `users` table:", user.id);
             if (!user.pilot_uuid && pilotUuidToLink) {
-                console.log(`Linking existing pilot ${pilotUuidToLink} to user ${user.id}`);
+                console.log(`[SteamStrategy] Linking existing pilot ${pilotUuidToLink} to user ${user.id}`);
                 await connection.execute(
                     `UPDATE users SET pilot_uuid = ? WHERE id = ?`,
                     [pilotUuidToLink, user.id]
                 );
-                user.pilot_uuid = pilotUuidToLink; // Обновляем объект пользователя
+                user.pilot_uuid = pilotUuidToLink;
             }
 
-            // Если username пустой или совпадает со steamId64 (первичная запись),
-            // обновляем его на Steam Display Name.
-            // first_name и last_name останутся пустыми, пока пользователь их не заполнит.
             if (user.username === '' || user.username === steamId64) {
+                console.log(`[SteamStrategy] Updating username for user ${user.id} to Steam Display Name: ${steamDisplayName}`);
                 await connection.execute(
                     `UPDATE users SET username = ? WHERE id = ?`,
                     [steamDisplayName, user.id]
                 );
-                user.username = steamDisplayName; // Обновляем объект пользователя
+                user.username = steamDisplayName;
             }
             
-            // Обновляем время последнего входа
             await connection.execute(
                 `UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?`,
                 [user.id]
             );
 
-            // Возвращаем полный объект пользователя для сериализации
             return done(null, {
                 id: user.id,
                 steam_id_64: user.steam_id_64,
@@ -168,26 +153,23 @@ async (identifier, profile, done) => {
                 is_admin: user.is_admin
             });
         } else {
-            // Сценарий 2: Пользователь входит/регистрируется через Steam, но записи в `users` еще нет.
-            console.log("New Steam user. Creating new entry in `users` table.");
-
+            console.log("[SteamStrategy] New Steam user. Creating new entry in `users` table.");
             const [insertResult] = await connection.execute(
                 `INSERT INTO users (steam_id_64, username, first_name, last_name, pilot_uuid, last_login_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-                [steamId64, steamDisplayName, '', '', pilotUuidToLink] // steamDisplayName как начальный username. first_name/last_name пока пустые
+                [steamId64, steamDisplayName, '', '', pilotUuidToLink]
             );
             const newUserId = insertResult.insertId;
 
-            // Получаем только что созданного пользователя, чтобы передать полный объект в Passport
             const [newUserRows] = await connection.execute(
                 `SELECT id, steam_id_64, pilot_uuid, username, first_name, last_name, is_admin FROM users WHERE id = ?`,
                 [newUserId]
             );
             const newUser = newUserRows[0];
-
-            return done(null, newUser); // Вход выполнен, возможно, нужно запросить имя/фамилию
+            console.log("[SteamStrategy] New user created:", newUser);
+            return done(null, newUser);
         }
     } catch (error) {
-        console.error("Error during Steam authentication strategy:", error);
+        console.error("[SteamStrategy] Error during Steam authentication strategy:", error);
         return done(error);
     } finally {
         if (connection) connection.release();
@@ -201,18 +183,19 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieParser()); // Не обязателен, если express-session уже обрабатывает куки
 
 // Настройка MySQL Session Store
-const sessionStore = new MySQLStore({}, pool);
+const sessionStore = new MySQLStore({}, pool); // Используем ваш существующий пул
 
 // Настройка сессий
 app.use(session({
     secret: SESSION_SECRET,
-    resave: false, // Не сохранять сессию, если она не была изменена
-    saveUninitialized: false, // Не сохранять новую, неинициализированную сессию
+    resave: false,
+    saveUninitialized: false,
+    store: sessionStore, // <-- Добавлено хранилище сессий
     cookie: {
-        secure: process.env.NODE_ENV === 'production', // true в продакшене (HTTPS)
+        secure: process.env.NODE_ENV === 'production',
         maxAge: 1000 * 60 * 60 * 24 * 7 // 1 неделя
     }
 }));
@@ -223,7 +206,9 @@ app.use(passport.session());
 
 // Middleware для добавления информации о пользователе в res.locals для EJS
 app.use((req, res, next) => {
-    // Если пользователь авторизован, формируем user.username для отображения
+    console.log(`[res.locals.user Middleware] isAuthenticated(): ${req.isAuthenticated()}`);
+    console.log(`[res.locals.user Middleware] req.user (before processing):`, req.user);
+
     if (req.isAuthenticated() && req.user) {
         if (req.user.first_name && req.user.last_name) {
             res.locals.user = {
@@ -231,11 +216,12 @@ app.use((req, res, next) => {
                 username: `${req.user.first_name} ${req.user.last_name}`
             };
         } else {
-            // Если first_name/last_name не заполнены, используем username из базы (Steam Display Name)
             res.locals.user = req.user;
         }
+        console.log(`[res.locals.user Middleware] res.locals.user (after processing):`, res.locals.user);
     } else {
         res.locals.user = null;
+        console.log(`[res.locals.user Middleware] User not authenticated, res.locals.user set to null.`);
     }
     next();
 });
@@ -244,18 +230,22 @@ app.use((req, res, next) => {
 const checkUsernameCompletion = async (req, res, next) => {
     console.log(`[checkUsernameCompletion] Path: ${req.path}`);
     console.log(`[checkUsernameCompletion] isAuthenticated(): ${req.isAuthenticated()}`);
-    console.log(`[checkUsernameCompletion] req.user:`, req.user); // Выведет undefined, если это так
+    console.log(`[checkUsernameCompletion] req.user (at start of middleware):`, req.user);
 
-     // Дополнительная проверка, чтобы избежать ошибки, если req.user действительно undefined
+    // Дополнительная проверка, чтобы избежать ошибки, если req.user действительно undefined
     if (!req.user) {
-        console.warn("[checkUsernameCompletion] req.user is undefined despite isAuthenticated(). Skipping check.");
+        console.warn("[checkUsernameCompletion] req.user is undefined despite isAuthenticated() potentially being true. Skipping check.");
+        // Здесь мы просто пропускаем, если req.user undefined.
+        // Если isAuthenticated() TRUE, а req.user UNDEFINED, это указывает на проблему с сессией/десериализацией.
+        // Перенаправление на /auth/steam будет обработано в маршрутах ниже, если пользователь не авторизован.
         return next();
     }
+    
     // Если пользователь авторизован, но у него не заполнены first_name ИЛИ last_name
-    if (req.isAuthenticated() && req.user && (!req.user.first_name || !req.user.last_name)) {
+    if (req.isAuthenticated() && (!req.user.first_name || !req.user.last_name)) {
         // И он пытается получить доступ к любой странице, кроме /complete-profile, /auth/steam, /auth/steam/return, /logout
         if (req.path !== '/complete-profile' && req.path !== '/auth/steam' && req.path !== '/auth/steam/return' && req.path !== '/logout') {
-            console.log(`Redirecting user ${req.user.id} to /complete-profile as first_name or last_name is missing.`);
+            console.log(`[checkUsernameCompletion] Redirecting user ${req.user.id} to /complete-profile as first_name or last_name is missing.`);
             return res.redirect('/complete-profile');
         }
     }
@@ -266,24 +256,19 @@ app.use(checkUsernameCompletion);
 
 // --- Маршруты аутентификации Steam ---
 
-// Маршрут для инициирования входа через Steam
 app.get('/auth/steam',
     passport.authenticate('steam', { failureRedirect: '/' }));
 
-// Маршрут обратного вызова от Steam
 app.get('/auth/steam/return',
     passport.authenticate('steam', { failureRedirect: '/' }),
     async (req, res) => {
-        // После успешной аутентификации и обработки в стратегии SteamStrategy
-        // req.user содержит данные пользователя из нашей БД.
+        console.log(`[auth/steam/return] Successful authentication. req.user:`, req.user);
 
-        // Проверяем, заполнено ли имя пользователя (first_name и last_name)
         if (!req.user.first_name || !req.user.last_name) {
-            console.log(`User ${req.user.id} needs to complete profile. Redirecting to /complete-profile.`);
+            console.log(`[auth/steam/return] User ${req.user.id} needs to complete profile. Redirecting to /complete-profile.`);
             return res.redirect('/complete-profile');
         }
 
-        // Если имя заполнено, и pilot_uuid уже есть (Сценарий 1)
         if (req.user.pilot_uuid) {
             let connection;
             try {
@@ -294,34 +279,34 @@ app.get('/auth/steam/return',
                 );
                 const pilotName = pilotNameRow[0]?.Name;
                 if (pilotName) {
-                    console.log(`User ${req.user.id} (Pilot ${pilotName}) redirected to /profile/${encodeURIComponent(pilotName)}`);
+                    console.log(`[auth/steam/return] User ${req.user.id} (Pilot ${pilotName}) redirected to /profile/${encodeURIComponent(pilotName)}`);
                     return res.redirect(`/profile/${encodeURIComponent(pilotName)}`);
                 }
             } catch (error) {
-                console.error("Error redirecting to pilot profile after Steam auth:", error);
-                // Если не удалось найти имя пилота, продолжаем, перенаправляем на общую страницу профиля
+                console.error("[auth/steam/return] Error redirecting to pilot profile after Steam auth:", error);
             } finally {
                 if (connection) connection.release();
             }
         }
         
-        // Если имя заполнено, но pilot_uuid NULL (пользователь зарегистрирован, но еще не пилот)
-        console.log(`User ${req.user.id} is authenticated but not linked to a pilot. Redirecting to /profile.`);
-        return res.redirect('/profile'); // Перенаправляем на общую страницу профиля
+        console.log(`[auth/steam/return] User ${req.user.id} is authenticated but not linked to a pilot or pilot name not found. Redirecting to /profile.`);
+        return res.redirect('/profile');
     });
 
-// Маршрут для выхода
 app.get('/logout', (req, res, next) => {
-    // req.logout() требует колбэк в Express 5+
+    console.log(`[logout] User ${req.user ? req.user.id : 'N/A'} attempting to log out.`);
     req.logout((err) => {
-        if (err) { return next(err); }
-        // Очищаем сессию после выхода
+        if (err) { 
+            console.error("[logout] Error during req.logout:", err);
+            return next(err); 
+        }
         req.session.destroy((err) => {
             if (err) {
-                console.error('Error destroying session:', err);
+                console.error('[logout] Error destroying session:', err);
                 return next(err);
             }
-            res.clearCookie('connect.sid'); // Очищаем куку сессии
+            res.clearCookie('connect.sid');
+            console.log("[logout] User logged out and session destroyed. Redirecting to /.");
             res.redirect('/');
         });
     });
@@ -329,12 +314,14 @@ app.get('/logout', (req, res, next) => {
 
 // --- Маршруты для заполнения имени/фамилии (только для новых пользователей) ---
 app.get('/complete-profile', (req, res) => {
-    // Если пользователь не авторизован или его first_name и last_name уже заполнены
-    if (!req.isAuthenticated() || (req.user.first_name && req.user.last_name)) {
-        console.log(`User ${req.user.id} is already completed or not authenticated. Redirecting to /.`);
+    console.log(`[complete-profile GET] Path: ${req.path}`);
+    console.log(`[complete-profile GET] isAuthenticated(): ${req.isAuthenticated()}`);
+    console.log(`[complete-profile GET] req.user:`, req.user);
+
+    if (!req.isAuthenticated() || (req.user && req.user.first_name && req.user.last_name)) {
+        console.log(`[complete-profile GET] User is already completed or not authenticated. Redirecting to /.`);
         return res.redirect('/');
     }
-    // Если first_name или last_name пусты, передаем их как пустые строки в шаблон
     res.render('complete_profile', { 
         message: null, 
         messageType: null, 
@@ -345,79 +332,75 @@ app.get('/complete-profile', (req, res) => {
 });
 
 app.post('/complete-profile', async (req, res) => {
-    // Проверяем, что пользователь авторизован и его first_name/last_name еще не заполнены
-    if (!req.isAuthenticated() || (req.user.first_name && req.user.last_name)) {
+    console.log(`[complete-profile POST] Path: ${req.path}`);
+    console.log(`[complete-profile POST] isAuthenticated(): ${req.isAuthenticated()}`);
+    console.log(`[complete-profile POST] req.user:`, req.user);
+
+    if (!req.isAuthenticated() || (req.user && req.user.first_name && req.user.last_name)) {
         return res.status(403).json({ message: "У вас немає прав для виконання цієї дії або профіль вже заповнений." });
     }
 
     const { first_name, last_name } = req.body;
-    // Санитизация входных данных
     const sanitizedFirstName = DOMPurify.sanitize(first_name).trim();
     const sanitizedLastName = DOMPurify.sanitize(last_name).trim();
 
     if (!sanitizedFirstName || !sanitizedLastName) {
+        console.log("[complete-profile POST] First name or last name missing.");
         return res.status(400).render('complete_profile', { 
             message: "Будь ласка, введіть ім'я та прізвище.", 
             messageType: "danger", 
             activeMenu: 'complete-profile',
-            first_name: sanitizedFirstName, // Возвращаем введенные значения
+            first_name: sanitizedFirstName,
             last_name: sanitizedLastName
         });
     }
 
-    // Совмещаем имя и фамилию для `username` (если он используется для отображения)
     const combinedUsername = `${sanitizedFirstName} ${sanitizedLastName}`;
     let connection;
     try {
         connection = await pool.getConnection();
         
-        // Обновляем username, first_name, last_name
         await connection.execute(
             `UPDATE users SET username = ?, first_name = ?, last_name = ? WHERE id = ?`,
             [combinedUsername, sanitizedFirstName, sanitizedLastName, req.user.id]
         );
 
-        // Обновляем req.user, чтобы Passport знал о новом имени
         req.user.username = combinedUsername;
         req.user.first_name = sanitizedFirstName;
         req.user.last_name = sanitizedLastName;
 
-        // После заполнения имени, проверяем, есть ли пилот с таким SteamId, чтобы связать (Сценарий 3)
         let pilotUuidToLink = null;
         const [pilotRows] = await connection.execute(
-            `SELECT UUID FROM pilots WHERE steam_id_64 = ?`, // Ищем пилота по SteamId
+            `SELECT UUID FROM pilots WHERE steam_id_64 = ?`,
             [req.user.steam_id_64]
         );
         if (pilotRows.length > 0) {
             pilotUuidToLink = pilotRows[0].UUID;
-            // Если пилот найден и еще не связан, обновляем pilot_uuid в users
             if (!req.user.pilot_uuid && pilotUuidToLink) {
                  await connection.execute(
                     `UPDATE users SET pilot_uuid = ? WHERE id = ?`,
                     [pilotUuidToLink, req.user.id]
                 );
-                req.user.pilot_uuid = pilotUuidToLink; // Обновляем req.user
-                console.log(`User ${req.user.id} linked to pilot ${pilotUuidToLink} after profile completion.`);
+                req.user.pilot_uuid = pilotUuidToLink;
+                console.log(`[complete-profile POST] User ${req.user.id} linked to pilot ${pilotUuidToLink} after profile completion.`);
             }
         }
 
-        // Перенаправляем на страницу профиля пользователя
         if (req.user.pilot_uuid) {
-            // Если теперь есть pilot_uuid, пробуем перенаправить на страницу пилота
             const [pilotNameRow] = await connection.execute(
                 `SELECT Name FROM pilots WHERE UUID = ?`,
                 [req.user.pilot_uuid]
             );
             const pilotName = pilotNameRow[0]?.Name;
             if (pilotName) {
-                console.log(`User ${req.user.id} redirected to pilot profile: /profile/${encodeURIComponent(pilotName)}`);
+                console.log(`[complete-profile POST] User ${req.user.id} redirected to pilot profile: /profile/${encodeURIComponent(pilotName)}`);
                 return res.redirect(`/profile/${encodeURIComponent(pilotName)}`);
             }
         }
-        console.log(`User ${req.user.id} profile completed. Redirecting to /profile.`);
-        res.redirect('/profile'); // Если pilot_uuid нет или имя пилота не найдено
+        console.log(`[complete-profile POST] User ${req.user.id} profile completed. Redirecting to /profile.`);
+        res.redirect('/profile');
     } catch (error) {
-        console.error("Error completing user profile:", error);
+        console.error("[complete-profile POST] Error completing user profile:", error);
         res.status(500).render('complete_profile', { 
             message: "Помилка при збереженні профілю. Спробуйте ще раз.", 
             messageType: "danger", 
@@ -434,7 +417,10 @@ app.post('/complete-profile', async (req, res) => {
 // --- Существующие маршруты (модифицированные) ---
 
 app.get("/", async (req, res) => {
-    console.log("Received request for / (root)");
+    console.log(`[Root GET] Path: ${req.path}`);
+    console.log(`[Root GET] isAuthenticated(): ${req.isAuthenticated()}`);
+    console.log(`[Root GET] req.user:`, req.user);
+
     let connection;
     try {
         connection = await pool.getConnection();
@@ -451,7 +437,7 @@ app.get("/", async (req, res) => {
         console.log("Pilots data:", rows.length > 0 ? `Fetched ${rows.length} pilots.` : 'No pilots found.');
         res.render("pilots", { pilots: rows, activeMenu: 'pilots' });
     } catch (error) {
-        console.error("Error fetching data for / (root):", error);
+        console.error("[Root GET] Error fetching data for / (root):", error);
         res.status(500).send("Error fetching data");
     } finally {
         if (connection) {
@@ -460,23 +446,20 @@ app.get("/", async (req, res) => {
     }
 });
 
-// Закомментированный маршрут /pilots удален, так как / теперь обслуживает рейтинг.
-
 app.get("/pilot/:name", async (req, res) => {
     const pilotName = req.params.name;
     let connection;
     try {
         connection = await pool.getConnection();
-        console.log(`Fetching data for pilot: ${pilotName}`);
+        console.log(`[Pilot Profile GET] Fetching data for pilot: ${pilotName}`);
 
-        // Ищем пилота по имени, чтобы получить его UUID, т.к. в дальнейшем запросы идут по UUID
         const [pilotLookupRows] = await connection.execute(
             `SELECT UUID FROM pilots WHERE Name = ?`,
             [pilotName]
         );
 
         if (pilotLookupRows.length === 0) {
-            console.warn(`Pilot with name ${pilotName} not found.`);
+            console.warn(`[Pilot Profile GET] Pilot with name ${pilotName} not found.`);
             return res.status(404).send("Pilot not found");
         }
         const pilotUUID = pilotLookupRows[0].UUID;
@@ -488,7 +471,7 @@ app.get("/pilot/:name", async (req, res) => {
              FROM raceparticipants rp
              JOIN pilots p ON rp.PilotUUID = p.UUID
              JOIN races r ON rp.RaceUUID = r.UUID
-             WHERE p.UUID = ? -- Изменено на поиск по UUID
+             WHERE p.UUID = ?
              ORDER BY r.StartDate`,
             [pilotUUID]
         );
@@ -513,7 +496,7 @@ app.get("/pilot/:name", async (req, res) => {
                 Top10,
                 PodiumPercentage
             FROM pilots
-            WHERE UUID = ?`, // Изменено на поиск по UUID
+            WHERE UUID = ?`,
             [pilotUUID]
         );
 
@@ -539,7 +522,7 @@ app.get("/pilot/:name", async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Error fetching pilot data:", error);
+        console.error("[Pilot Profile GET] Error fetching pilot data:", error);
         res.status(500).send("Error fetching pilot data");
     } finally {
         if (connection) {
@@ -548,31 +531,31 @@ app.get("/pilot/:name", async (req, res) => {
     }
 });
 
-// Маршрут для отображения профиля авторизованного пользователя
 app.get("/profile", async (req, res) => {
-    // Проверяем, аутентифицирован ли пользователь
+    console.log(`[Profile GET] Path: ${req.path}`);
+    console.log(`[Profile GET] isAuthenticated(): ${req.isAuthenticated()}`);
+    console.log(`[Profile GET] req.user:`, req.user);
+
     if (!req.isAuthenticated()) {
-        console.log("User not authenticated, redirecting to Steam auth.");
-        return res.redirect('/auth/steam'); // Если нет, перенаправляем на вход через Steam
+        console.log("[Profile GET] User not authenticated, redirecting to Steam auth.");
+        return res.redirect('/auth/steam');
     }
 
-    // Если пользователь авторизован, но у него еще не заполнены first_name или last_name
     if (!req.user.first_name || !req.user.last_name) {
-        console.log(`User ${req.user.id} needs to complete profile. Redirecting to /complete-profile.`);
+        console.log(`[Profile GET] User ${req.user.id} needs to complete profile. Redirecting to /complete-profile.`);
         return res.redirect('/complete-profile');
     }
 
     const userId = req.user.id;
-    const pilotUuidFromUser = req.user.pilot_uuid; // UUID пилота, связанный с текущим пользователем
+    const pilotUuidFromUser = req.user.pilot_uuid;
 
     let connection;
     try {
         connection = await pool.getConnection();
 
-        let pilot = {}; // Инициализируем пустой объект пилота по умолчанию
+        let pilot = {};
 
         if (pilotUuidFromUser) {
-            // Если у пользователя есть pilot_uuid, получаем его данные
             const [pilotRows] = await connection.execute(
                 `SELECT Name, Shortname, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, PhotoPath, TeamUUID, IsTeamInterested FROM pilots WHERE UUID = ?`,
                 [pilotUuidFromUser]
@@ -580,47 +563,29 @@ app.get("/profile", async (req, res) => {
             pilot = pilotRows[0];
 
             if (!pilot) {
-                // Если pilot_uuid в таблице users есть, но соответствующий пилот удален.
-                // В этом случае, очищаем pilot_uuid в таблице users.
                 await connection.execute(
                     `UPDATE users SET pilot_uuid = NULL WHERE id = ?`,
                     [userId]
                 );
-                // Обновляем req.user, чтобы Passport знал об изменении
                 req.user.pilot_uuid = null;
-                // Теперь pilot будет пустым, и мы отобразим базовый профиль пользователя.
-                console.warn(`Pilot with UUID ${pilotUuidFromUser} not found for user ${userId}. pilot_uuid set to NULL in users table.`);
+                console.warn(`[Profile GET] Pilot with UUID ${pilotUuidFromUser} not found for user ${userId}. pilot_uuid set to NULL in users table.`);
             }
         }
 
-        // Если pilot пуст (т.е. pilot_uuid был NULL или очищен),
-        // отображаем только базовую информацию о пользователе из таблицы users
         if (!pilot || Object.keys(pilot).length === 0) {
             pilot = {
-                Name: req.user.username, // Используем username из таблицы users (который теперь комбинированное имя)
-                Shortname: '',
-                DiscordId: '',
-                YoutubeChannel: '',
-                TwitchChannel: '',
-                Instagram: '',
-                Twitter: '',
-                iRacingCustomerId: '',
-                Country: '',
-                City: '',
-                PhotoPath: '/avatars/default_avatar_64.png', // Дефолтная аватарка
-                TeamUUID: null,
-                IsTeamInterested: false
+                Name: req.user.username,
+                Shortname: '', DiscordId: '', YoutubeChannel: '', TwitchChannel: '',
+                Instagram: '', Twitter: '', iRacingCustomerId: '', Country: '',
+                City: '', PhotoPath: '/avatars/default_avatar_64.png',
+                TeamUUID: null, IsTeamInterested: false
             };
-            // Добавим флаг, чтобы в EJS можно было понять, что это не полный профиль пилота
             pilot.isBasicUser = true;
         }
 
         const [teamsRows] = await connection.execute(`SELECT UUID, Name FROM teams ORDER BY Name`);
         const teams = teamsRows;
 
-        // Заполняем поля по умолчанию, если они NULL (для случая, если pilot не isBasicUser)
-        // Эти строки могут быть упрощены, если вы уверены, что БД возвращает NULL для пустых строк
-        // или если ваш ORM/SQL запрос уже делает это. Но для безопасности можно оставить.
         pilot.PhotoPath = pilot.PhotoPath || '/avatars/default_avatar_64.png';
         pilot.Shortname = pilot.Shortname || '';
         pilot.DiscordId = pilot.DiscordId || '';
@@ -636,14 +601,13 @@ app.get("/profile", async (req, res) => {
 
         res.render("profile", { pilot: pilot, teams: teams, activeMenu: 'profile' });
     } catch (error) {
-        console.error("Error fetching user profile:", error);
+        console.error("[Profile GET] Error fetching user profile:", error);
         res.status(500).send("Помилка завантаження профілю");
     } finally {
         if (connection) connection.release();
     }
 });
 
-// Маршрут для публичного просмотра профиля пилота (не требует авторизации)
 app.get("/profile/:pilotName", async (req, res) => {
     const pilotName = req.params.pilotName;
     let connection;
@@ -656,14 +620,13 @@ app.get("/profile/:pilotName", async (req, res) => {
 
         let pilot = pilotRows[0];
         if (!pilot) {
-            console.warn(`Public pilot profile for ${pilotName} not found.`);
+            console.warn(`[Public Profile GET] Public pilot profile for ${pilotName} not found.`);
             return res.status(404).send("Пилот не найден");
         }
 
         const [teamsRows] = await connection.execute(`SELECT UUID, Name FROM teams ORDER BY Name`);
         const teams = teamsRows;
 
-        // Заполняем поля по умолчанию, если они NULL
         pilot.PhotoPath = pilot.PhotoPath || '/avatars/default_avatar_64.png';
         pilot.Shortname = pilot.Shortname || '';
         pilot.DiscordId = pilot.DiscordId || '';
@@ -679,20 +642,17 @@ app.get("/profile/:pilotName", async (req, res) => {
 
         res.render("profile", { pilot: pilot, teams: teams, activeMenu: 'profile' });
     } catch (error) {
-        console.error("Error fetching public pilot profile:", error);
+        console.error("[Public Profile GET] Error fetching public pilot profile:", error);
         res.status(500).send("Помилка завантаження профілю");
     } finally {
         if (connection) connection.release();
     }
 });
 
-// Маршрут для обновления профиля пилота (требует авторизации и привязки к пилоту)
 app.post("/profile/:pilotName", async (req, res) => {
-    // Проверяем аутентификацию
     if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Ви не авторизовані." });
     }
-    // Проверяем, привязан ли пользователь к профилю пилота
     if (!req.user.pilot_uuid) {
         return res.status(403).json({ message: "Ваш обліковий запис не прив'язаний до профілю пілота. Функція редагування недоступна." });
     }
@@ -704,7 +664,6 @@ app.post("/profile/:pilotName", async (req, res) => {
     try {
         connection = await pool.getConnection();
 
-        // Проверяем, что pilotNameFromURL соответствует пилоту, связанному с пользователем
         const [pilotCheck] = await connection.execute(
             `SELECT UUID, Name FROM pilots WHERE Name = ? AND UUID = ?`,
             [pilotNameFromURL, pilotUuidFromToken]
@@ -715,31 +674,21 @@ app.post("/profile/:pilotName", async (req, res) => {
         }
 
         const {
-            Shortname,
-            DiscordId,
-            YoutubeChannel,
-            TwitchChannel,
-            Instagram,
-            Twitter,
-            iRacingCustomerId,
-            Country,
-            City,
-            TeamUUID,
+            Shortname, DiscordId, YoutubeChannel, TwitchChannel,
+            Instagram, Twitter, iRacingCustomerId, Country, City, TeamUUID,
+            IsTeamInterested
         } = req.body;
 
-        // Преобразуем значение чекбокса в булево (или 0/1 для БД)
-        let IsTeamInterested = Boolean(req.body.IsTeamInterested);
+        let IsTeamInterestedBool = Boolean(req.body.IsTeamInterested);
 
         let errorMessage = '';
 
-        // Валидация Shortname
         if (Shortname !== undefined && Shortname !== null && Shortname !== '') {
             if (!/^[A-Za-z]{3}$/.test(Shortname)) {
                 errorMessage += 'Поле "3-Letter Shortname" має містити рівно 3 літери (A-Z).\n';
             }
         }
 
-        // Валидация iRacingCustomerId
         if (iRacingCustomerId) {
             if (!/^[0-9]+$/.test(iRacingCustomerId)) {
                 errorMessage += 'Поле "iRacing Customer ID" повинно містити лише цифри.\n';
@@ -750,7 +699,6 @@ app.post("/profile/:pilotName", async (req, res) => {
             return res.status(400).json({ message: errorMessage.trim() });
         }
 
-        // Получаем текущие Shortname и TeamUUID для условного обновления
         const [currentPilotRows] = await connection.execute(
             `SELECT Shortname, TeamUUID FROM pilots WHERE UUID = ?`,
             [pilotUuidFromToken]
@@ -758,19 +706,16 @@ app.post("/profile/:pilotName", async (req, res) => {
         const currentPilotShortname = currentPilotRows[0]?.Shortname;
         const currentPilotTeamUUID = currentPilotRows[0]?.TeamUUID;
 
-        // Используем текущий Shortname, если новый пустой
         const finalShortname = (Shortname !== undefined && Shortname !== null && Shortname !== '') ? DOMPurify.sanitize(Shortname) : currentPilotShortname;
 
-        let newIsTeamInterested = IsTeamInterested;
+        let newIsTeamInterested = IsTeamInterestedBool;
 
-        // Логика для IsTeamInterested: если выбрана новая команда или команда изменилась, сбрасываем IsTeamInterested
         if (TeamUUID && (currentPilotTeamUUID !== TeamUUID || currentPilotTeamUUID === null)) {
             newIsTeamInterested = false;
-        } else if (!TeamUUID) { // Если команда не выбрана, используем значение из формы
-            newIsTeamInterested = IsTeamInterested;
+        } else if (!TeamUUID) {
+            newIsTeamInterested = IsTeamInterestedBool;
         }
 
-        // Санитизация всех входящих данных
         const sanitizedDiscordId = DiscordId ? DOMPurify.sanitize(DiscordId) : null;
         const sanitizedYoutubeChannel = YoutubeChannel ? DOMPurify.sanitize(YoutubeChannel) : null;
         const sanitizedTwitchChannel = TwitchChannel ? DOMPurify.sanitize(TwitchChannel) : null;
@@ -784,31 +729,15 @@ app.post("/profile/:pilotName", async (req, res) => {
 
         await connection.execute(
             `UPDATE pilots SET
-            Shortname = ?,
-            DiscordId = ?,
-            YoutubeChannel = ?,
-            TwitchChannel = ?,
-            Instagram = ?,
-            Twitter = ?,
-            iRacingCustomerId = ?,
-            Country = ?,
-            City = ?,
-            TeamUUID = ?,
-            IsTeamInterested = ?
+            Shortname = ?, DiscordId = ?, YoutubeChannel = ?, TwitchChannel = ?,
+            Instagram = ?, Twitter = ?, iRacingCustomerId = ?, Country = ?,
+            City = ?, TeamUUID = ?, IsTeamInterested = ?
             WHERE UUID = ?`,
             [
-                finalShortname,
-                sanitizedDiscordId,
-                sanitizedYoutubeChannel,
-                sanitizedTwitchChannel,
-                sanitizedInstagram,
-                sanitizedTwitter,
-                sanitizediRacingCustomerId,
-                sanitizedCountry,
-                sanitizedCity,
-                sanitizedTeamUUID,
-                newIsTeamInterested,
-                pilotUuidFromToken
+                finalShortname, sanitizedDiscordId, sanitizedYoutubeChannel,
+                sanitizedTwitchChannel, sanitizedInstagram, sanitizedTwitter,
+                sanitizediRacingCustomerId, sanitizedCountry, sanitizedCity,
+                sanitizedTeamUUID, newIsTeamInterested, pilotUuidFromToken
             ]
         );
         res.status(200).json({ message: "Профіль оновлено" });
@@ -820,7 +749,6 @@ app.post("/profile/:pilotName", async (req, res) => {
     }
 });
 
-// Маршрут для загрузки фото профиля (защищенный)
 app.post("/profile/:pilotName/upload-photo", upload.single('photo'), async (req, res) => {
     if (!req.isAuthenticated() || !req.user.pilot_uuid) {
         return res.status(403).json({ message: "У вас немає прав для завантаження фото." });
@@ -871,7 +799,6 @@ app.post("/profile/:pilotName/upload-photo", upload.single('photo'), async (req,
     }
 });
 
-// Маршрут для удаления фото профиля (защищенный)
 app.delete("/profile/:pilotName/delete-photo", async (req, res) => {
     if (!req.isAuthenticated() || !req.user.pilot_uuid) {
         return res.status(403).json({ message: "У вас немає прав для видалення фото." });
