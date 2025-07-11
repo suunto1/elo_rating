@@ -13,10 +13,6 @@ const cookieParser = require('cookie-parser');
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.get("/", (req, res) => {
-    res.redirect("/pilots");
-});
-
 const multer = require('multer');
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -278,6 +274,33 @@ app.post('/complete-profile', async (req, res) => {
 // --- Существующие маршруты (модифицированные) ---
 
 
+
+app.get("/", async (req, res) => {
+    console.log("Received request for / (root)");
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const [rows] = await connection.execute(`
+            SELECT
+                p.Name,
+                p.EloRanking,
+                p.RaceCount,
+                p.UUID,
+                p.AverageChange
+            FROM pilots p
+            ORDER BY p.EloRanking DESC
+        `);
+        console.log("Pilots data:", rows);
+        res.render("pilots", { pilots: rows, activeMenu: 'pilots' });
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        res.status(500).send("Error fetching data");
+    } finally {
+        if (connection) {
+            connection.release();
+        }
+    }
+});
 
 app.get("/pilots", async (req, res) => {
     console.log("Received request for /pilots");
