@@ -1,4 +1,6 @@
 require('dotenv').config();
+const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
 
 const express = require("express");
 const path = require("path");
@@ -7,7 +9,6 @@ const geoip = require('geoip-lite'); // Не используется в это�
 const fs = require('fs');
 const passport = require('passport');
 const SteamStrategy = require('passport-steam').Strategy;
-const session = require('express-session');
 const cookieParser = require('cookie-parser'); // Используется express-session, но оставлено для совместимости
 
 const app = express();
@@ -68,6 +69,7 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser(async (id, done) => {
+    console.log(`[deserializeUser] Attempting to deserialize user with ID: ${id}`);
     let connection;
     try {
         connection = await pool.getConnection();
@@ -79,6 +81,7 @@ passport.deserializeUser(async (id, done) => {
         );
         const user = rows[0];
         if (user) {
+            console.log(`[deserializeUser] User ${user.id} found. Username: ${user.username}, Pilot UUID: ${user.pilot_uuid}`);
             done(null, user); // Пользователь найден и доступен в req.user
         } else {
             console.warn(`User with ID ${id} not found during deserialization.`);
@@ -200,6 +203,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Настройка MySQL Session Store
+const sessionStore = new MySQLStore({}, pool);
+
 // Настройка сессий
 app.use(session({
     secret: SESSION_SECRET,
@@ -236,6 +242,15 @@ app.use((req, res, next) => {
 
 // Middleware для проверки, заполнено ли имя пользователя (для новых Steam-пользователей)
 const checkUsernameCompletion = async (req, res, next) => {
+    console.log(`[checkUsernameCompletion] Path: ${req.path}`);
+    console.log(`[checkUsernameCompletion] isAuthenticated(): ${req.isAuthenticated()}`);
+    console.log(`[checkUsernameCompletion] req.user:`, req.user); // Выведет undefined, если это так
+
+     // Дополнительная проверка, чтобы избежать ошибки, если req.user действительно undefined
+    if (!req.user) {
+        console.warn("[checkUsernameCompletion] req.user is undefined despite isAuthenticated(). Skipping check.");
+        return next();
+    }
     // Если пользователь авторизован, но у него не заполнены first_name ИЛИ last_name
     if (req.isAuthenticated() && req.user && (!req.user.first_name || !req.user.last_name)) {
         // И он пытается получить доступ к любой странице, кроме /complete-profile, /auth/steam, /auth/steam/return, /logout
