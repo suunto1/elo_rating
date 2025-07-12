@@ -12,6 +12,13 @@ const SteamStrategy = require('passport-steam').Strategy;
 const cookieParser = require('cookie-parser');
 
 const app = express();
+const cors = require('cors');
+
+app.use(cors({
+  origin: 'https://elo-rating.vercel.app',
+  credentials: true
+}));
+
 const port = process.env.PORT || 3000;
 
 // Multer для загрузки файлов
@@ -58,12 +65,7 @@ if (!STEAM_API_KEY || !STEAM_RETURN_URL || !SESSION_SECRET || !STEAM_REALM) {
     process.exit(1);
 }
 
-const cors = require('cors');
 
-app.use(cors({
-  origin: 'https://elo-rating.vercel.app',
-  credentials: true
-}));
 
 // Настройка Passport.js
 passport.serializeUser((user, done) => {
@@ -183,6 +185,8 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
