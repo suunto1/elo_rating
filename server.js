@@ -60,12 +60,12 @@ if (!STEAM_API_KEY || !STEAM_RETURN_URL || !SESSION_SECRET || !STEAM_REALM) {
 
 // Настройка Passport.js
 passport.serializeUser((user, done) => {
-    console.log(`[serializeUser] Serializing user ID: ${user.id}`);
+    console.log("[Passport] serializeUser: storing user.id =", user.id);
     done(null, user.id);
 });
 
 passport.deserializeUser(async (id, done) => {
-    console.log(`[deserializeUser] Attempting to deserialize user with ID: ${id}`);
+    console.log("[Passport] deserializeUser: fetching user with id =", id);
     let connection;
     try {
         connection = await pool.getConnection();
@@ -97,7 +97,8 @@ passport.use(new SteamStrategy({
 async (identifier, profile, done) => {
     const steamId64 = profile.id;
     const steamDisplayName = profile.displayName;
-    console.log(`[SteamStrategy] Authenticating Steam ID: ${steamId64}, Display Name: ${steamDisplayName}`);
+    console.log("[Passport] SteamStrategy: identifier =", identifier);
+    console.log("[Passport] SteamStrategy: profile =", profile);
     let connection;
     try {
         connection = await pool.getConnection();
@@ -327,6 +328,7 @@ app.get('/complete-profile', (req, res) => {
     console.log(`[complete-profile GET] Path: ${req.path}`);
     console.log(`[complete-profile GET] isAuthenticated(): ${req.isAuthenticated()}`);
     console.log(`[complete-profile GET] req.user:`, req.user);
+    console.log("req.session:", req.session);
 
     // Если пользователь не авторизован, перенаправляем на главную
     if (!req.isAuthenticated()) {
