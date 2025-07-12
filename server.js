@@ -189,6 +189,8 @@ app.use(cookieParser());
 // Настройка MySQL Session Store
 const sessionStore = new MySQLStore({}, pool);
 
+app.set('trust proxy', 1);
+
 // Настройка сессий
 app.use(session({
     secret: SESSION_SECRET,
