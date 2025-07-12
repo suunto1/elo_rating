@@ -60,34 +60,26 @@ if (!STEAM_API_KEY || !STEAM_RETURN_URL || !SESSION_SECRET || !STEAM_REALM) {
 
 // Настройка Passport.js
 passport.serializeUser((user, done) => {
-    console.log("[Passport] serializeUser: storing user.id =", user.id);
+    console.log("[Passport] serializeUser:", user.id);
     done(null, user.id);
 });
 
 passport.deserializeUser(async (id, done) => {
     console.log("[Passport] deserializeUser: fetching user with id =", id);
-    let connection;
     try {
-        connection = await pool.getConnection();
-        const [rows] = await connection.execute(
-            `SELECT id, steam_id_64, pilot_uuid, username, first_name, last_name, is_admin FROM users WHERE id = ?`,
-            [id]
-        );
-        const user = rows[0];
-        if (user) {
-            console.log(`[deserializeUser] User ${user.id} found. Username: ${user.username}, Pilot UUID: ${user.pilot_uuid}`);
-            done(null, user);
-        } else {
-            console.warn(`[deserializeUser] User with ID ${id} NOT found in DB. Setting req.user to false.`);
-            done(null, false);
+        const [rows] = await pool.execute("SELECT * FROM users WHERE id = ?", [id]);
+        if (rows.length === 0) {
+            console.warn("[Passport] No user found for id =", id);
+            return done(null, false); // вот он — приводит к req.user = undefined
         }
-    } catch (error) {
-        console.error("[deserializeUser] Error deserializing user:", error);
-        done(error, null);
-    } finally {
-        if (connection) connection.release();
+        console.log("[Passport] User found:", rows[0]);
+        done(null, rows[0]); // ОБЯЗАТЕЛЬНО возвращать объект пользователя
+    } catch (err) {
+        console.error("[Passport] Error in deserializeUser:", err);
+        done(err);
     }
 });
+
 
 passport.use(new SteamStrategy({
     returnURL: STEAM_RETURN_URL,
@@ -208,8 +200,9 @@ app.use(passport.session());
 
 // Middleware для добавления информации о пользователе в res.locals для EJS
 app.use((req, res, next) => {
-    console.log(`[res.locals.user Middleware] isAuthenticated(): ${req.isAuthenticated()}`);
-    console.log(`[res.locals.user Middleware] req.user (before processing):`, req.user);
+    console.log("[Session Check] Cookie headers:", req.headers.cookie);
+    console.log("[Session Check] Session ID:", req.sessionID);
+    console.log("[Session Check] Session:", req.session);
 
     if (req.isAuthenticated() && req.user) {
         // Если first_name и last_name заполнены, используем их для username
