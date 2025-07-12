@@ -214,12 +214,13 @@
                     };
 
                     try {
-                        const response = await fetch(`/profile/${pilotName}`, {
+                        const response = await fetch(`https://elo-rating-1.onrender.com/profile/${pilotName}`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                             },
                             body: JSON.stringify(formData),
+                            credentials: 'include'
                         });
 
                         const data = await response.json();
@@ -248,11 +249,13 @@
                     formData.append('photo', file);
 
                     try {
-                        const response = await fetch(`/profile/${pilotName}/upload-photo`, {
+                        const response = await fetch(`https://elo-rating-1.onrender.com/profile/${pilotName}/upload-photo`, {
                             method: 'POST',
                             body: formData,
+                            credentials: 'include'
                         });
                         const data = await response.json();
+                        
                         if (response.ok) {
                             profileAvatar.src = data.photoPath;
                             alert(data.message);
@@ -273,8 +276,9 @@
                         }
 
                         try {
-                            const response = await fetch(`/profile/${pilotName}/delete-photo`, {
+                            const response = await fetch(`https://elo-rating-1.onrender.com/profile/${pilotName}/delete-photo`, {
                                 method: 'DELETE',
+                                credentials: 'include'
                             });
                             const data = await response.json();
                             if (response.ok) {

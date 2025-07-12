@@ -58,6 +58,13 @@ if (!STEAM_API_KEY || !STEAM_RETURN_URL || !SESSION_SECRET || !STEAM_REALM) {
     process.exit(1);
 }
 
+const cors = require('cors');
+
+app.use(cors({
+  origin: 'https://elo-rating.vercel.app',
+  credentials: true
+}));
+
 // Настройка Passport.js
 passport.serializeUser((user, done) => {
     console.log("[Passport] serializeUser:", user.id);
@@ -187,9 +194,10 @@ app.use(session({
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    store: sessionStore, // <-- Добавлено хранилище сессий
+    store: sessionStore,
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: true,
+        sameSite: 'none',
         maxAge: 1000 * 60 * 60 * 24 * 7 // 1 неделя
     }
 }));
