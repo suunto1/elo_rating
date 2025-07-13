@@ -108,13 +108,6 @@
     font-size: 2.2em;
 }
 
-.profile-title .shortname {
-    margin: 5px 0 0;
-    color: #e0e0e0;
-    font-size: 1.2em;
-    font-weight: bold;
-}
-
 .profile-section h3 {
     margin-top: 0;
     color: #f0a020;
@@ -297,9 +290,6 @@
 @media (max-width: 480px) {
     .profile-title h2 {
         font-size: 1.8em;
-    }
-    .profile-title .shortname {
-        font-size: 1em;
     }
     .profile-avatar-container {
         width: 100px;

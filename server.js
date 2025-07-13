@@ -584,7 +584,7 @@ app.get("/profile", async (req, res) => {
 
         if (pilotUuidFromUser) {
             const [pilotRows] = await connection.execute(
-                `SELECT Name, Shortname, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, PhotoPath, TeamUUID, IsTeamInterested FROM pilots WHERE UUID = ?`,
+                `SELECT Name, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, PhotoPath, TeamUUID, IsTeamInterested FROM pilots WHERE UUID = ?`,
                 [pilotUuidFromUser]
             );
             pilot = pilotRows[0];
@@ -602,7 +602,7 @@ app.get("/profile", async (req, res) => {
         if (!pilot || Object.keys(pilot).length === 0) {
             pilot = {
                 Name: req.user.username,
-                Shortname: '', DiscordId: '', YoutubeChannel: '', TwitchChannel: '',
+                DiscordId: '', YoutubeChannel: '', TwitchChannel: '',
                 Instagram: '', Twitter: '', iRacingCustomerId: '', Country: '',
                 City: '', PhotoPath: '/avatars/default_avatar_64.png',
                 TeamUUID: null, IsTeamInterested: false
@@ -614,7 +614,6 @@ app.get("/profile", async (req, res) => {
         const teams = teamsRows;
 
         pilot.PhotoPath = pilot.PhotoPath || '/avatars/default_avatar_64.png';
-        pilot.Shortname = pilot.Shortname || '';
         pilot.DiscordId = pilot.DiscordId || '';
         pilot.YoutubeChannel = pilot.YoutubeChannel || '';
         pilot.TwitchChannel = pilot.TwitchChannel || '';
@@ -641,7 +640,7 @@ app.get("/profile/:pilotName", async (req, res) => {
     try {
         connection = await pool.getConnection();
         const [pilotRows] = await connection.execute(
-            `SELECT Name, Shortname, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, PhotoPath, TeamUUID, IsTeamInterested FROM pilots WHERE Name = ?`,
+            `SELECT Name, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, PhotoPath, TeamUUID, IsTeamInterested FROM pilots WHERE Name = ?`,
             [pilotName]
         );
 
@@ -655,7 +654,6 @@ app.get("/profile/:pilotName", async (req, res) => {
         const teams = teamsRows;
 
         pilot.PhotoPath = pilot.PhotoPath || '/avatars/default_avatar_64.png';
-        pilot.Shortname = pilot.Shortname || '';
         pilot.DiscordId = pilot.DiscordId || '';
         pilot.YoutubeChannel = pilot.YoutubeChannel || '';
         pilot.TwitchChannel = pilot.TwitchChannel || '';
@@ -701,7 +699,7 @@ app.post("/profile/:pilotName", async (req, res) => {
         }
 
         const {
-            Shortname, DiscordId, YoutubeChannel, TwitchChannel,
+            DiscordId, YoutubeChannel, TwitchChannel,
             Instagram, Twitter, iRacingCustomerId, Country, City, TeamUUID,
             IsTeamInterested
         } = req.body;
@@ -709,12 +707,6 @@ app.post("/profile/:pilotName", async (req, res) => {
         let IsTeamInterestedBool = Boolean(req.body.IsTeamInterested);
 
         let errorMessage = '';
-
-        if (Shortname !== undefined && Shortname !== null && Shortname !== '') {
-            if (!/^[A-Za-z]{3}$/.test(Shortname)) {
-                errorMessage += 'Поле "3-Letter Shortname" має містити рівно 3 літери (A-Z).\n';
-            }
-        }
 
         if (iRacingCustomerId) {
             if (!/^[0-9]+$/.test(iRacingCustomerId)) {
@@ -727,13 +719,10 @@ app.post("/profile/:pilotName", async (req, res) => {
         }
 
         const [currentPilotRows] = await connection.execute(
-            `SELECT Shortname, TeamUUID FROM pilots WHERE UUID = ?`,
+            `SELECT TeamUUID FROM pilots WHERE UUID = ?`,
             [pilotUuidFromToken]
         );
-        const currentPilotShortname = currentPilotRows[0]?.Shortname;
         const currentPilotTeamUUID = currentPilotRows[0]?.TeamUUID;
-
-        const finalShortname = (Shortname !== undefined && Shortname !== null && Shortname !== '') ? DOMPurify.sanitize(Shortname) : currentPilotShortname;
 
         let newIsTeamInterested = IsTeamInterestedBool;
 
@@ -756,12 +745,12 @@ app.post("/profile/:pilotName", async (req, res) => {
 
         await connection.execute(
             `UPDATE pilots SET
-            Shortname = ?, DiscordId = ?, YoutubeChannel = ?, TwitchChannel = ?,
+            DiscordId = ?, YoutubeChannel = ?, TwitchChannel = ?,
             Instagram = ?, Twitter = ?, iRacingCustomerId = ?, Country = ?,
             City = ?, TeamUUID = ?, IsTeamInterested = ?
             WHERE UUID = ?`,
             [
-                finalShortname, sanitizedDiscordId, sanitizedYoutubeChannel,
+                sanitizedDiscordId, sanitizedYoutubeChannel,
                 sanitizedTwitchChannel, sanitizedInstagram, sanitizedTwitter,
                 sanitizediRacingCustomerId, sanitizedCountry, sanitizedCity,
                 sanitizedTeamUUID, newIsTeamInterested, pilotUuidFromToken

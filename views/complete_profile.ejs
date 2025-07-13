@@ -4,40 +4,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Завершити профіль - КМАМК Sim Racing</title>
+    <title>КМАМК Sim Racing</title>
     <link rel="stylesheet" href="/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
-<body>
+<<body>
     <%- include('partials/menu') %>
-        <aside class="sidebar-left"></aside>
-        <main class="container">
-            <div class="card auth-card">
-                <h2>Останній крок до успішної реєстрації</h2>
+    <div class="main-content-wrapper-registration"> <aside class="sidebar-left"></aside>
+        <main class="container"> <div class="card auth-card">
+                <h2>Реестрацiя</h2>
                 <p>Введіть Ваше ім'я та прізвище латиницею.</p>
-
                 <% if (typeof message !=='undefined' && message) { %>
                     <div class="alert alert-<%= typeof messageType !== 'undefined' ? messageType : 'info' %>">
                         <%= message %>
                     </div>
-                    <% } %>
-
-                        <form action="/complete-profile" method="POST">
-                            <div class="form-group">
-                                <label for="first_name">Ім'я:</label>
-                                <input type="text" id="first_name" name="first_name" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="last_name">Прізвище:</label>
-                                <input type="text" id="last_name" name="last_name" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Зберегти</button>
-                        </form>
+                <% } %>
+                <form action="/complete-profile" method="POST">
+                    <div class="form-group">
+                        <label for="first_name">Ім'я:</label>
+                        <input type="text" id="first_name" name="first_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="last_name">Прізвище:</label>
+                        <input type="text" id="last_name" name="last_name" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Зберегти</button>
+                </form>
             </div>
         </main>
         <aside class="sidebar-right"></aside>
-        <%- include('partials/footer') %>
+    </div>
+    <%- include('partials/footer') %>
 </body>
 
 </html>

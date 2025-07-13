@@ -55,14 +55,22 @@
                                         <h2>
                                             <%= pilot.Name %>
                                         </h2>
-                                        <% if (pilot.Shortname) { %>
-                                            <p class="shortname"> [ <%= pilot.Shortname %> ] </p>
-                                            <% } %>
                                     </div>
                                 </div>
 
                                 <div class="profile-section">
                                     <form id="profile-form">
+                                        <div class="form-group">
+                                            <label for="iRacingCustomerId">iRacing Customer ID</label>
+                                            <input type="text" id="iRacingCustomerId" name="iRacingCustomerId"
+                                                value="<%= pilot.iRacingCustomerId %>" pattern="[0-9]*"
+                                                title="Повинно містити лише цифри">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="LMUName">LMU Name</label>
+                                            <input type="text" id="LMUName" name="LMUName"
+                                                value="<%= pilot.LMUName %>" pattern="[0-9]*">    
+                                        </div>
                                         <div class="form-group">
                                             <label for="DiscordId">Discord ID</label>
                                             <input type="text" id="DiscordId" name="DiscordId"
@@ -87,12 +95,7 @@
                                             <label for="Twitter">Twitter URL</label>
                                             <input type="url" id="Twitter" name="Twitter" value="<%= pilot.Twitter %>">
                                         </div>
-                                        <div class="form-group">
-                                            <label for="iRacingCustomerId">iRacing Customer ID</label>
-                                            <input type="text" id="iRacingCustomerId" name="iRacingCustomerId"
-                                                value="<%= pilot.iRacingCustomerId %>" pattern="[0-9]*"
-                                                title="Должно содержать только цифры">
-                                        </div>
+                                        
                                         <div class="form-group">
                                             <label for="Country">Країна</label>
                                             <input type="text" id="Country" name="Country" value="<%= pilot.Country %>">
@@ -179,16 +182,9 @@
                 form.addEventListener('submit', async (e) => {
                     e.preventDefault();
 
-                    const shortnameInput = document.getElementById('Shortname');
+                    
                     const iRacingCustomerIdInput = document.getElementById('iRacingCustomerId');
                     let clientErrorMessage = '';
-
-                    if (shortnameInput.value && !/^[A-Za-z]{3}$/.test(shortnameInput.value)) {
-                        clientErrorMessage += 'Поле "3-Letter Shortname" має містити три літери (A-Z).\n';
-                    }
-                    if (!shortnameInput.value) {
-                        clientErrorMessage += 'Поле "3-Letter Shortname" є обов\'язковим.\n';
-                    }
 
                     if (iRacingCustomerIdInput.value && !/^[0-9]+$/.test(iRacingCustomerIdInput.value)) {
                         clientErrorMessage += 'Поле "iRacing Customer ID" повинно містити лише цифри\n';
@@ -200,7 +196,6 @@
                     }
 
                     const formData = {
-                        Shortname: shortnameInput.value,
                         DiscordId: document.getElementById('DiscordId').value,
                         YoutubeChannel: document.getElementById('YoutubeChannel').value,
                         TwitchChannel: document.getElementById('TwitchChannel').value,

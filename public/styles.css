@@ -770,3 +770,31 @@ ul.footer-nav {
 .card.auth-card a:hover {
     text-decoration: underline;
 }
+
+.main-content-wrapper-registration {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    flex: 1;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+    .main-content-wrapper-registration {
+        flex-direction: column; /* На маленьких екранах сайдбари та main можуть вишиковуватися вертикально */
+        align-items: center; /* Центруємо вміст вертикального флекс-контейнера */
+        padding: 10px;
+    }
+    .sidebar-left,
+    .sidebar-right {
+        flex: auto; /* Дозволити сайдбарам займати автоматичну ширину */
+        width: 100%; /* Щоб вони займали всю ширину в колонці */
+        padding: 0; /* Або зменшити padding */
+    }
+    .container {
+        width: 100%; /* Займає всю ширину обгортки */
+        max-width: none; /* Прибираємо обмеження, щоб вміст адаптувався */
+        margin: 10px 0; /* Відступи по вертикалі */
+    }
+}
