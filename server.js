@@ -274,6 +274,23 @@ const checkUsernameCompletion = async (req, res, next) => {
 };
 app.use(checkUsernameCompletion);
 
+function checkAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    res.redirect("/login");
+}
+
+function checkUsernameCompletion(req, res, next) {
+    if (req.isAuthenticated()) {
+        if (!req.user.first_name || !req.user.last_name) {
+            if (req.path !== "/complete-profile") {
+                return res.redirect("/complete-profile");
+            }
+        }
+    }
+    next();
+}
 
 // --- Маршруты аутентификации Steam ---
 
