@@ -609,45 +609,7 @@ app.get("/profile", async (req, res) => {
     }
 });
 
-app.get("/profile/:pilotName", async (req, res) => {
-    const pilotName = req.params.pilotName;
-    let connection;
-    try {
-        connection = await pool.getConnection();
-        const [pilotRows] = await connection.execute(
-            `SELECT Name, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, PhotoPath, TeamUUID, IsTeamInterested FROM pilots WHERE Name = ?`,
-            [pilotName]
-        );
 
-        let pilot = pilotRows[0];
-        if (!pilot) {
-            console.warn(`[Public Profile GET] Public pilot profile for ${pilotName} not found.`);
-            return res.status(404).send("Пилот не найден");
-        }
-
-        const [teamsRows] = await connection.execute(`SELECT UUID, Name FROM teams ORDER BY Name`);
-        const teams = teamsRows;
-
-        pilot.PhotoPath = pilot.PhotoPath || '/avatars/default_avatar_64.png';
-        pilot.DiscordId = pilot.DiscordId || '';
-        pilot.YoutubeChannel = pilot.YoutubeChannel || '';
-        pilot.TwitchChannel = pilot.TwitchChannel || '';
-        pilot.Instagram = pilot.Instagram || '';
-        pilot.Twitter = pilot.Twitter || '';
-        pilot.iRacingCustomerId = pilot.iRacingCustomerId || '';
-        pilot.Country = pilot.Country || '';
-        pilot.City = pilot.City || '';
-        pilot.TeamUUID = pilot.TeamUUID || null;
-        pilot.IsTeamInterested = pilot.IsTeamInterested || false;
-
-        res.render("profile", { pilot: pilot, teams: teams, activeMenu: 'profile' });
-    } catch (error) {
-        console.error("[Public Profile GET] Error fetching public pilot profile:", error);
-        res.status(500).send("Помилка завантаження профілю");
-    } finally {
-        if (connection) connection.release();
-    }
-});
 
 app.post("/profile", async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -796,6 +758,46 @@ app.delete("/profile/delete-photo", async (req, res) => { // Изменили UR
     } catch (error) {
         console.error("Помилка видалення фото:", error);
         res.status(500).json({ message: "Помилка видалення фото" });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
+app.get("/profile/:pilotName", async (req, res) => {
+    const pilotName = req.params.pilotName;
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const [pilotRows] = await connection.execute(
+            `SELECT Name, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, PhotoPath, TeamUUID, IsTeamInterested FROM pilots WHERE Name = ?`,
+            [pilotName]
+        );
+
+        let pilot = pilotRows[0];
+        if (!pilot) {
+            console.warn(`[Public Profile GET] Public pilot profile for ${pilotName} not found.`);
+            return res.status(404).send("Пилот не найден");
+        }
+
+        const [teamsRows] = await connection.execute(`SELECT UUID, Name FROM teams ORDER BY Name`);
+        const teams = teamsRows;
+
+        pilot.PhotoPath = pilot.PhotoPath || '/avatars/default_avatar_64.png';
+        pilot.DiscordId = pilot.DiscordId || '';
+        pilot.YoutubeChannel = pilot.YoutubeChannel || '';
+        pilot.TwitchChannel = pilot.TwitchChannel || '';
+        pilot.Instagram = pilot.Instagram || '';
+        pilot.Twitter = pilot.Twitter || '';
+        pilot.iRacingCustomerId = pilot.iRacingCustomerId || '';
+        pilot.Country = pilot.Country || '';
+        pilot.City = pilot.City || '';
+        pilot.TeamUUID = pilot.TeamUUID || null;
+        pilot.IsTeamInterested = pilot.IsTeamInterested || false;
+
+        res.render("profile", { pilot: pilot, teams: teams, activeMenu: 'profile' });
+    } catch (error) {
+        console.error("[Public Profile GET] Error fetching public pilot profile:", error);
+        res.status(500).send("Помилка завантаження профілю");
     } finally {
         if (connection) connection.release();
     }
