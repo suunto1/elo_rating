@@ -25,18 +25,18 @@ const storage = multer.diskStorage({
         cb(null, uploadPath);
     },
     filename: function (req, file, cb) {
-        cb(null, Date.now() + '-' + file.originalname);
+        const userId = req.params.userId || req.user.id;
+        const fileExtension = path.extname(file.originalname);
+        cb(null, `${userId}-${Date.now()}${fileExtension}`);
     }
 });
 const upload = multer({ storage: storage });
 
-// DOMPurify для санитизации HTML
 const { JSDOM } = require('jsdom');
 const createDOMPurify = require('dompurify');
 const window = new JSDOM('').window;
 const DOMPurify = createDOMPurify(window);
 
-// Конфигурация базы данных
 const dbConfig = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -61,8 +61,8 @@ if (!STEAM_API_KEY || !STEAM_RETURN_URL || !SESSION_SECRET || !STEAM_REALM) {
 const cors = require('cors');
 
 app.use(cors({
-  origin: 'https://elo-rating.vercel.app',
-  credentials: true
+    origin: 'https://elo-rating.vercel.app',
+    credentials: true
 }));
 
 // Настройка Passport.js
@@ -93,89 +93,89 @@ passport.use(new SteamStrategy({
     realm: STEAM_REALM,
     apiKey: STEAM_API_KEY
 },
-async (identifier, profile, done) => {
-    const steamId64 = profile.id;
-    const steamDisplayName = profile.displayName;
-    console.log("[Passport] SteamStrategy: identifier =", identifier);
-    console.log("[Passport] SteamStrategy: profile =", profile);
-    let connection;
-    try {
-        connection = await pool.getConnection();
+    async (identifier, profile, done) => {
+        const steamId64 = profile.id;
+        const steamDisplayName = profile.displayName;
+        console.log("[Passport] SteamStrategy: identifier =", identifier);
+        console.log("[Passport] SteamStrategy: profile =", profile);
+        let connection;
+        try {
+            connection = await pool.getConnection();
 
-        const [userRows] = await connection.execute(
-            `SELECT id, steam_id_64, pilot_uuid, username, first_name, last_name, is_admin FROM users WHERE steam_id_64 = ?`,
-            [steamId64]
-        );
-        let user = userRows[0];
-        let pilotUuidToLink = null;
+            const [userRows] = await connection.execute(
+                `SELECT id, steam_id_64, pilot_uuid, username, first_name, last_name, is_admin FROM users WHERE steam_id_64 = ?`,
+                [steamId64]
+            );
+            let user = userRows[0];
+            let pilotUuidToLink = null;
 
-        const [pilotRows] = await connection.execute(
-            `SELECT UUID FROM pilots WHERE steam_id_64 = ?`,
-            [steamId64]
-        );
-        if (pilotRows.length > 0) {
-            pilotUuidToLink = pilotRows[0].UUID;
-            console.log(`[SteamStrategy] Found existing pilot UUID ${pilotUuidToLink} for Steam ID ${steamId64}`);
-        }
-
-        if (user) {
-            console.log("[SteamStrategy] Existing user found in `users` table:", user.id);
-            if (!user.pilot_uuid && pilotUuidToLink) {
-                console.log(`[SteamStrategy] Linking existing pilot ${pilotUuidToLink} to user ${user.id}`);
-                await connection.execute(
-                    `UPDATE users SET pilot_uuid = ? WHERE id = ?`,
-                    [pilotUuidToLink, user.id]
-                );
-                user.pilot_uuid = pilotUuidToLink;
+            const [pilotRows] = await connection.execute(
+                `SELECT UUID FROM pilots WHERE steam_id_64 = ?`,
+                [steamId64]
+            );
+            if (pilotRows.length > 0) {
+                pilotUuidToLink = pilotRows[0].UUID;
+                console.log(`[SteamStrategy] Found existing pilot UUID ${pilotUuidToLink} for Steam ID ${steamId64}`);
             }
 
-            if (user.username === '' || user.username === steamId64) {
-                console.log(`[SteamStrategy] Updating username for user ${user.id} to Steam Display Name: ${steamDisplayName}`);
+            if (user) {
+                console.log("[SteamStrategy] Existing user found in `users` table:", user.id);
+                if (!user.pilot_uuid && pilotUuidToLink) {
+                    console.log(`[SteamStrategy] Linking existing pilot ${pilotUuidToLink} to user ${user.id}`);
+                    await connection.execute(
+                        `UPDATE users SET pilot_uuid = ? WHERE id = ?`,
+                        [pilotUuidToLink, user.id]
+                    );
+                    user.pilot_uuid = pilotUuidToLink;
+                }
+
+                if (user.username === '' || user.username === steamId64) {
+                    console.log(`[SteamStrategy] Updating username for user ${user.id} to Steam Display Name: ${steamDisplayName}`);
+                    await connection.execute(
+                        `UPDATE users SET username = ? WHERE id = ?`,
+                        [steamDisplayName, user.id]
+                    );
+                    user.username = steamDisplayName;
+                }
+
                 await connection.execute(
-                    `UPDATE users SET username = ? WHERE id = ?`,
-                    [steamDisplayName, user.id]
+                    `UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?`,
+                    [user.id]
                 );
-                user.username = steamDisplayName;
+
+                return done(null, {
+                    id: user.id,
+                    steam_id_64: user.steam_id_64,
+                    pilot_uuid: user.pilot_uuid,
+                    username: user.username,
+                    first_name: user.first_name,
+                    last_name: user.last_name,
+                    is_admin: user.is_admin
+                });
+            } else {
+                console.log("[SteamStrategy] New Steam user. Creating new entry in `users` table.");
+
+                const [insertResult] = await connection.execute(
+                    `INSERT INTO users (steam_id_64, username, first_name, last_name, pilot_uuid, last_login_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+                    [steamId64, steamDisplayName, '', '', pilotUuidToLink]
+                );
+                const newUserId = insertResult.insertId;
+
+                const [newUserRows] = await connection.execute(
+                    `SELECT id, steam_id_64, pilot_uuid, username, first_name, last_name, is_admin FROM users WHERE id = ?`,
+                    [newUserId]
+                );
+                const newUser = newUserRows[0];
+                console.log("[SteamStrategy] New user created:", newUser);
+                return done(null, newUser);
             }
-            
-            await connection.execute(
-                `UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?`,
-                [user.id]
-            );
-
-            return done(null, {
-                id: user.id,
-                steam_id_64: user.steam_id_64,
-                pilot_uuid: user.pilot_uuid,
-                username: user.username,
-                first_name: user.first_name,
-                last_name: user.last_name,
-                is_admin: user.is_admin
-            });
-        } else {
-            console.log("[SteamStrategy] New Steam user. Creating new entry in `users` table.");
-
-            const [insertResult] = await connection.execute(
-                `INSERT INTO users (steam_id_64, username, first_name, last_name, pilot_uuid, last_login_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-                [steamId64, steamDisplayName, '', '', pilotUuidToLink]
-            );
-            const newUserId = insertResult.insertId;
-
-            const [newUserRows] = await connection.execute(
-                `SELECT id, steam_id_64, pilot_uuid, username, first_name, last_name, is_admin FROM users WHERE id = ?`,
-                [newUserId]
-            );
-            const newUser = newUserRows[0];
-            console.log("[SteamStrategy] New user created:", newUser);
-            return done(null, newUser);
+        } catch (error) {
+            console.error("[SteamStrategy] Error during Steam authentication strategy:", error);
+            return done(error);
+        } finally {
+            if (connection) connection.release();
         }
-    } catch (error) {
-        console.error("[SteamStrategy] Error during Steam authentication strategy:", error);
-        return done(error);
-    } finally {
-        if (connection) connection.release();
-    }
-}));
+    }));
 
 
 // --- Middleware ---
@@ -249,11 +249,11 @@ const checkUsernameCompletion = async (req, res, next) => {
         console.warn("[checkUsernameCompletion] req.user is undefined despite isAuthenticated() potentially being true. Skipping check.");
         return next();
     }
-    
+
     // Если пользователь авторизован, но у него не заполнены first_name ИЛИ last_name
     // Используем .trim().length > 0 для надежной проверки на пустые строки
     if (req.isAuthenticated() && (!req.user.first_name || req.user.first_name.trim().length === 0 ||
-                                  !req.user.last_name || req.user.last_name.trim().length === 0)) {
+        !req.user.last_name || req.user.last_name.trim().length === 0)) {
         // И он пытается получить доступ к любой странице, кроме /complete-profile, /auth/steam, /auth/steam/return, /logout
         if (req.path !== '/complete-profile' && req.path !== '/auth/steam' && req.path !== '/auth/steam/return' && req.path !== '/logout') {
             console.log(`[checkUsernameCompletion] Redirecting user ${req.user.id} to /complete-profile as first_name or last_name is missing.`);
@@ -302,7 +302,7 @@ app.get('/auth/steam/return',
                 if (connection) connection.release();
             }
         }
-        
+
         console.log(`[auth/steam/return] User ${req.user.id} is authenticated but not linked to a pilot or pilot name not found. Redirecting to /profile.`);
         return res.redirect('/profile');
     });
@@ -310,9 +310,9 @@ app.get('/auth/steam/return',
 app.get('/logout', (req, res, next) => {
     console.log(`[logout] User ${req.user ? req.user.id : 'N/A'} attempting to log out.`);
     req.logout((err) => {
-        if (err) { 
+        if (err) {
             console.error("[logout] Error during req.logout:", err);
-            return next(err); 
+            return next(err);
         }
         req.session.destroy((err) => {
             if (err) {
@@ -348,9 +348,9 @@ app.get('/complete-profile', (req, res) => {
     }
 
     // Иначе, рендерим страницу заполнения профиля
-    res.render('complete_profile', { 
-        message: null, 
-        messageType: null, 
+    res.render('complete_profile', {
+        message: null,
+        messageType: null,
         activeMenu: 'complete-profile',
         first_name: req.user.first_name || '',
         last_name: req.user.last_name || ''
@@ -372,9 +372,9 @@ app.post('/complete-profile', async (req, res) => {
 
     if (!sanitizedFirstName || !sanitizedLastName) {
         console.log("[complete-profile POST] First name or last name missing.");
-        return res.status(400).render('complete_profile', { 
-            message: "Будь ласка, введіть ім'я та прізвище.", 
-            messageType: "danger", 
+        return res.status(400).render('complete_profile', {
+            message: "Будь ласка, введіть ім'я та прізвище.",
+            messageType: "danger",
             activeMenu: 'complete-profile',
             first_name: sanitizedFirstName,
             last_name: sanitizedLastName
@@ -385,7 +385,7 @@ app.post('/complete-profile', async (req, res) => {
     let connection;
     try {
         connection = await pool.getConnection();
-        
+
         await connection.execute(
             `UPDATE users SET username = ?, first_name = ?, last_name = ? WHERE id = ?`,
             [combinedUsername, sanitizedFirstName, sanitizedLastName, req.user.id]
@@ -403,7 +403,7 @@ app.post('/complete-profile', async (req, res) => {
         if (pilotRows.length > 0) {
             pilotUuidToLink = pilotRows[0].UUID;
             if (!req.user.pilot_uuid && pilotUuidToLink) {
-                 await connection.execute(
+                await connection.execute(
                     `UPDATE users SET pilot_uuid = ? WHERE id = ?`,
                     [pilotUuidToLink, req.user.id]
                 );
@@ -427,9 +427,9 @@ app.post('/complete-profile', async (req, res) => {
         res.redirect('/profile');
     } catch (error) {
         console.error("[complete-profile POST] Error completing user profile:", error);
-        res.status(500).render('complete_profile', { 
-            message: "Помилка при збереженні профілю. Спробуйте ще раз.", 
-            messageType: "danger", 
+        res.status(500).render('complete_profile', {
+            message: "Помилка при збереженні профілю. Спробуйте ще раз.",
+            messageType: "danger",
             activeMenu: 'complete-profile',
             first_name: sanitizedFirstName,
             last_name: sanitizedLastName
@@ -726,9 +726,9 @@ app.post("/profile/:pilotName", async (req, res) => {
 
         let newIsTeamInterested = IsTeamInterestedBool;
 
-        if (TeamUUID && (currentPilotTeamUUID !== TeamUUID || currentPilotTeamUUID === null)) {
+        if (TeamUUID) {
             newIsTeamInterested = false;
-        } else if (!TeamUUID) {
+        } else {
             newIsTeamInterested = IsTeamInterestedBool;
         }
 
