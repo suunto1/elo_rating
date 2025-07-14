@@ -43,7 +43,7 @@ const dbConfig = {
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
     port: process.env.DB_PORT,
-    waitForConnections: true,        
+    waitForConnections: true,
     connectionLimit: 60,
     queueLimit: 1000
 };
@@ -595,6 +595,7 @@ app.post('/profile/update', async (req, res) => {
     console.log(`[profile/update POST] Path: ${req.path}`);
     console.log(`[profile/update POST] isAuthenticated(): ${req.isAuthenticated()}`);
     console.log(`[profile/update POST] req.user:`, req.user);
+    console.log(`[profile/update POST] req.body:`, req.body); // Додано лог вхідних даних
 
     if (!req.isAuthenticated() || !req.user) {
         console.warn("[profile/update POST] User not authenticated or user object missing. Sending 401.");
@@ -613,9 +614,10 @@ app.post('/profile/update', async (req, res) => {
         Country,
         City,
         TeamUUID,
-        IsTeamInterested
+        IsTeamInterested // Це буде булеве значення з фронтенду
     } = req.body;
 
+    // Санітизація вхідних даних з використанням DOMPurify
     const sanitizedIRacingCustomerId = DOMPurify.sanitize(iRacingCustomerId || '').trim();
     const sanitizedLMUName = DOMPurify.sanitize(LMUName || '').trim();
     const sanitizedDiscordId = DOMPurify.sanitize(DiscordId || '').trim();
@@ -625,16 +627,25 @@ app.post('/profile/update', async (req, res) => {
     const sanitizedTwitter = DOMPurify.sanitize(Twitter || '').trim();
     const sanitizedCountry = DOMPurify.sanitize(Country || '').trim();
     const sanitizedCity = DOMPurify.sanitize(City || '').trim();
-    const sanitizedTeamUUID = sanitizedTeamUUID === '' ? null : DOMPurify.sanitize(TeamUUID || '').trim();
 
+    // КОРИГУВАННЯ ТУТ: Перевіряємо TeamUUID перед санітизацією та присвоєнням
+    const finalTeamUUID = (TeamUUID === '' || TeamUUID === undefined || TeamUUID === null) ? null : DOMPurify.sanitize(TeamUUID).trim();
+
+    // Валідація на стороні сервера для iRacingCustomerId
     if (sanitizedIRacingCustomerId && !/^[0-9]+$/.test(sanitizedIRacingCustomerId)) {
+        console.warn(`[profile/update POST] Invalid iRacingCustomerId: ${sanitizedIRacingCustomerId}`);
         return res.status(400).json({ success: false, message: 'Поле "iRacing Customer ID" повинно містити лише цифри.' });
     }
 
+    // Логіка для IsTeamInterested: якщо TeamUUID вибрано, IsTeamInterested має бути false
     let finalIsTeamInterested = (IsTeamInterested === true || IsTeamInterested === 'on' || IsTeamInterested === 1) ? 1 : 0;
-    if (sanitizedTeamUUID) {
-        finalIsTeamInterested = 0;
+    if (finalTeamUUID) { // Використовуємо finalTeamUUID
+        finalIsTeamInterested = 0; // Якщо є команда, інтерес до приєднання до команди знімається
+        console.log(`[profile/update POST] TeamUUID is present, setting IsTeamInterested to 0.`);
+    } else {
+        console.log(`[profile/update POST] TeamUUID is NOT present, IsTeamInterested is: ${finalIsTeamInterested}`);
     }
+
 
     let connection;
     try {
@@ -652,7 +663,7 @@ app.post('/profile/update', async (req, res) => {
         updateFields.push('Twitter = ?'); updateValues.push(sanitizedTwitter);
         updateFields.push('Country = ?'); updateValues.push(sanitizedCountry);
         updateFields.push('City = ?'); updateValues.push(sanitizedCity);
-        updateFields.push('TeamUUID = ?'); updateValues.push(sanitizedTeamUUID);
+        updateFields.push('TeamUUID = ?'); updateValues.push(finalTeamUUID); // Використовуємо finalTeamUUID
         updateFields.push('IsTeamInterested = ?'); updateValues.push(finalIsTeamInterested);
 
         const query = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
@@ -666,6 +677,7 @@ app.post('/profile/update', async (req, res) => {
             return res.status(404).json({ success: false, message: "Користувач не знайдений або немає змін для збереження." });
         }
 
+        // Оновлюємо req.user об'єкт в поточній сесії
         req.user.iRacingCustomerId = sanitizedIRacingCustomerId;
         req.user.LMUName = sanitizedLMUName;
         req.user.DiscordId = sanitizedDiscordId;
@@ -675,11 +687,18 @@ app.post('/profile/update', async (req, res) => {
         req.user.Twitter = sanitizedTwitter;
         req.user.Country = sanitizedCountry;
         req.user.City = sanitizedCity;
-        req.user.TeamUUID = sanitizedTeamUUID;
+        req.user.TeamUUID = finalTeamUUID; // Оновлюємо з finalTeamUUID
         req.user.IsTeamInterested = finalIsTeamInterested;
 
-        console.log(`[profile/update POST] User ${userId} profile updated successfully.`);
-        res.json({ success: true, message: "Профіль успішно оновлено!" });
+        // Явно зберігаємо сесію (можливо, не потрібно, але для діагностики можна спробувати)
+        req.session.save((err) => {
+            if (err) {
+                console.error("[profile/update POST] Error saving session:", err);
+                return res.status(500).json({ success: false, message: "Помилка збереження сесії." });
+            }
+            console.log(`[profile/update POST] User ${userId} profile updated successfully and session saved.`);
+            res.json({ success: true, message: "Профіль успішно оновлено!" });
+        });
 
     } catch (error) {
         console.error("[profile/update POST] Error updating user profile:", error);
