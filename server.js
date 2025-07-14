@@ -68,25 +68,23 @@ app.use(cors({
     credentials: true
 }));
 
-// Настройка Passport.js
 passport.serializeUser((user, done) => {
     console.log("[Passport] serializeUser:", user.id);
     done(null, user.id);
 });
 
 passport.deserializeUser(async (id, done) => {
-    console.log("[Passport] deserializeUser: fetching user with id =", id);
+    let connection;
     try {
-        const [rows] = await pool.execute("SELECT * FROM users WHERE id = ?", [id]);
-        if (rows.length === 0) {
-            console.warn("[Passport] No user found for id =", id);
-            return done(null, false); // вот он — приводит к req.user = undefined
-        }
-        console.log("[Passport] User found:", rows[0]);
-        done(null, rows[0]); // ОБЯЗАТЕЛЬНО возвращать объект пользователя
+        connection = await pool.getConnection();
+        const [rows] = await connection.execute(`SELECT id, username, PhotoPath, LMUName, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, TeamUUID, IsTeamInterested FROM users WHERE id = ?`, [id]);
+        const user = rows[0];
+        done(null, user);
     } catch (err) {
-        console.error("[Passport] Error in deserializeUser:", err);
+        console.error("Error in deserializeUser:", err);
         done(err);
+    } finally {
+        if (connection) connection.release();
     }
 });
 
