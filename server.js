@@ -281,17 +281,6 @@ function checkAuthenticated(req, res, next) {
     res.redirect("/login");
 }
 
-function checkUsernameCompletion(req, res, next) {
-    if (req.isAuthenticated()) {
-        if (!req.user.first_name || !req.user.last_name) {
-            if (req.path !== "/complete-profile") {
-                return res.redirect("/complete-profile");
-            }
-        }
-    }
-    next();
-}
-
 // --- Маршруты аутентификации Steam ---
 
 app.get('/auth/steam',
