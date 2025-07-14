@@ -74,25 +74,24 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser(async (id, done) => {
-    console.log("[Passport] deserializeUser - Attempting to deserialize user with ID:", id); // Логируем ID, который пытаемся десериализовать
+    console.log("[Passport] deserializeUser - Attempting to deserialize user with ID:", id);
     let connection;
     try {
         connection = await pool.getConnection();
-        const [rows] = await connection.execute(`SELECT id, username, PhotoPath, LMUName, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, TeamUUID, IsTeamInterested FROM users WHERE id = ?`, [id]);
+        // ДОБАВЛЕН steam_id_64 в SELECT запрос
+        const [rows] = await connection.execute(`SELECT id, username, PhotoPath, LMUName, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, TeamUUID, IsTeamInterested, steam_id_64 FROM users WHERE id = ?`, [id]);
         const user = rows[0];
 
         if (!user) {
-            // Если пользователь не найден по ID, явно сообщаем Passport
             console.warn("[Passport] deserializeUser - User not found for ID:", id);
-            return done(null, false); // false означает, что пользователь не найден
+            return done(null, false);
         }
 
-        console.log("[Passport] deserializeUser - Successfully deserialized user:", user.username, "ID:", user.id); // Логируем успешную десериализацию
-        done(null, user); // Передаем найденного пользователя
+        console.log("[Passport] deserializeUser - Successfully deserialized user:", user.username, "ID:", user.id, "Steam ID:", user.steam_id_64); // Добавим лог для steam_id_64
+        done(null, user);
     } catch (err) {
-        // Если произошла любая ошибка БД или другая ошибка
-        console.error("Error in deserializeUser:", err); // Логируем саму ошибку
-        done(err); // Передаем ошибку Passport
+        console.error("Error in deserializeUser:", err);
+        done(err);
     } finally {
         if (connection) connection.release();
     }
