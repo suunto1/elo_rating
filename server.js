@@ -78,8 +78,7 @@ passport.deserializeUser(async (id, done) => {
     let connection;
     try {
         connection = await pool.getConnection();
-        // ДОБАВЛЕН steam_id_64 в SELECT запрос
-        const [rows] = await connection.execute(`SELECT id, username, PhotoPath, LMUName, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, TeamUUID, IsTeamInterested, steam_id_64 FROM users WHERE id = ?`, [id]);
+        const [rows] = await connection.execute(`SELECT id, username, PhotoPath, LMUName, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, TeamUUID, IsTeamInterested, steam_id_64, first_name, last_name FROM users WHERE id = ?`, [id]);
         const user = rows[0];
 
         if (!user) {
@@ -87,7 +86,7 @@ passport.deserializeUser(async (id, done) => {
             return done(null, false);
         }
 
-        console.log("[Passport] deserializeUser - Successfully deserialized user:", user.username, "ID:", user.id, "Steam ID:", user.steam_id_64); // Добавим лог для steam_id_64
+        console.log("[Passport] deserializeUser - Successfully deserialized user:", user.username, "ID:", user.id, "Steam ID:", user.steam_id_64);
         done(null, user);
     } catch (err) {
         console.error("Error in deserializeUser:", err);
