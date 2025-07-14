@@ -666,6 +666,100 @@ app.post("/profile", async (req, res) => {
     }
 });
 
+app.post('/profile/update', async (req, res) => {
+    console.log(`[profile/update POST] Path: ${req.path}`);
+    console.log(`[profile/update POST] isAuthenticated(): ${req.isAuthenticated()}`);
+    console.log(`[profile/update POST] req.user:`, req.user);
+
+    if (!req.isAuthenticated() || !req.user) {
+        console.warn("[profile/update POST] User not authenticated or user object missing. Sending 401.");
+        return res.status(401).json({ success: false, message: "Не авторизовано. Будь ласка, увійдіть." });
+    }
+
+    const userId = req.user.id;
+    const {
+        iRacingCustomerId,
+        LMUName,
+        DiscordId,
+        YoutubeChannel,
+        TwitchChannel,
+        Instagram,
+        Twitter,
+        Country,
+        City,
+        TeamUUID,
+        IsTeamInterested
+    } = req.body;
+
+    // Санитизация входных данных с использованием DOMPurify
+    const sanitizedIRacingCustomerId = DOMPurify.sanitize(iRacingCustomerId || '').trim();
+    const sanitizedLMUName = DOMPurify.sanitize(LMUName || '').trim();
+    const sanitizedDiscordId = DOMPurify.sanitize(DiscordId || '').trim();
+    const sanitizedYoutubeChannel = DOMPurify.sanitize(YoutubeChannel || '').trim();
+    const sanitizedTwitchChannel = DOMPurify.sanitize(TwitchChannel || '').trim();
+    const sanitizedInstagram = DOMPurify.sanitize(Instagram || '').trim();
+    const sanitizedTwitter = DOMPurify.sanitize(Twitter || '').trim();
+    const sanitizedCountry = DOMPurify.sanitize(Country || '').trim();
+    const sanitizedCity = DOMPurify.sanitize(City || '').trim();
+    const sanitizedTeamUUID = DOMPurify.sanitize(TeamUUID || '').trim(); // ДОБАВЛЕНО: санитизация TeamUUID
+    // Для IsTeamInterested, предполагаем, что это может быть флаг (чекбокс), который приходит как 'on' или булево true, или число 1.
+    // Если это не так, то это 0.
+    const sanitizedIsTeamInterested = (IsTeamInterested === true || IsTeamInterested === 'on' || IsTeamInterested === 1) ? 1 : 0; // ДОБАВЛЕНО: санитизация IsTeamInterested
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+
+        const updateFields = [];
+        const updateValues = [];
+
+        updateFields.push('iRacingCustomerId = ?'); updateValues.push(sanitizedIRacingCustomerId);
+        updateFields.push('LMUName = ?'); updateValues.push(sanitizedLMUName);
+        updateFields.push('DiscordId = ?'); updateValues.push(sanitizedDiscordId);
+        updateFields.push('YoutubeChannel = ?'); updateValues.push(sanitizedYoutubeChannel);
+        updateFields.push('TwitchChannel = ?'); updateValues.push(sanitizedTwitchChannel);
+        updateFields.push('Instagram = ?'); updateValues.push(sanitizedInstagram);
+        updateFields.push('Twitter = ?'); updateValues.push(sanitizedTwitter);
+        updateFields.push('Country = ?'); updateValues.push(sanitizedCountry);
+        updateFields.push('City = ?'); updateValues.push(sanitizedCity);
+        updateFields.push('TeamUUID = ?'); updateValues.push(sanitizedTeamUUID); // ДОБАВЛЕНО: добавление TeamUUID в SQL-запрос
+        updateFields.push('IsTeamInterested = ?'); updateValues.push(sanitizedIsTeamInterested); // ДОБАВЛЕНО: добавление IsTeamInterested в SQL-запрос
+
+        const query = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
+        updateValues.push(userId);
+
+        console.log("[profile/update POST] Executing update query:", query, "with values:", updateValues);
+        const [result] = await connection.execute(query, updateValues);
+
+        if (result.affectedRows === 0) {
+            console.warn(`[profile/update POST] No rows updated for user ID: ${userId}. User might not exist or no changes were made.`);
+            return res.status(404).json({ success: false, message: "Пользователь не найден или нет изменений для сохранения." });
+        }
+
+        // Обновляем req.user объект в текущей сессии
+        req.user.iRacingCustomerId = sanitizedIRacingCustomerId;
+        req.user.LMUName = sanitizedLMUName;
+        req.user.DiscordId = sanitizedDiscordId;
+        req.user.YoutubeChannel = sanitizedYoutubeChannel;
+        req.user.TwitchChannel = sanitizedTwitchChannel;
+        req.user.Instagram = sanitizedInstagram;
+        req.user.Twitter = sanitizedTwitter;
+        req.user.Country = sanitizedCountry;
+        req.user.City = sanitizedCity;
+        req.user.TeamUUID = sanitizedTeamUUID; // ДОБАВЛЕНО: обновление TeamUUID в сессии
+        req.user.IsTeamInterested = sanitizedIsTeamInterested; // ДОБАВЛЕНО: обновление IsTeamInterested в сессии
+
+        console.log(`[profile/update POST] User ${userId} profile updated successfully.`);
+        res.json({ success: true, message: "Профіль успішно оновлено!" });
+
+    } catch (error) {
+        console.error("[profile/update POST] Error updating user profile:", error);
+        res.status(500).json({ success: false, message: "Помилка сервера при оновленні профілю." });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
 app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
     if (!req.isAuthenticated()) {
         return res.status(403).json({ message: "У вас немає прав для завантаження фото." });
