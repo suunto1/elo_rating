@@ -367,90 +367,57 @@ app.get('/complete-profile', (req, res) => {
     });
 });
 
-app.post('/complete-profile', async (req, res) => {
-    console.log(`[complete-profile POST] Path: ${req.path}`);
-    console.log(`[complete-profile POST] isAuthenticated(): ${req.isAuthenticated()}`);
-    console.log(`[complete-profile POST] req.user:`, req.user);
-
-    if (!req.isAuthenticated() || (req.user && req.user.first_name && req.user.last_name && req.user.first_name.trim().length > 0 && req.user.last_name.trim().length > 0)) {
-        return res.status(403).json({ message: "У вас немає прав для виконання цієї дії або профіль вже заповнений." });
-    }
-
-    const { first_name, last_name } = req.body;
-    const sanitizedFirstName = DOMPurify.sanitize(first_name).trim();
-    const sanitizedLastName = DOMPurify.sanitize(last_name).trim();
-
-    if (!sanitizedFirstName || !sanitizedLastName) {
-        console.log("[complete-profile POST] First name or last name missing.");
-        return res.status(400).render('complete_profile', {
-            message: "Будь ласка, введіть ім'я та прізвище.",
-            messageType: "danger",
-            activeMenu: 'complete-profile',
-            first_name: sanitizedFirstName,
-            last_name: sanitizedLastName
-        });
-    }
-
-    const combinedUsername = `${sanitizedFirstName} ${sanitizedLastName}`;
+app.post("/complete-profile", checkAuthenticated, async (req, res) => {
     let connection;
     try {
         connection = await pool.getConnection();
+        const { first_name, last_name } = req.body;
+        const userId = req.user.id;
+        const username = `${first_name} ${last_name}`;
 
         await connection.execute(
-            `UPDATE users SET username = ?, first_name = ?, last_name = ? WHERE id = ?`,
-            [combinedUsername, sanitizedFirstName, sanitizedLastName, req.user.id]
+            "UPDATE users SET first_name = ?, last_name = ?, username = ? WHERE id = ?",
+            [first_name, last_name, username, userId]
         );
 
-        req.user.username = combinedUsername;
-        req.user.first_name = sanitizedFirstName;
-        req.user.last_name = sanitizedLastName;
+        req.user.first_name = first_name;
+        req.user.last_name = last_name;
+        req.user.username = username;
 
-        let pilotUuidToLink = null;
-        const [pilotRows] = await connection.execute(
-            `SELECT UUID FROM pilots WHERE steam_id_64 = ?`,
-            [req.user.steam_id_64]
-        );
-        if (pilotRows.length > 0) {
-            pilotUuidToLink = pilotRows[0].UUID;
-            if (!req.user.pilot_uuid && pilotUuidToLink) {
-                await connection.execute(
-                    `UPDATE users SET pilot_uuid = ? WHERE id = ?`,
-                    [pilotUuidToLink, req.user.id]
+        req.session.save(async (err) => {
+            if (err) {
+                console.error("Ошибка сохранения сессии после обновления профиля:", err);
+                return res.status(500).render("complete_profile", { message: "Помилка збереження сесії. Спробуйте ще раз.", messageType: "danger" });
+            }
+
+            let pilotName = null;
+            if (req.user.pilot_uuid) {
+                const [rows] = await connection.execute(
+                    "SELECT Name FROM pilots WHERE UUID = ?",
+                    [req.user.pilot_uuid]
                 );
-                req.user.pilot_uuid = pilotUuidToLink;
-                console.log(`[complete-profile POST] User ${req.user.id} linked to pilot ${pilotUuidToLink} after profile completion.`);
+                if (rows.length > 0) {
+                    pilotName = rows[0].Name;
+                }
             }
-        }
 
-        if (req.user.pilot_uuid) {
-            const [pilotNameRow] = await connection.execute(
-                `SELECT Name FROM pilots WHERE UUID = ?`,
-                [req.user.pilot_uuid]
-            );
-            const pilotName = pilotNameRow[0]?.Name;
             if (pilotName) {
-                console.log(`[complete-profile POST] User ${req.user.id} redirected to pilot profile: /profile/${encodeURIComponent(pilotName)}`);
-                return res.redirect(`/profile/${encodeURIComponent(pilotName)}`);
+                res.redirect(`/profile/${encodeURIComponent(pilotName)}`);
+            } else {
+                res.redirect("/profile");
             }
-        }
-        console.log(`[complete-profile POST] User ${req.user.id} profile completed. Redirecting to /profile.`);
-        res.redirect('/profile');
-    } catch (error) {
-        console.error("[complete-profile POST] Error completing user profile:", error);
-        res.status(500).render('complete_profile', {
-            message: "Помилка при збереженні профілю. Спробуйте ще раз.",
-            messageType: "danger",
-            activeMenu: 'complete-profile',
-            first_name: sanitizedFirstName,
-            last_name: sanitizedLastName
         });
+
+    } catch (error) {
+        console.error("Ошибка завершения профиля:", error);
+        res.status(500).render("complete_profile", { message: "Помилка збереження даних. Спробуйте ще раз.", messageType: "danger" });
     } finally {
-        if (connection) connection.release();
+        if (connection) {
+            connection.release();
+        }
     }
 });
 
-
-// --- Существующие маршруты (модифицированные) ---
 
 app.get("/", async (req, res) => {
     console.log(`[Root GET] Path: ${req.path}`);
@@ -608,7 +575,7 @@ app.get("/profile", async (req, res) => {
             teams: availableTeams,
             activeMenu: 'profile',
             isAuthenticated: req.isAuthenticated(),
-            user: req.user // Передаем информацию о пользователе в шаблон
+            user: req.user
         });
 
     } catch (error) {
@@ -695,11 +662,11 @@ app.post("/profile", async (req, res) => {
 });
 
 app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
-    if (!req.isAuthenticated()) { // Проверка на авторизацию
+    if (!req.isAuthenticated()) {
         return res.status(403).json({ message: "У вас немає прав для завантаження фото." });
     }
 
-    const userId = req.user.id; // Используем ID пользователя из сессии
+    const userId = req.user.id;
 
     console.log("Received file upload:", req.file);
 
@@ -713,7 +680,6 @@ app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
 
         const photoPath = '/avatars/' + req.file.filename;
 
-        // ИЗМЕНЕНИЕ: Получаем старый PhotoPath из users и обновляем users
         const [rows] = await connection.execute(`SELECT PhotoPath FROM users WHERE id = ?`, [userId]);
         const oldPhotoPath = rows[0]?.PhotoPath;
         if (oldPhotoPath && oldPhotoPath !== '/avatars/default_avatar_64.png') {
@@ -736,13 +702,13 @@ app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
     }
 });
 
-app.delete("/profile/delete-photo", async (req, res) => { // Изменили URL и убрали :pilotName
-    // Проверка аутентификации
+app.delete("/profile/delete-photo", async (req, res) => {
+
     if (!req.isAuthenticated()) {
         return res.status(403).json({ message: "У вас немає прав для видалення фото." });
     }
 
-    const userId = req.user.id; // Получаем ID пользователя из сессии
+    const userId = req.user.id;
 
     let connection;
     try {
