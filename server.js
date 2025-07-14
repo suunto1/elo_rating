@@ -595,7 +595,7 @@ app.get("/profile", async (req, res) => {
 
         res.render("profile", {
             userProfile,
-            availableTeams,
+            teams: availableTeams,
             activeMenu: 'profile',
             isAuthenticated: req.isAuthenticated(),
             user: req.user // Передаем информацию о пользователе в шаблон
