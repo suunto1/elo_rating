@@ -25,7 +25,7 @@ const storage = multer.diskStorage({
         cb(null, uploadPath);
     },
     filename: function (req, file, cb) {
-        const userId = req.params.userId || req.user.id;
+        const userId = req.user.id;
         const fileExtension = path.extname(file.originalname);
         cb(null, `${userId}-${Date.now()}${fileExtension}`);
     }
@@ -558,77 +558,52 @@ app.get("/pilot/:name", async (req, res) => {
 });
 
 app.get("/profile", async (req, res) => {
-    console.log(`[Profile GET] Path: ${req.path}`);
-    console.log(`[Profile GET] isAuthenticated(): ${req.isAuthenticated()}`);
-    console.log(`[Profile GET] req.user:`, req.user);
-
     if (!req.isAuthenticated()) {
-        console.log("[Profile GET] User not authenticated, redirecting to Steam auth.");
-        return res.redirect('/auth/steam');
-    }
-
-    if (!req.user.first_name || req.user.first_name.trim().length === 0 ||
-        !req.user.last_name || req.user.last_name.trim().length === 0) {
-        console.log(`[Profile GET] User ${req.user.id} needs to complete profile. Redirecting to /complete-profile.`);
-        return res.redirect('/complete-profile');
+        return res.redirect("/login");
     }
 
     const userId = req.user.id;
-    const pilotUuidFromUser = req.user.pilot_uuid;
 
     let connection;
     try {
         connection = await pool.getConnection();
 
-        let pilot = {};
+        const [rows] = await connection.execute(
+            `SELECT LMUName, DiscordId, YoutubeChannel, TwitchChannel,
+            Instagram, Twitter, iRacingCustomerId, Country, City,
+            TeamUUID, IsTeamInterested, PhotoPath
+            FROM users WHERE id = ?`,
+            [userId]
+        );
 
-        if (pilotUuidFromUser) {
-            const [pilotRows] = await connection.execute(
-                `SELECT Name, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, PhotoPath, TeamUUID, IsTeamInterested FROM pilots WHERE UUID = ?`,
-                [pilotUuidFromUser]
-            );
-            pilot = pilotRows[0];
-
-            if (!pilot) {
-                await connection.execute(
-                    `UPDATE users SET pilot_uuid = NULL WHERE id = ?`,
-                    [userId]
-                );
-                req.user.pilot_uuid = null;
-                console.warn(`[Profile GET] Pilot with UUID ${pilotUuidFromUser} not found for user ${userId}. pilot_uuid set to NULL in users table.`);
-            }
+        if (rows.length === 0) {
+            return res.render("profile", {
+                userProfile: {},
+                availableTeams: [],
+                activeMenu: 'profile',
+                isAuthenticated: req.isAuthenticated(),
+                user: req.user
+            });
         }
 
-        if (!pilot || Object.keys(pilot).length === 0) {
-            pilot = {
-                Name: req.user.username,
-                DiscordId: '', YoutubeChannel: '', TwitchChannel: '',
-                Instagram: '', Twitter: '', iRacingCustomerId: '', Country: '',
-                City: '', PhotoPath: '/avatars/default_avatar_64.png',
-                TeamUUID: null, IsTeamInterested: false
-            };
-            pilot.isBasicUser = true;
-        }
+        const userProfile = rows[0];
+        const [teams] = await connection.execute(`SELECT UUID, Name FROM teams`);
+        const availableTeams = teams.map(team => ({
+            uuid: team.UUID,
+            name: team.Name
+        }));
 
-        const [teamsRows] = await connection.execute(`SELECT UUID, Name FROM teams ORDER BY Name`);
-        const teams = teamsRows;
+        res.render("profile", {
+            userProfile,
+            availableTeams,
+            activeMenu: 'profile',
+            isAuthenticated: req.isAuthenticated(),
+            user: req.user // Передаем информацию о пользователе в шаблон
+        });
 
-        pilot.PhotoPath = pilot.PhotoPath || '/avatars/default_avatar_64.png';
-        pilot.DiscordId = pilot.DiscordId || '';
-        pilot.YoutubeChannel = pilot.YoutubeChannel || '';
-        pilot.TwitchChannel = pilot.TwitchChannel || '';
-        pilot.Instagram = pilot.Instagram || '';
-        pilot.Twitter = pilot.Twitter || '';
-        pilot.iRacingCustomerId = pilot.iRacingCustomerId || '';
-        pilot.Country = pilot.Country || '';
-        pilot.City = pilot.City || '';
-        pilot.TeamUUID = pilot.TeamUUID || null;
-        pilot.IsTeamInterested = pilot.IsTeamInterested || false;
-
-        res.render("profile", { pilot: pilot, teams: teams, activeMenu: 'profile' });
     } catch (error) {
-        console.error("[Profile GET] Error fetching user profile:", error);
-        res.status(500).send("Помилка завантаження профілю");
+        console.error("Error fetching user profile:", error);
+        res.status(500).send("Error fetching user profile data.");
     } finally {
         if (connection) connection.release();
     }
@@ -674,32 +649,19 @@ app.get("/profile/:pilotName", async (req, res) => {
     }
 });
 
-app.post("/profile/:pilotName", async (req, res) => {
+app.post("/profile", async (req, res) => {
     if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Ви не авторизовані." });
     }
-    if (!req.user.pilot_uuid) {
-        return res.status(403).json({ message: "Ваш обліковий запис не прив'язаний до профілю пілота. Функція редагування недоступна." });
-    }
 
-    const pilotNameFromURL = req.params.pilotName;
-    const pilotUuidFromToken = req.user.pilot_uuid;
+    const userId = req.user.id;
 
     let connection;
     try {
         connection = await pool.getConnection();
 
-        const [pilotCheck] = await connection.execute(
-            `SELECT UUID, Name FROM pilots WHERE Name = ? AND UUID = ?`,
-            [pilotNameFromURL, pilotUuidFromToken]
-        );
-
-        if (pilotCheck.length === 0) {
-            return res.status(403).json({ message: "У вас немає прав для редагування цього профілю." });
-        }
-
         const {
-            DiscordId, YoutubeChannel, TwitchChannel,
+            LMUName, DiscordId, YoutubeChannel, TwitchChannel,
             Instagram, Twitter, iRacingCustomerId, Country, City, TeamUUID,
             IsTeamInterested
         } = req.body;
@@ -718,12 +680,6 @@ app.post("/profile/:pilotName", async (req, res) => {
             return res.status(400).json({ message: errorMessage.trim() });
         }
 
-        const [currentPilotRows] = await connection.execute(
-            `SELECT TeamUUID FROM pilots WHERE UUID = ?`,
-            [pilotUuidFromToken]
-        );
-        const currentPilotTeamUUID = currentPilotRows[0]?.TeamUUID;
-
         let newIsTeamInterested = IsTeamInterestedBool;
 
         if (TeamUUID) {
@@ -732,6 +688,7 @@ app.post("/profile/:pilotName", async (req, res) => {
             newIsTeamInterested = IsTeamInterestedBool;
         }
 
+        const sanitizedLMUName = LMUName ? DOMPurify.sanitize(LMUName) : null;
         const sanitizedDiscordId = DiscordId ? DOMPurify.sanitize(DiscordId) : null;
         const sanitizedYoutubeChannel = YoutubeChannel ? DOMPurify.sanitize(YoutubeChannel) : null;
         const sanitizedTwitchChannel = TwitchChannel ? DOMPurify.sanitize(TwitchChannel) : null;
@@ -744,16 +701,16 @@ app.post("/profile/:pilotName", async (req, res) => {
 
 
         await connection.execute(
-            `UPDATE pilots SET
-            DiscordId = ?, YoutubeChannel = ?, TwitchChannel = ?,
+            `UPDATE users SET
+            LMUName = ?, DiscordId = ?, YoutubeChannel = ?, TwitchChannel = ?,
             Instagram = ?, Twitter = ?, iRacingCustomerId = ?, Country = ?,
             City = ?, TeamUUID = ?, IsTeamInterested = ?
-            WHERE UUID = ?`,
+            WHERE id = ?`,
             [
-                sanitizedDiscordId, sanitizedYoutubeChannel,
+                sanitizedLMUName, sanitizedDiscordId, sanitizedYoutubeChannel,
                 sanitizedTwitchChannel, sanitizedInstagram, sanitizedTwitter,
                 sanitizediRacingCustomerId, sanitizedCountry, sanitizedCity,
-                sanitizedTeamUUID, newIsTeamInterested, pilotUuidFromToken
+                sanitizedTeamUUID, newIsTeamInterested, userId
             ]
         );
         res.status(200).json({ message: "Профіль оновлено" });
@@ -765,14 +722,14 @@ app.post("/profile/:pilotName", async (req, res) => {
     }
 });
 
-app.post("/profile/:pilotName/upload-photo", upload.single('photo'), async (req, res) => {
-    if (!req.isAuthenticated() || !req.user.pilot_uuid) {
+app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
+    if (!req.isAuthenticated()) { // Проверка на авторизацию
         return res.status(403).json({ message: "У вас немає прав для завантаження фото." });
     }
 
+    const userId = req.user.id; // Используем ID пользователя из сессии
+
     console.log("Received file upload:", req.file);
-    const pilotNameFromURL = req.params.pilotName;
-    const pilotUuidFromToken = req.user.pilot_uuid;
 
     if (!req.file) {
         return res.status(400).json({ message: "Файл не завантажено" });
@@ -782,18 +739,10 @@ app.post("/profile/:pilotName/upload-photo", upload.single('photo'), async (req,
     try {
         connection = await pool.getConnection();
 
-        const [pilotCheck] = await connection.execute(
-            `SELECT UUID FROM pilots WHERE Name = ? AND UUID = ?`,
-            [pilotNameFromURL, pilotUuidFromToken]
-        );
-
-        if (pilotCheck.length === 0) {
-            return res.status(403).json({ message: "У вас немає прав для завантаження фото для цього профілю." });
-        }
-
         const photoPath = '/avatars/' + req.file.filename;
 
-        const [rows] = await connection.execute(`SELECT PhotoPath FROM pilots WHERE UUID = ?`, [pilotUuidFromToken]);
+        // ИЗМЕНЕНИЕ: Получаем старый PhotoPath из users и обновляем users
+        const [rows] = await connection.execute(`SELECT PhotoPath FROM users WHERE id = ?`, [userId]);
         const oldPhotoPath = rows[0]?.PhotoPath;
         if (oldPhotoPath && oldPhotoPath !== '/avatars/default_avatar_64.png') {
             const filePath = path.join(__dirname, 'public', oldPhotoPath);
@@ -803,8 +752,8 @@ app.post("/profile/:pilotName/upload-photo", upload.single('photo'), async (req,
         }
 
         await connection.execute(
-            `UPDATE pilots SET PhotoPath = ? WHERE UUID = ?`,
-            [photoPath, pilotUuidFromToken]
+            `UPDATE users SET PhotoPath = ? WHERE id = ?`,
+            [photoPath, userId]
         );
         res.status(200).json({ message: "Фото успішно завантажено", photoPath: photoPath });
     } catch (error) {
@@ -815,29 +764,21 @@ app.post("/profile/:pilotName/upload-photo", upload.single('photo'), async (req,
     }
 });
 
-app.delete("/profile/:pilotName/delete-photo", async (req, res) => {
-    if (!req.isAuthenticated() || !req.user.pilot_uuid) {
+app.delete("/profile/delete-photo", async (req, res) => { // Изменили URL и убрали :pilotName
+    // Проверка аутентификации
+    if (!req.isAuthenticated()) {
         return res.status(403).json({ message: "У вас немає прав для видалення фото." });
     }
 
-    const pilotNameFromURL = req.params.pilotName;
-    const pilotUuidFromToken = req.user.pilot_uuid;
+    const userId = req.user.id; // Получаем ID пользователя из сессии
 
     let connection;
     try {
         connection = await pool.getConnection();
 
-        const [pilotCheck] = await connection.execute(
-            `SELECT UUID FROM pilots WHERE Name = ? AND UUID = ?`,
-            [pilotNameFromURL, pilotUuidFromToken]
-        );
-
-        if (pilotCheck.length === 0) {
-            return res.status(403).json({ message: "У вас немає прав для видалення фото для этого профілю." });
-        }
-
-        const [rows] = await connection.execute(`SELECT PhotoPath FROM pilots WHERE UUID = ?`, [pilotUuidFromToken]);
+        const [rows] = await connection.execute(`SELECT PhotoPath FROM users WHERE id = ?`, [userId]);
         const oldPhotoPath = rows[0]?.PhotoPath;
+
         if (oldPhotoPath && oldPhotoPath !== '/avatars/default_avatar_64.png') {
             const filePath = path.join(__dirname, 'public', oldPhotoPath);
             fs.unlink(filePath, (err) => {
@@ -848,8 +789,8 @@ app.delete("/profile/:pilotName/delete-photo", async (req, res) => {
         const defaultAvatarPath = '/avatars/default_avatar_64.png';
 
         await connection.execute(
-            `UPDATE pilots SET PhotoPath = ? WHERE UUID = ?`,
-            [defaultAvatarPath, pilotUuidFromToken]
+            `UPDATE users SET PhotoPath = ? WHERE id = ?`,
+            [defaultAvatarPath, userId]
         );
         res.status(200).json({ message: "Фото видалено", photoPath: defaultAvatarPath });
     } catch (error) {

@@ -213,8 +213,7 @@
             };
 
             try {
-                // ИЗМЕНЕН URL запроса
-                const response = await fetch(`https://elo-rating-1.onrender.com/profile/update-user-data/${currentUserId}`, {
+                const response = await fetch(`/profile`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -249,8 +248,7 @@
             formData.append('photo', file);
 
             try {
-                // ИЗМЕНЕН URL запроса
-                const response = await fetch(`https://elo-rating-1.onrender.com/profile/upload-photo/${currentUserId}`, {
+                const response = await fetch(`/profile/upload-photo`, {
                     method: 'POST',
                     body: formData,
                     credentials: 'include'
@@ -278,7 +276,7 @@
 
                 try {
                     // ИЗМЕНЕН URL запроса
-                    const response = await fetch(`https://elo-rating-1.onrender.com/profile/delete-photo/${currentUserId}`, {
+                    const response = await fetch(`/profile/delete-photo`, {
                         method: 'DELETE',
                         credentials: 'include'
                     });
