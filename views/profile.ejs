@@ -122,7 +122,7 @@
                                         <div class="form-group checkbox-group">
                                             <input type="checkbox" id="IsTeamInterested" name="IsTeamInterested"
                                                 <%=user.IsTeamInterested ? 'checked' : '' %>
-                                            <%= user.TeamUUID ? 'disabled' : '' %>> <label
+                                                <%= user.TeamUUID ? 'disabled' : '' %>> <label
                                                     for="IsTeamInterested">Зацікавлений у створенні команди / Приєднанні
                                                     до існуючої команди</label>
                                         </div>
@@ -140,9 +140,12 @@
 
         <%- include('partials/footer') %>
 
-            <script>
-                dayjs.extend(dayjs.plugin.utc);
-                dayjs.extend(dayjs.plugin.timezone);
+        <script>
+            // Обертываем весь ваш JavaScript код в событие DOMContentLoaded
+            // Это гарантирует, что скрипт выполнится только после того, как весь HTML документа будет загружен.
+            document.addEventListener('DOMContentLoaded', () => {
+                // dayjs.extend(dayjs.plugin.utc); // Эти строки можно убрать, так как они уже в <head>
+                // dayjs.extend(dayjs.plugin.timezone); // Аналогично
 
                 const currentUserId = "<%= user.id %>";
                 const form = document.getElementById('profile-form');
@@ -153,15 +156,25 @@
                 const isTeamInterestedCheckbox = document.getElementById('IsTeamInterested');
                 const DEFAULT_AVATAR_PATH = '/avatars/default_avatar_64.png';
 
+                // Добавляем проверку, что форма была найдена
+                if (!form) {
+                    console.error('Ошибка: Форма с ID "profile-form" не найдена в DOM!');
+                    return; // Прекращаем выполнение скрипта, если форма не найдена
+                }
+
                 function updateDeleteButtonVisibility() {
                     const deleteAvatarBtn = document.getElementById('delete-avatar-btn');
+                    // Важно: profileAvatar.src может быть относительным путём, поэтому проверяем `includes`
                     if (profileAvatar.src.includes(DEFAULT_AVATAR_PATH)) {
                         if (deleteAvatarBtn) {
                             deleteAvatarBtn.style.display = 'none';
                         }
                     } else {
                         if (!deleteAvatarBtn) {
-                            location.reload();
+                            // Если кнопки нет, но аватар не дефолтный, это может быть проблемой.
+                            // Перезагрузка тут не идеальна, лучше динамически создать кнопку или убедиться,
+                            // что она всегда есть в DOM, просто скрыта. Но для начала оставим.
+                            location.reload(); 
                         } else {
                             deleteAvatarBtn.style.display = 'inline-block';
                         }
@@ -184,18 +197,20 @@
                 teamUUIDSelect.addEventListener('change', updateIsTeamInterestedState);
 
                 form.addEventListener('submit', async (e) => {
-                    e.preventDefault();
+                    e.preventDefault(); // Это предотвращает стандартную отправку формы и перезагрузку страницы
+                    console.log('Кнопка "Зберегти" нажата. Обработчик submit запущен.'); // Лог для отладки
 
                     const iRacingCustomerIdInput = document.getElementById('iRacingCustomerId');
                     let clientErrorMessage = '';
 
+                    // Проверка на корректность ввода iRacingCustomerId
                     if (iRacingCustomerIdInput.value && !/^[0-9]+$/.test(iRacingCustomerIdInput.value)) {
                         clientErrorMessage += 'Поле "iRacing Customer ID" повинно містити лише цифри\n';
                     }
 
                     if (clientErrorMessage) {
                         alert(clientErrorMessage);
-                        return;
+                        return; // Останавливаем выполнение, если есть ошибки валидации на клиенте
                     }
 
                     const formData = {
@@ -212,31 +227,36 @@
                         IsTeamInterested: isTeamInterestedCheckbox.checked
                     };
 
+                    console.log('Отправляемые данные формы:', formData); // Лог для проверки данных перед отправкой
+
                     try {
-                        // ИЗМЕНЕН URL запроса на /profile/update
                         const response = await fetch(`/profile/update`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                             },
                             body: JSON.stringify(formData),
-                            credentials: 'include'
+                            credentials: 'include' // Это важно для отправки кукисов (сессии)
                         });
 
-                        const data = await response.json();
+                        const data = await response.json(); // Ожидаем JSON ответ
 
-                        if (response.ok) {
+                        if (response.ok) { // Проверяем, был ли статус ответа 2xx (успешно)
                             alert(data.message);
                             location.reload(); // Перезагружаем страницу, чтобы отобразить обновленные данные
                         } else {
-                            alert('Помилка: ' + data.message);
+                            // Если сервер вернул ошибку (например, 400, 401, 500)
+                            console.error('Ошибка от сервера при обновлении профиля:', data.message || response.statusText);
+                            alert('Помилка: ' + (data.message || 'Неизвестная ошибка'));
                         }
                     } catch (error) {
-                        console.error('Помилка при оновленні профілю:', error);
-                        alert('Помилка при оновленні профілю');
+                        // Если произошла сетевая ошибка или ошибка в Fetch API
+                        console.error('Ошибка при оновленні профілю (сеть/Fetch API):', error);
+                        alert('Помилка при оновленні профілю. Проверьте подключение к интернету.');
                     }
                 });
 
+                // Обработчики для загрузки и удаления аватара
                 uploadAvatarBtn.addEventListener('click', () => {
                     avatarInput.click();
                 });
@@ -248,10 +268,12 @@
                     const formData = new FormData();
                     formData.append('photo', file);
 
+                    console.log('Загрузка аватара: выбран файл', file.name); // Лог для отладки
+
                     try {
                         const response = await fetch(`/profile/upload-photo`, {
                             method: 'POST',
-                            body: formData,
+                            body: formData, // FormData отправляется без заголовка 'Content-Type', браузер его устанавливает сам
                             credentials: 'include'
                         });
                         const data = await response.json();
@@ -261,11 +283,12 @@
                             alert(data.message);
                             updateDeleteButtonVisibility();
                         } else {
-                            alert('Помилка: ' + data.message);
+                            console.error('Ошибка от сервера при загрузке фото:', data.message || response.statusText);
+                            alert('Помилка: ' + (data.message || 'Неизвестная ошибка при загрузке фото'));
                         }
                     } catch (error) {
-                        console.error('Помилка завантаження фото:', error);
-                        alert('Помилка завантаження фото');
+                        console.error('Помилка завантаження фото (сеть/Fetch API):', error);
+                        alert('Помилка завантаження фото. Проверьте подключение.');
                     }
                 });
 
@@ -275,6 +298,8 @@
                             return;
                         }
 
+                        console.log('Попытка удаления аватара.'); // Лог для отладки
+
                         try {
                             const response = await fetch(`/profile/delete-photo`, {
                                 method: 'DELETE',
@@ -282,19 +307,21 @@
                             });
                             const data = await response.json();
                             if (response.ok) {
-                                profileAvatar.src = data.photoPath;
+                                profileAvatar.src = data.photoPath; // Предполагается, что сервер вернет путь к дефолтному аватару
                                 alert(data.message);
                                 updateDeleteButtonVisibility();
                             } else {
-                                alert('Помилка: ' + data.message);
+                                console.error('Ошибка от сервера при удалении фото:', data.message || response.statusText);
+                                alert('Помилка: ' + (data.message || 'Неизвестная ошибка при удалении фото'));
                             }
                         } catch (error) {
-                            console.error('Помилка при видаленні фото:', error);
-                            alert('Сталася помилка при видаленні фото.');
+                            console.error('Помилка при видаленні фото (сеть/Fetch API):', error);
+                            alert('Сталася помилка при видаленні фото. Проверьте подключение.');
                         }
                     }
                 });
-            </script>
+            });
+        </script>
 </body>
 
 </html>
