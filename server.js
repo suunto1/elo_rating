@@ -74,15 +74,25 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser(async (id, done) => {
+    console.log("[Passport] deserializeUser - Attempting to deserialize user with ID:", id); // Логируем ID, который пытаемся десериализовать
     let connection;
     try {
         connection = await pool.getConnection();
         const [rows] = await connection.execute(`SELECT id, username, PhotoPath, LMUName, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, TeamUUID, IsTeamInterested FROM users WHERE id = ?`, [id]);
         const user = rows[0];
-        done(null, user);
+
+        if (!user) {
+            // Если пользователь не найден по ID, явно сообщаем Passport
+            console.warn("[Passport] deserializeUser - User not found for ID:", id);
+            return done(null, false); // false означает, что пользователь не найден
+        }
+
+        console.log("[Passport] deserializeUser - Successfully deserialized user:", user.username, "ID:", user.id); // Логируем успешную десериализацию
+        done(null, user); // Передаем найденного пользователя
     } catch (err) {
-        console.error("Error in deserializeUser:", err);
-        done(err);
+        // Если произошла любая ошибка БД или другая ошибка
+        console.error("Error in deserializeUser:", err); // Логируем саму ошибку
+        done(err); // Передаем ошибку Passport
     } finally {
         if (connection) connection.release();
     }
