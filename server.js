@@ -259,17 +259,33 @@ const checkUsernameCompletion = async (req, res, next) => {
         return next();
     }
 
+    // Определяем пути, которые не требуют полного профиля для доступа
+    const allowedPaths = [
+        '/complete-profile',
+        '/auth/steam',
+        '/auth/steam/return',
+        '/logout',
+        // Добавьте сюда все пути, которые могут быть запрошены AJAX-ом или нужны для работы без полного профиля
+        // Например, /api/events, /track-view, если они могут быть вызваны до заполнения профиля
+        '/api/events',
+        '/track-view'
+    ];
+
+    // Проверяем, находится ли текущий путь в списке разрешенных
+    const isAllowedPath = allowedPaths.some(path => req.path.startsWith(path));
+
     // Если пользователь авторизован, но у него не заполнены first_name ИЛИ last_name
-    // Используем .trim().length > 0 для надежной проверки на пустые строки
     if (req.isAuthenticated() && (!req.user.first_name || req.user.first_name.trim().length === 0 ||
         !req.user.last_name || req.user.last_name.trim().length === 0)) {
-        // И он пытается получить доступ к любой странице, кроме /complete-profile, /auth/steam, /auth/steam/return, /logout
-        if (req.path !== '/complete-profile' && req.path !== '/auth/steam' && req.path !== '/auth/steam/return' && req.path !== '/logout') {
+
+        // Если пользователь пытается получить доступ к любой странице, кроме разрешенных
+        if (!isAllowedPath) {
             console.log(`[checkUsernameCompletion] Redirecting user ${req.user.id} to /complete-profile as first_name or last_name is missing.`);
+            // Перенаправляем на чистый /complete-profile, без параметров
             return res.redirect('/complete-profile');
         }
     }
-    next();
+    next(); // Продолжаем выполнение запроса
 };
 app.use(checkUsernameCompletion);
 
