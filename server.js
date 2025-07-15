@@ -14,7 +14,7 @@ const cookieParser = require('cookie-parser');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Multer for file uploads (specifically for avatars)
+// Multer для загрузки файлов
 const multer = require('multer');
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -25,8 +25,7 @@ const storage = multer.diskStorage({
         cb(null, uploadPath);
     },
     filename: function (req, file, cb) {
-        // Use req.user.id for authenticated uploads, otherwise handle appropriately
-        const userId = req.user ? req.user.id : 'unknown';
+        const userId = req.user.id;
         const fileExtension = path.extname(file.originalname);
         cb(null, `${userId}-${Date.now()}${fileExtension}`);
     }
@@ -51,7 +50,7 @@ const dbConfig = {
 
 const pool = mysql.createPool(dbConfig);
 
-// --- Steam and Session Configuration ---
+// --- Конфигурация Steam и сессий ---
 const STEAM_API_KEY = process.env.STEAM_API_KEY;
 const STEAM_RETURN_URL = process.env.STEAM_RETURN_URL;
 const SESSION_SECRET = process.env.SESSION_SECRET;
@@ -79,12 +78,7 @@ passport.deserializeUser(async (id, done) => {
     let connection;
     try {
         connection = await pool.getConnection();
-        // Ensure all relevant user fields are selected here for req.user object
-        const [rows] = await connection.execute(
-            `SELECT id, username, PhotoPath, LMUName, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, TeamUUID, IsTeamInterested, steam_id_64, first_name, last_name, pilot_uuid, is_admin
-             FROM users WHERE id = ?`,
-            [id]
-        );
+        const [rows] = await connection.execute(`SELECT id, username, PhotoPath, LMUName, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, TeamUUID, IsTeamInterested, steam_id_64, first_name, last_name FROM users WHERE id = ?`, [id]);
         const user = rows[0];
 
         if (!user) {
@@ -101,6 +95,7 @@ passport.deserializeUser(async (id, done) => {
         if (connection) connection.release();
     }
 });
+
 
 passport.use(new SteamStrategy({
     returnURL: STEAM_RETURN_URL,
@@ -143,8 +138,7 @@ passport.use(new SteamStrategy({
                     user.pilot_uuid = pilotUuidToLink;
                 }
 
-                // Only update username if it's empty or still the default steamId64
-                if (user.username === '' || user.username === String(steamId64)) {
+                if (user.username === '' || user.username === steamId64) {
                     console.log(`[SteamStrategy] Updating username for user ${user.id} to Steam Display Name: ${steamDisplayName}`);
                     await connection.execute(
                         `UPDATE users SET username = ? WHERE id = ?`,
@@ -165,20 +159,19 @@ passport.use(new SteamStrategy({
                     username: user.username,
                     first_name: user.first_name,
                     last_name: user.last_name,
-                    is_admin: user.is_admin,
-                    PhotoPath: user.PhotoPath // Ensure PhotoPath is passed to req.user
+                    is_admin: user.is_admin
                 });
             } else {
                 console.log("[SteamStrategy] New Steam user. Creating new entry in `users` table.");
 
                 const [insertResult] = await connection.execute(
-                    `INSERT INTO users (steam_id_64, username, first_name, last_name, pilot_uuid, last_login_at, PhotoPath) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)`,
-                    [steamId64, steamDisplayName, '', '', pilotUuidToLink, '/avatars/default_avatar_64.png'] // Set default avatar for new users
+                    `INSERT INTO users (steam_id_64, username, first_name, last_name, pilot_uuid, last_login_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+                    [steamId64, steamDisplayName, '', '', pilotUuidToLink]
                 );
                 const newUserId = insertResult.insertId;
 
                 const [newUserRows] = await connection.execute(
-                    `SELECT id, steam_id_64, pilot_uuid, username, first_name, last_name, is_admin, PhotoPath FROM users WHERE id = ?`,
+                    `SELECT id, steam_id_64, pilot_uuid, username, first_name, last_name, is_admin FROM users WHERE id = ?`,
                     [newUserId]
                 );
                 const newUser = newUserRows[0];
@@ -193,6 +186,7 @@ passport.use(new SteamStrategy({
         }
     }));
 
+
 // --- Middleware ---
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -201,36 +195,36 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Configure MySQL Session Store
+// Настройка MySQL Session Store
 const sessionStore = new MySQLStore({}, pool);
 
 app.set('trust proxy', 1);
 
-// Configure Sessions
+// Настройка сессий
 app.use(session({
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: sessionStore,
     cookie: {
-        secure: true, // Requires HTTPS
-        sameSite: 'none', // Required for cross-site cookies (e.g., Vercel frontend, backend API)
-        maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week
+        secure: true,
+        sameSite: 'none',
+        maxAge: 1000 * 60 * 60 * 24 * 7 // 1 неделя
     }
 }));
 
-// Initialize Passport
+// Инициализация Passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Middleware to add user information to res.locals for EJS
+// Middleware для добавления информации о пользователе в res.locals для EJS
 app.use((req, res, next) => {
     console.log("[Session Check] Cookie headers:", req.headers.cookie);
     console.log("[Session Check] Session ID:", req.sessionID);
     console.log("[Session Check] Session:", req.session);
 
     if (req.isAuthenticated() && req.user) {
-        // If first_name and last_name are filled, use them for username
+        // Если first_name и last_name заполнены, используем их для username
         if (req.user.first_name && req.user.first_name.trim().length > 0 &&
             req.user.last_name && req.user.last_name.trim().length > 0) {
             res.locals.user = {
@@ -238,8 +232,8 @@ app.use((req, res, next) => {
                 username: `${req.user.first_name.trim()} ${req.user.last_name.trim()}`
             };
         } else {
-            // If first_name/last_name are not filled, use username from DB (Steam Display Name)
-            // Ensure username is always a string
+            // Если first_name/last_name не заполнены, используем username из базы (Steam Display Name)
+            // Убедимся, что username всегда является строкой
             res.locals.user = {
                 ...req.user,
                 username: req.user.username || '' // Fallback to empty string if username is null/undefined
@@ -253,60 +247,45 @@ app.use((req, res, next) => {
     next();
 });
 
-// Middleware to check if username is completed (for new Steam users)
+// Middleware для проверки, заполнено ли имя пользователя (для новых Steam-пользователей)
 const checkUsernameCompletion = async (req, res, next) => {
     console.log(`[checkUsernameCompletion] Path: ${req.path}`);
     console.log(`[checkUsernameCompletion] isAuthenticated(): ${req.isAuthenticated()}`);
     console.log(`[checkUsernameCompletion] req.user (at start of middleware):`, req.user);
 
-    // Additional check to avoid error if req.user is indeed undefined
+    // Дополнительная проверка, чтобы избежать ошибки, если req.user действительно undefined
     if (!req.user) {
         console.warn("[checkUsernameCompletion] req.user is undefined despite isAuthenticated() potentially being true. Skipping check.");
         return next();
     }
 
-    // Define paths that do not require a complete profile for access
+    // Определяем пути, которые не требуют полного профиля для доступа
     const allowedPaths = [
         '/complete-profile',
         '/auth/steam',
         '/auth/steam/return',
         '/logout',
         '/api/events',
-        '/track-view',
-        '/api/search-pilots', // Allow search without full profile
-        '/teams', // Allow team views without full profile
-        '/team/', // Allow individual team views
-        '/events', // Allow event views
-        '/event/', // Allow individual event views
-        '/race/', // Allow individual race views
-        '/login', // Allow login page
-        '/rules', // Allow rules page
-        '/contacts', // Allow contacts page
-        '/privacy-policy', // Allow privacy policy
-        '/tracks', // Allow tracks page
-        '/api/tracks', // Allow tracks API
-        '/new-participants', // Allow analytics page
-        '/analytics', // Allow analytics page
-        '/' // Allow root/pilots listing page
+        '/track-view'
     ];
 
-    // Check if the current path is in the list of allowed paths
-    const isAllowedPath = allowedPaths.some(path => req.path.startsWith(path))
-        || /^\/profile(\/.*)?$/.test(req.path) // Allow all /profile and /profile/:pilotName
-        || /^\/pilot(\/.*)?$/.test(req.path); // Allow all /pilot and /pilot/:pilotName
+    // Проверяем, находится ли текущий путь в списке разрешенных
+    // const isAllowedPath = allowedPaths.some(path => req.path.startsWith(path));
+        const isAllowedPath = allowedPaths.some(path => req.path.startsWith(path))
+        || /^\/profile(\/.*)?$/.test(req.path); // разрешить все /profile и /profile/:pilotName
 
-    // If user is authenticated, but first_name OR last_name are not filled
+    // Если пользователь авторизован, но у него не заполнены first_name ИЛИ last_name
     if (req.isAuthenticated() && (!req.user.first_name || req.user.first_name.trim().length === 0 ||
         !req.user.last_name || req.user.last_name.trim().length === 0)) {
 
-        // If the user tries to access any page other than the allowed ones
+        // Если пользователь пытается получить доступ к любой странице, кроме разрешенных
         if (!isAllowedPath) {
             console.log(`[checkUsernameCompletion] Redirecting user ${req.user.id} to /complete-profile as first_name or last_name is missing.`);
-            // Redirect to a clean /complete-profile, without parameters
+            // Перенаправляем на чистый /complete-profile, без параметров
             return res.redirect('/complete-profile');
         }
     }
-    next(); // Continue request execution
+    next(); // Продолжаем выполнение запроса
 };
 app.use(checkUsernameCompletion);
 
@@ -317,7 +296,7 @@ function checkAuthenticated(req, res, next) {
     res.redirect("/login");
 }
 
-// --- Steam Authentication Routes ---
+// --- Маршруты аутентификации Steam ---
 
 app.get('/auth/steam',
     passport.authenticate('steam', { failureRedirect: '/' }));
@@ -327,7 +306,8 @@ app.get('/auth/steam/return',
     async (req, res) => {
         console.log(`[auth/steam/return] Successful authentication. req.user:`, req.user);
 
-        // Redirect logic to ensure profile completion or send to relevant profile
+        // Проверяем, заполнено ли имя пользователя (first_name и last_name)
+        // Используем .trim().length > 0 для надежной проверки на пустые строки
         if (!req.user.first_name || req.user.first_name.trim().length === 0 ||
             !req.user.last_name || req.user.last_name.trim().length === 0) {
             console.log(`[auth/steam/return] User ${req.user.id} needs to complete profile. Redirecting to /complete-profile.`);
@@ -377,32 +357,28 @@ app.get('/logout', (req, res, next) => {
     });
 });
 
-// --- Routes for completing first/last name (only for new users) ---
+// --- Маршруты для заполнения имени/фамилии (только для новых пользователей) ---
 app.get('/complete-profile', (req, res) => {
     console.log(`[complete-profile GET] Path: ${req.path}`);
     console.log(`[complete-profile GET] isAuthenticated(): ${req.isAuthenticated()}`);
     console.log(`[complete-profile GET] req.user:`, req.user);
     console.log("req.session:", req.session);
 
-    // If user is not authenticated, redirect to homepage
+    // Если пользователь не авторизован, перенаправляем на главную
     if (!req.isAuthenticated()) {
         console.log(`[complete-profile GET] User not authenticated. Redirecting to /.`);
         return res.redirect('/');
     }
 
-    // If user is authenticated AND their first AND last name are ALREADY FILLED, redirect to homepage
-    // Use .trim().length > 0 for reliable check against empty strings
+    // Если пользователь авторизован И его имя И фамилия УЖЕ ЗАПОЛНЕНЫ, перенаправляем на главную
+    // Используем .trim().length > 0 для надежной проверки на пустые строки
     if (req.user.first_name && req.user.first_name.trim().length > 0 &&
         req.user.last_name && req.user.last_name.trim().length > 0) {
         console.log(`[complete-profile GET] User ${req.user.id} already completed profile. Redirecting to /.`);
-        // If profile is complete, redirect them to their specific pilot profile if linked
-        if (req.user.pilot_uuid && req.user.username) { // Assuming username would be pilot name here
-            return res.redirect(`/profile/${encodeURIComponent(req.user.username)}`);
-        }
-        return res.redirect('/'); // Fallback to homepage
+        return res.redirect('/');
     }
 
-    // Otherwise, render the profile completion page
+    // Иначе, рендерим страницу заполнения профиля
     res.render('complete_profile', {
         message: null,
         messageType: null,
@@ -418,21 +394,20 @@ app.post("/complete-profile", checkAuthenticated, async (req, res) => {
         connection = await pool.getConnection();
         const { first_name, last_name } = req.body;
         const userId = req.user.id;
-        const username = `${first_name.trim()} ${last_name.trim()}`; // Ensure trimmed username
+        const username = `${first_name} ${last_name}`;
 
         await connection.execute(
             "UPDATE users SET first_name = ?, last_name = ?, username = ? WHERE id = ?",
-            [first_name.trim(), last_name.trim(), username, userId]
+            [first_name, last_name, username, userId]
         );
 
-        // Update req.user object in the session immediately
-        req.user.first_name = first_name.trim();
-        req.user.last_name = last_name.trim();
-        req.user.username = username; // Update username as well
+        req.user.first_name = first_name;
+        req.user.last_name = last_name;
+        req.user.username = username;
 
         req.session.save(async (err) => {
             if (err) {
-                console.error("Error saving session after profile update:", err);
+                console.error("Ошибка сохранения сессии после обновления профиля:", err);
                 return res.status(500).render("complete_profile", { message: "Помилка збереження сесії. Спробуйте ще раз.", messageType: "danger" });
             }
 
@@ -455,7 +430,7 @@ app.post("/complete-profile", checkAuthenticated, async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Error completing profile:", error);
+        console.error("Ошибка завершения профиля:", error);
         res.status(500).render("complete_profile", { message: "Помилка збереження даних. Спробуйте ще раз.", messageType: "danger" });
     } finally {
         if (connection) {
@@ -463,6 +438,7 @@ app.post("/complete-profile", checkAuthenticated, async (req, res) => {
         }
     }
 });
+
 
 app.get("/", async (req, res) => {
     console.log(`[Root GET] Path: ${req.path}`);
@@ -512,6 +488,7 @@ app.get("/pilot/:name", async (req, res) => {
         }
         const pilotUUID = pilotLookupRows[0].UUID;
 
+
         let initialEloRanking = 1500;
         const [eloRaceRows] = await connection.execute(
             `SELECT r.StartDate as Date, rp.EloChange
@@ -526,7 +503,7 @@ app.get("/pilot/:name", async (req, res) => {
         let cumulativeElo = initialEloRanking;
         const eloChartData = eloRaceRows.map((race) => {
             const date = new Date(race.Date);
-            const utcDate = new Date(date.toISOString()); // Ensure UTC
+            const utcDate = new Date(date.toISOString());
             cumulativeElo += race.EloChange;
             return {
                 Date: utcDate.toISOString(),
@@ -634,7 +611,7 @@ app.post('/profile/update', async (req, res) => {
     console.log(`[profile/update POST] Path: ${req.path}`);
     console.log(`[profile/update POST] isAuthenticated(): ${req.isAuthenticated()}`);
     console.log(`[profile/update POST] req.user:`, req.user);
-    console.log(`[profile/update POST] req.body:`, req.body); // Added log for incoming data
+    console.log(`[profile/update POST] req.body:`, req.body); // Додано лог вхідних даних
 
     if (!req.isAuthenticated() || !req.user) {
         console.warn("[profile/update POST] User not authenticated or user object missing. Sending 401.");
@@ -653,10 +630,10 @@ app.post('/profile/update', async (req, res) => {
         Country,
         City,
         TeamUUID,
-        IsTeamInterested // This will be a boolean value from the frontend
+        IsTeamInterested // Це буде булеве значення з фронтенду
     } = req.body;
 
-    // Sanitize input data using DOMPurify
+    // Санітизація вхідних даних з використанням DOMPurify
     const sanitizedIRacingCustomerId = DOMPurify.sanitize(iRacingCustomerId || '').trim();
     const sanitizedLMUName = DOMPurify.sanitize(LMUName || '').trim();
     const sanitizedDiscordId = DOMPurify.sanitize(DiscordId || '').trim();
@@ -667,23 +644,24 @@ app.post('/profile/update', async (req, res) => {
     const sanitizedCountry = DOMPurify.sanitize(Country || '').trim();
     const sanitizedCity = DOMPurify.sanitize(City || '').trim();
 
-    // ADJUSTMENT HERE: Check TeamUUID before sanitization and assignment
+    // КОРИГУВАННЯ ТУТ: Перевіряємо TeamUUID перед санітизацією та присвоєнням
     const finalTeamUUID = (TeamUUID === '' || TeamUUID === undefined || TeamUUID === null) ? null : DOMPurify.sanitize(TeamUUID).trim();
 
-    // Server-side validation for iRacingCustomerId
+    // Валідація на стороні сервера для iRacingCustomerId
     if (sanitizedIRacingCustomerId && !/^[0-9]+$/.test(sanitizedIRacingCustomerId)) {
         console.warn(`[profile/update POST] Invalid iRacingCustomerId: ${sanitizedIRacingCustomerId}`);
         return res.status(400).json({ success: false, message: 'Поле "iRacing Customer ID" повинно містити лише цифри.' });
     }
 
-    // Logic for IsTeamInterested: if TeamUUID is selected, IsTeamInterested should be false
+    // Логіка для IsTeamInterested: якщо TeamUUID вибрано, IsTeamInterested має бути false
     let finalIsTeamInterested = (IsTeamInterested === true || IsTeamInterested === 'on' || IsTeamInterested === 1) ? 1 : 0;
-    if (finalTeamUUID) { // Use finalTeamUUID
-        finalIsTeamInterested = 0; // If a team is present, interest in joining a team is removed
+    if (finalTeamUUID) { // Використовуємо finalTeamUUID
+        finalIsTeamInterested = 0; // Якщо є команда, інтерес до приєднання до команди знімається
         console.log(`[profile/update POST] TeamUUID is present, setting IsTeamInterested to 0.`);
     } else {
         console.log(`[profile/update POST] TeamUUID is NOT present, IsTeamInterested is: ${finalIsTeamInterested}`);
     }
+
 
     let connection;
     try {
@@ -701,7 +679,7 @@ app.post('/profile/update', async (req, res) => {
         updateFields.push('Twitter = ?'); updateValues.push(sanitizedTwitter);
         updateFields.push('Country = ?'); updateValues.push(sanitizedCountry);
         updateFields.push('City = ?'); updateValues.push(sanitizedCity);
-        updateFields.push('TeamUUID = ?'); updateValues.push(finalTeamUUID); // Use finalTeamUUID
+        updateFields.push('TeamUUID = ?'); updateValues.push(finalTeamUUID); // Використовуємо finalTeamUUID
         updateFields.push('IsTeamInterested = ?'); updateValues.push(finalIsTeamInterested);
 
         const query = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
@@ -715,7 +693,7 @@ app.post('/profile/update', async (req, res) => {
             return res.status(404).json({ success: false, message: "Користувач не знайдений або немає змін для збереження." });
         }
 
-        // Update req.user object in the current session
+        // Оновлюємо req.user об'єкт в поточній сесії
         req.user.iRacingCustomerId = sanitizedIRacingCustomerId;
         req.user.LMUName = sanitizedLMUName;
         req.user.DiscordId = sanitizedDiscordId;
@@ -725,10 +703,10 @@ app.post('/profile/update', async (req, res) => {
         req.user.Twitter = sanitizedTwitter;
         req.user.Country = sanitizedCountry;
         req.user.City = sanitizedCity;
-        req.user.TeamUUID = finalTeamUUID; // Update with finalTeamUUID
+        req.user.TeamUUID = finalTeamUUID; // Оновлюємо з finalTeamUUID
         req.user.IsTeamInterested = finalIsTeamInterested;
 
-        // Explicitly save the session
+        // Явно зберігаємо сесію (можливо, не потрібно, але для діагностики можна спробувати)
         req.session.save((err) => {
             if (err) {
                 console.error("[profile/update POST] Error saving session:", err);
@@ -767,7 +745,6 @@ app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
 
         const [rows] = await connection.execute(`SELECT PhotoPath FROM users WHERE id = ?`, [userId]);
         const oldPhotoPath = rows[0]?.PhotoPath;
-        // Check if oldPhotoPath exists and is not the default avatar before attempting to delete
         if (oldPhotoPath && oldPhotoPath !== '/avatars/default_avatar_64.png') {
             const filePath = path.join(__dirname, 'public', oldPhotoPath);
             fs.unlink(filePath, (err) => {
@@ -779,19 +756,9 @@ app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
             `UPDATE users SET PhotoPath = ? WHERE id = ?`,
             [photoPath, userId]
         );
-
-        // Update req.user in session immediately
-        req.user.PhotoPath = photoPath;
-
         res.status(200).json({ message: "Фото успішно завантажено", photoPath: photoPath });
     } catch (error) {
         console.error("Error uploading photo:", error);
-        // If an error occurred, delete the uploaded file to prevent "orphan" files
-        if (req.file) {
-            fs.unlink(req.file.path, (err) => {
-                if (err) console.error(`Error deleting uploaded file on error: ${req.file.path}`, err);
-            });
-        }
         res.status(500).json({ message: "Помилка при завантаженні фото" });
     } finally {
         if (connection) connection.release();
@@ -799,6 +766,7 @@ app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
 });
 
 app.delete("/profile/delete-photo", async (req, res) => {
+
     if (!req.isAuthenticated()) {
         return res.status(403).json({ message: "У вас немає прав для видалення фото." });
     }
@@ -825,10 +793,6 @@ app.delete("/profile/delete-photo", async (req, res) => {
             `UPDATE users SET PhotoPath = ? WHERE id = ?`,
             [defaultAvatarPath, userId]
         );
-
-        // Update req.user in session immediately
-        req.user.PhotoPath = defaultAvatarPath;
-
         res.status(200).json({ message: "Фото видалено", photoPath: defaultAvatarPath });
     } catch (error) {
         console.error("Помилка видалення фото:", error);
@@ -843,25 +807,20 @@ app.get("/profile/:pilotName", async (req, res) => {
     let connection;
     try {
         connection = await pool.getConnection();
-        // Fetch user data from 'users' table, not 'pilots' for public profile
-        const [pilotUserRows] = await connection.execute(
-            `SELECT u.LMUName, u.DiscordId, u.YoutubeChannel, u.TwitchChannel, u.Instagram, u.Twitter, u.iRacingCustomerId, u.Country, u.City, u.PhotoPath, u.TeamUUID, u.IsTeamInterested, p.Name AS PilotName
-             FROM users u
-             JOIN pilots p ON u.pilot_uuid = p.UUID
-             WHERE p.Name = ?`,
+        const [pilotRows] = await connection.execute(
+            `SELECT Name, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, PhotoPath, TeamUUID, IsTeamInterested FROM pilots WHERE Name = ?`,
             [pilotName]
         );
 
-        let pilot = pilotUserRows[0];
+        let pilot = pilotRows[0];
         if (!pilot) {
             console.warn(`[Public Profile GET] Public pilot profile for ${pilotName} not found.`);
-            return res.status(404).render("error", { message: "Пилот не найден", activeMenu: null }); // Render an error page
+            return res.status(404).send("Пилот не найден");
         }
 
         const [teamsRows] = await connection.execute(`SELECT UUID, Name FROM teams ORDER BY Name`);
         const teams = teamsRows;
 
-        // Ensure fields are not null for rendering
         pilot.PhotoPath = pilot.PhotoPath || '/avatars/default_avatar_64.png';
         pilot.DiscordId = pilot.DiscordId || '';
         pilot.YoutubeChannel = pilot.YoutubeChannel || '';
@@ -872,12 +831,12 @@ app.get("/profile/:pilotName", async (req, res) => {
         pilot.Country = pilot.Country || '';
         pilot.City = pilot.City || '';
         pilot.TeamUUID = pilot.TeamUUID || null;
-        pilot.IsTeamInterested = pilot.IsTeamInterested || false; // Ensure it's a boolean
+        pilot.IsTeamInterested = pilot.IsTeamInterested || false;
 
-        res.render("profile", { pilot: pilot, teams: teams, activeMenu: 'profile', isAuthenticated: req.isAuthenticated(), user: req.user });
+        res.render("profile", { pilot: pilot, teams: teams, activeMenu: 'profile' });
     } catch (error) {
         console.error("[Public Profile GET] Error fetching public pilot profile:", error);
-        res.status(500).render("error", { message: "Помилка завантаження профілю", activeMenu: null }); // Render an error page
+        res.status(500).send("Помилка завантаження профілю");
     } finally {
         if (connection) connection.release();
     }
@@ -900,7 +859,7 @@ app.get("/new-participants", async (req, res) => {
         const allParticipants = new Set();
 
         rows.forEach((row) => {
-            const date = new Date(row.StartDate).toISOString().split('T')[0]; // Use YYYY-MM-DD
+            const date = new Date(row.StartDate).toISOString().split('T')[0];
             if (!races[date]) {
                 races[date] = new Set();
                 raceDates.push(date);
@@ -908,7 +867,7 @@ app.get("/new-participants", async (req, res) => {
             races[date].add(row.PilotUUID);
         });
 
-        raceDates.sort(); // Ensure dates are sorted for correct cumulative counting
+        raceDates.sort();
 
         raceDates.forEach((date) => {
             const participantsInThisRace = races[date];
@@ -1025,9 +984,9 @@ app.get("/api/events", async (req, res) => {
     try {
         connection = await pool.getConnection();
         const [rows] = await connection.execute(`
-            SELECT UUID, Name, Description, EventStartDate, EventEndDate, PhotoPath
+            SELECT id, date, description, url
             FROM events
-            ORDER BY EventStartDate
+            ORDER BY date
         `);
         res.json({ events: rows });
     } catch (error) {
@@ -1044,16 +1003,15 @@ app.get("/calendar", async (req, res) => {
     let connection;
     try {
         connection = await pool.getConnection();
-        // Assuming your 'events' table has 'EventStartDate', 'Name' (for description), 'UUID' (for URL)
         const [rows] = await connection.execute(`
-            SELECT UUID as id, EventStartDate as date, Name as description, CONCAT('/event/', UUID) as url
+            SELECT id, date, description, url
             FROM events
-            ORDER BY EventStartDate
+            ORDER BY date
         `);
-        console.log("Events data for calendar:", rows);
+        console.log("Events data:", rows);
         res.render("calendar", { events: rows, activeMenu: 'calendar' });
     } catch (error) {
-        console.error("Error fetching data for calendar:", error);
+        console.error("Error fetching data:", error);
         res.status(500).send("Error fetching data");
     } finally {
         if (connection) {
@@ -1068,23 +1026,18 @@ app.post("/track-view", async (req, res) => {
         connection = await pool.getConnection();
         const ip = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
         const userAgent = req.headers['user-agent'];
-        // Use req.originalUrl to get the actual path requested by the client
-        // req.headers.referer/referrer might be unreliable or not always present
-        const pageUrl = req.originalUrl;
+        const pageUrl = req.headers.referer || req.headers.referrer || req.originalUrl;
 
         let processedIp = ip;
 
-        // Anonymize IPv4
         if (ip && ip.includes('.') && ip.split('.').length === 4) {
             const parts = ip.split('.');
             processedIp = parts[0] + '.' + parts[1] + '.' + parts[2] + '.0';
         }
-        // Anonymize IPv6 (simplistic for example, might need more robust solution)
         else if (ip && ip.includes(':')) {
             const parts = ip.split(':');
-            // Keep first 3 blocks for general location, then anonymize
-            if (parts.length > 3) {
-                processedIp = parts.slice(0, 3).join(':') + '::';
+            if (parts.length > 4) {
+                processedIp = parts.slice(0, Math.ceil(parts.length / 2)).join(':') + '::';
             }
         }
 
@@ -1198,7 +1151,7 @@ app.get("/analytics", async (req, res) => {
     }
 });
 
-// Start the server
+// Запуск сервера
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
     console.log(`Open http://localhost:${port}`);
