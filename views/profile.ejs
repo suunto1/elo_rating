@@ -14,21 +14,13 @@
     <link rel="icon" href="/favicon.png" type="image/png" />
     <title>КМАМК Sim Racing</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs/plugin/utc"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs/plugin/timezone"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-dayjs"></script>
-    <script>
-        dayjs.extend(dayjs.plugin.utc);
-        dayjs.extend(dayjs.plugin.timezone);
-    </script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script
         src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.33/moment-timezone-with-data.min.js"></script>
 
     <script src='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/locale/uk.js'></script>
-</head>
 </head>
 
 <body>
@@ -46,13 +38,15 @@
                                 <div class="profile-header">
                                     <div class="profile-avatar-container">
                                         <img id="profile-avatar" src="<%= user.PhotoPath %>" alt="Аватар пилота">
-                                        <button id="upload-avatar-btn" class="upload-btn">Завантажити</button>
-                                        <input type="file" id="avatar-input" accept="image/*" style="display: none;">
-                                        <% const defaultAvatarPath='/avatars/default_avatar_64.png' ; %>
-                                            <% if (user.PhotoPath && user.PhotoPath !==defaultAvatarPath) { %>
-                                                <button id="delete-avatar-btn" class="delete-btn"
-                                                    style="display: none;">Видалити</button>
-                                                <% } %>
+                                                                      <button id="upload-avatar-btn"
+                                            class="upload-btn">Завантажити</button>
+                                                                                <input type="file" id="avatar-input"
+                                            accept="image/*" style="display: none;">
+                                                                                <% const
+                                            defaultAvatarPath='/avatars/default_avatar_64.png' ; %>
+                                                                                    <button id="delete-avatar-btn"
+                                                class="delete-btn" style="display: none;">Видалити</button>
+                                            <% } %>
                                     </div>
                                     <div class="profile-title">
                                         <h2>
