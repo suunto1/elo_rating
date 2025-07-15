@@ -244,28 +244,37 @@
 }
 
 .status-message {
-    padding: 10px 15px;
-    margin-bottom: 15px;
-    border-radius: 5px;
-    font-size: 0.9em;
+    transition: opacity 0.5s ease-in-out, max-height 0.5s ease-in-out;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding: 0 15px;
+    box-sizing: border-box;
     text-align: center;
-    opacity: 0; /* Изначально невидимый */
-    transition: opacity 0.5s ease-in-out; /* Плавное появление/исчезновение */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.status-message.show {
+    opacity: 1;
+    max-height: 100px;
+    padding-top: 15px;
+    padding-bottom: 15px;
 }
 
 .status-message.success {
-    background-color: #d4edda; /* Светло-зеленый фон */
-    color: #155724; /* Темно-зеленый текст */
+    background-color: #d4edda;
+    color: #155724;
     border: 1px solid #c3e6cb;
-    opacity: 1; /* Для появления */
 }
 
 .status-message.error {
-    background-color: #f8d7da; /* Светло-красный фон */
-    color: #721c24; /* Темно-красный текст */
+    background-color: #f8d7da;
+    color: #721c24;
     border: 1px solid #f5c6cb;
-    opacity: 1; /* Для появления */
 }
 
 @media (max-width: 768px) {
