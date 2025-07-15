@@ -16,21 +16,40 @@ const port = process.env.PORT || 3000;
 
 // Multer для загрузки файлов
 const multer = require('multer');
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        const uploadPath = 'public/avatars/';
-        if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true });
+        const uploadDir = path.join(__dirname, 'public', 'avatars'); 
+        
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+            console.log(`Created upload directory: ${uploadDir}`);
         }
-        cb(null, uploadPath);
+        cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
-        const userId = req.user.id;
+        // Генерируем уникальное имя файла без userId на этом этапе
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const fileExtension = path.extname(file.originalname);
-        cb(null, `${userId}-${Date.now()}${fileExtension}`);
+        // Временное имя файла
+        cb(null, `temp-${uniqueSuffix}${fileExtension}`); 
     }
 });
-const upload = multer({ storage: storage });
+
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // Ограничение на размер файла (например, 10MB)
+    fileFilter: (req, file, cb) => {
+        const filetypes = /jpeg|jpg|png|gif/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error("Error: Only images (jpeg, jpg, png, gif) are allowed!"), false);
+    }
+});
 
 const { JSDOM } = require('jsdom');
 const createDOMPurify = require('dompurify');
@@ -831,11 +850,20 @@ app.post('/profile/update', async (req, res) => {
 });
 
 app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
+    // req.isAuthenticated() и req.user.id теперь гарантированно доступны,
+    // так как Multer уже обработал файл, и Passport.js успел десериализовать пользователя.
     if (!req.isAuthenticated()) {
+        // Если по какой-то причине пользователь не аутентифицирован, удаляем временный файл
+        if (req.file) {
+            fs.unlink(req.file.path, (err) => {
+                if (err) console.error('Error deleting temporary file for unauthenticated user:', err);
+            });
+        }
         return res.status(403).json({ message: "У вас немає прав для завантаження фото." });
     }
 
-    const userId = req.user.id;
+    const userId = req.user.id; // Теперь userId гарантированно доступен
+    console.log(`[upload-photo] User ID: ${userId}`);
 
     console.log("Received file upload:", req.file);
 
@@ -847,25 +875,58 @@ app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
     try {
         connection = await pool.getConnection();
 
-        const photoPath = '/avatars/' + req.file.filename;
-
+        // Получаем старый путь к фото для удаления
         const [rows] = await connection.execute(`SELECT PhotoPath FROM users WHERE id = ?`, [userId]);
         const oldPhotoPath = rows[0]?.PhotoPath;
+
+        // Определяем новое имя файла с userId
+        const fileExtension = path.extname(req.file.originalname);
+        const newFilename = `${userId}-${Date.now()}${fileExtension}`;
+        const newPhotoPath = `/avatars/${newFilename}`; // Путь для сохранения в БД
+        const newFilePath = path.join(__dirname, 'public', 'avatars', newFilename); // Абсолютный путь для сохранения на диске
+
+        // Переименовываем временный файл в постоянное имя
+        // req.file.path - это абсолютный путь к временному файлу, сохраненному Multer'ом
+        await fs.promises.rename(req.file.path, newFilePath);
+        console.log(`[upload-photo] Renamed temporary file ${req.file.filename} to ${newFilename}`);
+
+        // Удаляем старое фото, если оно не дефолтное
         if (oldPhotoPath && oldPhotoPath !== '/avatars/default_avatar_64.png') {
-            const filePath = path.join(__dirname, 'public', oldPhotoPath);
-            fs.unlink(filePath, (err) => {
+            const oldFilePath = path.join(__dirname, 'public', oldPhotoPath);
+            fs.unlink(oldFilePath, (err) => { // Используем fs.unlink для асинхронного удаления
                 if (err) console.error('Error deleting old photo file:', err);
+                else console.log(`[upload-photo] Deleted old photo: ${oldFilePath}`);
             });
         }
 
+        // Обновляем PhotoPath в базе данных
         await connection.execute(
             `UPDATE users SET PhotoPath = ? WHERE id = ?`,
-            [photoPath, userId]
+            [newPhotoPath, userId]
         );
-        res.status(200).json({ message: "Фото успішно завантажено", photoPath: photoPath });
+        console.log(`[upload-photo] Database updated with new PhotoPath: ${newPhotoPath}`);
+
+        // Обновляем req.user в сессии для немедленного отображения
+        if (req.user) {
+            req.user.PhotoPath = newPhotoPath;
+            // Если вы используете req.session.save(), то это может быть полезно для немедленного обновления сессии
+            // req.session.save((err) => {
+            //     if (err) console.error("Error saving session after photo upload:", err);
+            // });
+        }
+
+
+        res.status(200).json({ message: "Фото успішно завантажено", photoPath: newPhotoPath });
+
     } catch (error) {
         console.error("Error uploading photo:", error);
-        res.status(500).json({ message: "Помилка при завантаженні фото" });
+        // Если произошла ошибка после сохранения временного файла, удаляем его
+        if (req.file) {
+            fs.unlink(req.file.path, (err) => {
+                if (err) console.error('Error deleting temporary file after processing error:', err);
+            });
+        }
+        res.status(500).json({ message: "Помилка при завантаженні фото", error: error.message });
     } finally {
         if (connection) connection.release();
     }
