@@ -78,15 +78,26 @@ passport.deserializeUser(async (id, done) => {
     let connection;
     try {
         connection = await pool.getConnection();
-        const [rows] = await connection.execute(`SELECT id, username, PhotoPath, LMUName, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, TeamUUID, IsTeamInterested, steam_id_64, first_name, last_name FROM users WHERE id = ?`, [id]);
-        const user = rows[0];
+        const [rows] = await connection.execute(
+            `SELECT id, username, PhotoPath, LMUName, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, TeamUUID, IsTeamInterested, steam_id_64, first_name, last_name 
+             FROM users 
+             WHERE id = ?`, 
+            [id]
+        );
+        let user = rows[0];
 
         if (!user) {
             console.warn("[Passport] deserializeUser - User not found for ID:", id);
             return done(null, false);
         }
 
-        console.log("[Passport] deserializeUser - Successfully deserialized user:", user.username, "ID:", user.id, "Steam ID:", user.steam_id_64);
+        const defaultAvatarPath = '/avatars/default_avatar_64.png';
+        if (user.PhotoPath === null || user.PhotoPath === undefined || user.PhotoPath === '') {
+            user.PhotoPath = defaultAvatarPath;
+            console.log(`[Passport] deserializeUser - User ${user.id} had NULL/empty PhotoPath, set to default.`);
+        }
+
+        console.log("[Passport] deserializeUser - Successfully deserialized user:", user.username, "ID:", user.id, "Steam ID:", user.steam_id_64, "PhotoPath:", user.PhotoPath);
         done(null, user);
     } catch (err) {
         console.error("Error in deserializeUser:", err);
@@ -316,20 +327,120 @@ app.get('/auth/steam',
 app.get('/auth/steam/return',
     passport.authenticate('steam', { failureRedirect: '/' }),
     async (req, res) => {
-        console.log(`[auth/steam/return] Successful authentication. req.user:`, req.user);
+        console.log(`[auth/steam/return] Successful authentication. req.user (from Passport SteamStrategy):`, req.user);
 
-        // Проверяем, заполнено ли имя пользователя (first_name и last_name)
-        // Используем .trim().length > 0 для надежной проверки на пустые строки
-        if (!req.user.first_name || req.user.first_name.trim().length === 0 ||
-            !req.user.last_name || req.user.last_name.trim().length === 0) {
-            console.log(`[auth/steam/return] User ${req.user.id} needs to complete profile. Redirecting to /complete-profile.`);
-            return res.redirect('/complete-profile');
-        }
+        let connection;
+        try {
+            connection = await pool.getConnection();
 
-        if (req.user.pilot_uuid) {
-            let connection;
-            try {
-                connection = await pool.getConnection();
+            const steamId64 = req.user.id; // SteamStrategy возвращает Steam ID в req.user.id
+            const steamDisplayName = req.user.displayName; // Отображаемое имя от Steam
+
+            // 1. Ищем пользователя в нашей базе данных по Steam ID
+            const [userRows] = await connection.execute(
+                `SELECT id, steam_id_64, pilot_uuid, username, first_name, last_name, is_admin, PhotoPath FROM users WHERE steam_id_64 = ?`,
+                [steamId64]
+            );
+            let userInDb = userRows[0];
+
+            const defaultPhotoPath = '/avatars/default_avatar_64.png';
+            let currentPilotUuid = null; // Будет использоваться для связывания пилота
+
+            // 2. Ищем UUID пилота, связанного с этим Steam ID (если есть)
+            const [pilotRows] = await connection.execute(
+                `SELECT UUID FROM pilots WHERE steam_id_64 = ?`,
+                [steamId64]
+            );
+            if (pilotRows.length > 0) {
+                currentPilotUuid = pilotRows[0].UUID;
+                console.log(`[auth/steam/return] Found existing pilot UUID ${currentPilotUuid} for Steam ID ${steamId64}`);
+            }
+
+            if (!userInDb) {
+                // 3. Если пользователь НОВЫЙ в нашей базе данных
+                console.log("[auth/steam/return] New Steam user. Creating new entry in `users` table.");
+
+                const [insertResult] = await connection.execute(
+                    `INSERT INTO users (steam_id_64, username, first_name, last_name, pilot_uuid, PhotoPath, registered_at, last_login_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+                    [steamId64, steamDisplayName, '', '', currentPilotUuid, defaultPhotoPath] // first_name и last_name пока пустые
+                );
+                userInDb = {
+                    id: insertResult.insertId,
+                    steam_id_64: steamId64,
+                    username: steamDisplayName,
+                    first_name: '',
+                    last_name: '',
+                    pilot_uuid: currentPilotUuid,
+                    PhotoPath: defaultPhotoPath,
+                    is_admin: 0 // По умолчанию не админ
+                };
+                console.log("[auth/steam/return] New user created:", userInDb);
+
+                // Обновляем req.user, чтобы он содержал полный объект пользователя из нашей БД
+                // Это важно, так как Passport.js мог вернуть не все поля.
+                // req.login() или deserializeUser должны были это сделать, но на всякий случай.
+                Object.assign(req.user, userInDb);
+
+            } else {
+                // 4. Если пользователь СУЩЕСТВУЕТ в нашей базе данных
+                console.log("[auth/steam/return] Existing user found in `users` table:", userInDb.id);
+
+                // Обновляем pilot_uuid, если он изменился или был найден
+                if (!userInDb.pilot_uuid && currentPilotUuid) {
+                    console.log(`[auth/steam/return] Linking existing pilot ${currentPilotUuid} to user ${userInDb.id}`);
+                    await connection.execute(
+                        `UPDATE users SET pilot_uuid = ? WHERE id = ?`,
+                        [currentPilotUuid, userInDb.id]
+                    );
+                    userInDb.pilot_uuid = currentPilotUuid;
+                }
+
+                // Обновляем username, если он пустой или равен Steam ID
+                if (userInDb.username === '' || userInDb.username === steamId64) {
+                    console.log(`[auth/steam/return] Updating username for user ${userInDb.id} to Steam Display Name: ${steamDisplayName}`);
+                    await connection.execute(
+                        `UPDATE users SET username = ? WHERE id = ?`,
+                        [steamDisplayName, userInDb.id]
+                    );
+                    userInDb.username = steamDisplayName;
+                }
+
+                // Убедимся, что PhotoPath не NULL для существующих пользователей (если он не был установлен ранее)
+                if (userInDb.PhotoPath === null || userInDb.PhotoPath === undefined || userInDb.PhotoPath === '') {
+                    console.log(`[auth/steam/return] Updating PhotoPath for existing user ${userInDb.id} to default.`);
+                    await connection.execute(
+                        `UPDATE users SET PhotoPath = ? WHERE id = ?`,
+                        [defaultPhotoPath, userInDb.id]
+                    );
+                    userInDb.PhotoPath = defaultPhotoPath;
+                }
+
+                // Обновляем время последнего входа
+                await connection.execute(
+                    `UPDATE users SET last_login_at = NOW() WHERE id = ?`,
+                    [userInDb.id]
+                );
+
+                // Обновляем req.user, чтобы он содержал полный объект пользователя из нашей БД
+                // Это важно, так как Passport.js мог вернуть не все поля или старые данные.
+                Object.assign(req.user, userInDb);
+            }
+
+            // -------------------------------------------------------------------------------------------------------------------------------------------------------------------
+            // Теперь req.user должен содержать актуальные данные из нашей БД, включая PhotoPath, first_name, last_name.
+            // Далее идет логика перенаправления, которая теперь будет работать корректно.
+            // -------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+            // 5. Проверяем, заполнено ли имя пользователя (first_name и last_name)
+            if (!req.user.first_name || req.user.first_name.trim().length === 0 ||
+                !req.user.last_name || req.user.last_name.trim().length === 0) {
+                console.log(`[auth/steam/return] User ${req.user.id} needs to complete profile. Redirecting to /complete-profile.`);
+                return res.redirect('/complete-profile');
+            }
+
+            // 6. Перенаправляем пользователя на профиль пилота или общий профиль
+            if (req.user.pilot_uuid) {
+                // Если у пользователя есть pilot_uuid, пытаемся перенаправить на его страницу пилота
                 const [pilotNameRow] = await connection.execute(
                     `SELECT Name FROM pilots WHERE UUID = ?`,
                     [req.user.pilot_uuid]
@@ -339,15 +450,17 @@ app.get('/auth/steam/return',
                     console.log(`[auth/steam/return] User ${req.user.id} (Pilot ${pilotName}) redirected to /profile/${encodeURIComponent(pilotName)}`);
                     return res.redirect(`/profile/${encodeURIComponent(pilotName)}`);
                 }
-            } catch (error) {
-                console.error("[auth/steam/return] Error redirecting to pilot profile after Steam auth:", error);
-            } finally {
-                if (connection) connection.release();
             }
-        }
 
-        console.log(`[auth/steam/return] User ${req.user.id} is authenticated but not linked to a pilot or pilot name not found. Redirecting to /profile.`);
-        return res.redirect('/profile');
+            console.log(`[auth/steam/return] User ${req.user.id} is authenticated but not linked to a pilot or pilot name not found. Redirecting to /profile.`);
+            return res.redirect('/profile');
+
+        } catch (error) {
+            console.error("[auth/steam/return] Error during Steam authentication processing:", error);
+            return res.redirect('/'); // В случае серьезной ошибки перенаправляем на главную
+        } finally {
+            if (connection) connection.release();
+        }
     });
 
 app.get('/logout', (req, res, next) => {

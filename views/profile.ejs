@@ -50,7 +50,8 @@
                                         <input type="file" id="avatar-input" accept="image/*" style="display: none;">
                                         <% const defaultAvatarPath='/avatars/default_avatar_64.png' ; %>
                                             <% if (user.PhotoPath && user.PhotoPath !==defaultAvatarPath) { %>
-                                                <button id="delete-avatar-btn" class="delete-btn">Видалити</button>
+                                                <button id="delete-avatar-btn" class="delete-btn"
+                                                    style="display: none;">Видалити</button>
                                                 <% } %>
                                     </div>
                                     <div class="profile-title">
@@ -144,8 +145,7 @@
                 // Обертываем весь ваш JavaScript код в событие DOMContentLoaded
                 // Это гарантирует, что скрипт выполнится только после того, как весь HTML документа будет загружен.
                 document.addEventListener('DOMContentLoaded', () => {
-                    // dayjs.extend(dayjs.plugin.utc); // Эти строки можно убрать, так как они уже в <head>
-                    // dayjs.extend(dayjs.plugin.timezone); // Аналогично
+
 
                     const currentUserId = "<%= user.id %>";
                     const form = document.getElementById('profile-form');
@@ -159,25 +159,22 @@
                     // Добавляем проверку, что форма была найдена
                     if (!form) {
                         console.error('Ошибка: Форма с ID "profile-form" не найдена в DOM!');
-                        return; // Прекращаем выполнение скрипта, если форма не найдена
+                        return;
                     }
 
                     function updateDeleteButtonVisibility() {
                         const deleteAvatarBtn = document.getElementById('delete-avatar-btn');
-                        const isDefaultAvatar = profileAvatar.src.includes(DEFAULT_AVATAR_PATH); // Проверка на относительный путь
+                        const isDefaultAvatar = profileAvatar.src.includes(DEFAULT_AVATAR_PATH);
 
-                        if (isDefaultAvatar) {
-                            if (deleteAvatarBtn) {
+                        if (deleteAvatarBtn) { // Теперь эта проверка всегда будет true, так как кнопка всегда в DOM
+                            if (isDefaultAvatar) {
                                 deleteAvatarBtn.style.display = 'none';
+                            } else {
+                                deleteAvatarBtn.style.display = 'inline-block';
                             }
                         } else {
-                            if (deleteAvatarBtn) {
-                                deleteAvatarBtn.style.display = 'inline-block';
-                            } else {
-                                console.error('Ошибка: Аватар не дефолтный, но кнопка удаления аватара не найдена в DOM.');
-                                // Можно добавить alert, если хотите уведомить пользователя, но не перезагружать
-                                alert('Произошла ошибка при отображении кнопки удаления аватара.');
-                            }
+                            // Это сообщение теперь по идее никогда не должно появляться, если кнопка всегда в DOM
+                            console.error('Ошибка: Кнопка удаления аватара не найдена в DOM (неожиданно).');
                         }
                     }
 
