@@ -567,7 +567,7 @@ app.get("/pilot/:name", async (req, res) => {
     }
 });
 
-app.get("/profile", async (req, res) => {
+app.get("/profile", checkAuthenticated, async (req, res) => {
     if (!req.isAuthenticated()) {
         return res.redirect("/login");
     }
