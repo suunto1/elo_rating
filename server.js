@@ -265,14 +265,14 @@ const checkUsernameCompletion = async (req, res, next) => {
         '/auth/steam',
         '/auth/steam/return',
         '/logout',
-        // Добавьте сюда все пути, которые могут быть запрошены AJAX-ом или нужны для работы без полного профиля
-        // Например, /api/events, /track-view, если они могут быть вызваны до заполнения профиля
         '/api/events',
         '/track-view'
     ];
 
     // Проверяем, находится ли текущий путь в списке разрешенных
-    const isAllowedPath = allowedPaths.some(path => req.path.startsWith(path));
+    // const isAllowedPath = allowedPaths.some(path => req.path.startsWith(path));
+        const isAllowedPath = allowedPaths.some(path => req.path.startsWith(path))
+        || /^\/profile(\/.*)?$/.test(req.path); // разрешить все /profile и /profile/:pilotName
 
     // Если пользователь авторизован, но у него не заполнены first_name ИЛИ last_name
     if (req.isAuthenticated() && (!req.user.first_name || req.user.first_name.trim().length === 0 ||
