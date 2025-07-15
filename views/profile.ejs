@@ -24,7 +24,6 @@
 </head>
 
 <body>
-    <div id="global-status-message" class="global-status-message" style="display: none;"></div>
     <%- include('partials/menu') %>
 
         <div class="main-content-wrapper">
@@ -119,23 +118,25 @@
                                                     до існуючої команди</label>
                                         </div>
                                         <button type="submit" class="save-btn">Зберегти</button>
+                                        <div id="profile-status-message" class="status-message">
+                                        </div>
+                                    </form>
                                 </div>
-                                </form>
                             </div>
                         </div>
-                    </div>
 
+                    </div>
                 </div>
-        </div>
-        </main>
-        <aside class="sidebar-right"></aside>
+            </main>
+            <aside class="sidebar-right"></aside>
         </div>
 
         <%- include('partials/footer') %>
 
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
-                    const currentUserId = "<%= user.id %>"; // Приклад отримання ID користувача з EJS
+
+                    const currentUserId = "<%= user.id %>";
                     const form = document.getElementById('profile-form');
                     const profileAvatar = document.getElementById('profile-avatar');
                     const uploadAvatarBtn = document.getElementById('upload-avatar-btn');
@@ -145,45 +146,31 @@
                     const isTeamInterestedCheckbox = document.getElementById('IsTeamInterested');
                     const DEFAULT_AVATAR_PATH = '/avatars/default_avatar_64.png';
 
-                    // *** ОБЪЯВЛЯЕМ НОВЫЙ ЭЛЕМЕНТ ДЛЯ ГЛОБАЛЬНЫХ СООБЩЕНИЙ ***
-                    const globalStatusMessageDiv = document.getElementById('global-status-message');
-
-
                     if (!form) {
                         console.error('Ошибка: Форма с ID "profile-form" не найдена в DOM!');
                         return;
                     }
 
-                    // 2. Универсальная функция для показа сообщений (ИЗМЕНЕНА)
-                    function showStatusMessage(message, type = 'success', duration = 3000) {
-                        if (!globalStatusMessageDiv) {
-                            console.error('Элемент для глобальных сообщений не найден!');
-                            return;
-                        }
+                    const profileStatusMessageDiv = document.getElementById('profile-status-message');
+                    const avatarStatusMessageDiv = document.getElementById('avatar-status-message');
 
-                        // Убираем старые классы типа и класс 'show'
-                        globalStatusMessageDiv.classList.remove('success', 'error', 'show');
 
-                        globalStatusMessageDiv.textContent = message;
-                        globalStatusMessageDiv.classList.add(type); // Добавляем класс типа (success или error)
-
-                        // Показываем элемент, добавляя класс 'show'
-                        globalStatusMessageDiv.classList.add('show');
-
-                        // Убедимся, что браузер применил стили перед запуском таймера для скрытия
-                        void globalStatusMessageDiv.offsetWidth; // Триггер рефлоу для правильной анимации
+                    function showStatusMessage(element, message, type = 'success', duration = 3000) {
+                        if (!element) return;
+                        element.classList.remove('success', 'error', 'show');
+                        element.textContent = message;
+                        element.classList.add(type);
+                        element.classList.add('show');
+                        void element.offsetWidth;
 
                         setTimeout(() => {
-                            // Скрываем элемент, удаляя класс 'show'
-                            globalStatusMessageDiv.classList.remove('show');
-                            // Дополнительный таймаут, чтобы дождаться окончания анимации скрытия, прежде чем очистить текст
+                            element.classList.remove('show');
                             setTimeout(() => {
-                                globalStatusMessageDiv.textContent = ''; // Очищаем текст после скрытия
-                            }, 400); // Должно соответствовать времени transition (0.4s) в CSS
+                                element.textContent = '';
+                            }, 500);
                         }, duration);
                     }
 
-                    // Функция для обновления видимости кнопки "Видалити"
                     function updateDeleteButtonVisibility() {
                         const isDefaultAvatar = profileAvatar.src.includes(DEFAULT_AVATAR_PATH);
                         if (deleteAvatarBtn) {
@@ -198,6 +185,7 @@
                     }
 
                     updateDeleteButtonVisibility();
+
                     function updateIsTeamInterestedState() {
                         if (teamUUIDSelect.value) {
                             isTeamInterestedCheckbox.checked = false;
@@ -206,10 +194,11 @@
                             isTeamInterestedCheckbox.disabled = false;
                         }
                     }
+
                     updateIsTeamInterestedState();
+
                     teamUUIDSelect.addEventListener('change', updateIsTeamInterestedState);
 
-                    // ----- ОБНОВЛЕНИЕ ПРОФИЛЯ -----
                     form.addEventListener('submit', async (e) => {
                         e.preventDefault();
                         console.log('Кнопка "Зберегти" нажата. Обработчик submit запущен.');
@@ -222,8 +211,7 @@
                         }
 
                         if (clientErrorMessage) {
-                            // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage без элемента ***
-                            showStatusMessage(clientErrorMessage, 'error', 5000);
+                            showStatusMessage(profileStatusMessageDiv, clientErrorMessage, 'error', 5000);
                             return;
                         }
 
@@ -256,21 +244,17 @@
                             const data = await response.json();
 
                             if (response.ok) {
-                                // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage без элемента ***
-                                showStatusMessage(data.message, 'success');
+                                showStatusMessage(profileStatusMessageDiv, data.message, 'success');
                             } else {
                                 console.error('Ошибка от сервера при обновлении профиля:', data.message || response.statusText);
-                                // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage без элемента ***
-                                showStatusMessage('Помилка: ' + (data.message || 'Неизвестная ошибка'), 'error', 5000);
+                                showStatusMessage(profileStatusMessageDiv, 'Помилка: ' + (data.message || 'Неизвестная ошибка'), 'error', 5000);
                             }
                         } catch (error) {
                             console.error('Ошибка при оновленні профілю (сеть/Fetch API):', error);
-                            // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage без элемента ***
-                            showStatusMessage('Помилка при оновленні профілю. Проверьте подключение к интернету.', 'error', 5000);
+                            showStatusMessage(profileStatusMessageDiv, 'Помилка при оновленні профілю. Проверьте подключение к интернету.', 'error', 5000);
                         }
                     });
 
-                    // ----- ЗАГРУЗКА АВАТАРА -----
                     uploadAvatarBtn.addEventListener('click', () => {
                         avatarInput.click();
                     });
@@ -294,22 +278,18 @@
 
                             if (response.ok) {
                                 profileAvatar.src = data.photoPath;
-                                // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage без элемента ***
-                                showStatusMessage(data.message, 'success');
+                                showStatusMessage(avatarStatusMessageDiv, data.message, 'success');
                                 updateDeleteButtonVisibility();
                             } else {
                                 console.error('Ошибка от сервера при загрузке фото:', data.message || response.statusText);
-                                // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage без элемента ***
-                                showStatusMessage('Помилка: ' + (data.message || 'Неизвестная ошибка при загрузке фото'), 'error', 5000);
+                                showStatusMessage(avatarStatusMessageDiv, 'Помилка: ' + (data.message || 'Неизвестная ошибка при загрузке фото'), 'error', 5000);
                             }
                         } catch (error) {
                             console.error('Помилка завантаження фото (сеть/Fetch API):', error);
-                            // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage без элемента ***
-                            showStatusMessage('Помилка завантаження фото.', 'error', 5000);
+                            showStatusMessage(avatarStatusMessageDiv, 'Помилка завантаження фото.', 'error', 5000);
                         }
                     });
 
-                    // ----- УДАЛЕНИЕ АВАТАРА -----
                     document.addEventListener('click', async (event) => {
                         if (event.target.id === 'delete-avatar-btn') {
                             if (!confirm('Ви впевнені, що хочете видалити фото профілю?')) {
@@ -326,18 +306,15 @@
                                 const data = await response.json();
                                 if (response.ok) {
                                     profileAvatar.src = data.photoPath;
-                                    // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage без элемента ***
-                                    showStatusMessage(data.message, 'success');
+                                    showStatusMessage(avatarStatusMessageDiv, data.message, 'success');
                                     updateDeleteButtonVisibility();
                                 } else {
                                     console.error('Ошибка от сервера при удалении фото:', data.message || response.statusText);
-                                    // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage без элемента ***
-                                    showStatusMessage('Помилка: ' + (data.message || 'Неизвестная ошибка при удалении фото'), 'error', 5000);
+                                    showStatusMessage(avatarStatusMessageDiv, 'Помилка: ' + (data.message || 'Неизвестная ошибка при удалении фото'), 'error', 5000);
                                 }
                             } catch (error) {
                                 console.error('Помилка при видаленні фото (сеть/Fetch API):', error);
-                                // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage без элемента ***
-                                showStatusMessage('Сталася помилка при видаленні фото. Проверьте подключение.', 'error', 5000);
+                                showStatusMessage(avatarStatusMessageDiv, 'Сталася помилка при видаленні фото. Проверьте подключение.', 'error', 5000);
                             }
                         }
                     });
