@@ -736,7 +736,7 @@ app.post('/profile/update', async (req, res) => {
     console.log(`[profile/update POST] Path: ${req.path}`);
     console.log(`[profile/update POST] isAuthenticated(): ${req.isAuthenticated()}`);
     console.log(`[profile/update POST] req.user:`, req.user);
-    console.log(`[profile/update POST] req.body:`, req.body); // Додано лог вхідних даних
+    console.log(`[profile/update POST] req.body:`, req.body);
 
     if (!req.isAuthenticated() || !req.user) {
         console.warn("[profile/update POST] User not authenticated or user object missing. Sending 401.");
@@ -755,10 +755,9 @@ app.post('/profile/update', async (req, res) => {
         Country,
         City,
         TeamUUID,
-        IsTeamInterested // Це буде булеве значення з фронтенду
+        IsTeamInterested
     } = req.body;
 
-    // Санітизація вхідних даних з використанням DOMPurify
     const sanitizedIRacingCustomerId = DOMPurify.sanitize(iRacingCustomerId || '').trim();
     const sanitizedLMUName = DOMPurify.sanitize(LMUName || '').trim();
     const sanitizedDiscordId = DOMPurify.sanitize(DiscordId || '').trim();
@@ -769,19 +768,16 @@ app.post('/profile/update', async (req, res) => {
     const sanitizedCountry = DOMPurify.sanitize(Country || '').trim();
     const sanitizedCity = DOMPurify.sanitize(City || '').trim();
 
-    // КОРИГУВАННЯ ТУТ: Перевіряємо TeamUUID перед санітизацією та присвоєнням
     const finalTeamUUID = (TeamUUID === '' || TeamUUID === undefined || TeamUUID === null) ? null : DOMPurify.sanitize(TeamUUID).trim();
 
-    // Валідація на стороні сервера для iRacingCustomerId
-    if (sanitizedIRacingCustomerId && !/^[0-9]+$/.test(sanitizedIRacingCustomerId)) {
+     if (sanitizedIRacingCustomerId && !/^[0-9]+$/.test(sanitizedIRacingCustomerId)) {
         console.warn(`[profile/update POST] Invalid iRacingCustomerId: ${sanitizedIRacingCustomerId}`);
         return res.status(400).json({ success: false, message: 'Поле "iRacing Customer ID" повинно містити лише цифри.' });
     }
 
-    // Логіка для IsTeamInterested: якщо TeamUUID вибрано, IsTeamInterested має бути false
     let finalIsTeamInterested = (IsTeamInterested === true || IsTeamInterested === 'on' || IsTeamInterested === 1) ? 1 : 0;
-    if (finalTeamUUID) { // Використовуємо finalTeamUUID
-        finalIsTeamInterested = 0; // Якщо є команда, інтерес до приєднання до команди знімається
+    if (finalTeamUUID) {
+        finalIsTeamInterested = 0;
         console.log(`[profile/update POST] TeamUUID is present, setting IsTeamInterested to 0.`);
     } else {
         console.log(`[profile/update POST] TeamUUID is NOT present, IsTeamInterested is: ${finalIsTeamInterested}`);
@@ -804,7 +800,7 @@ app.post('/profile/update', async (req, res) => {
         updateFields.push('Twitter = ?'); updateValues.push(sanitizedTwitter);
         updateFields.push('Country = ?'); updateValues.push(sanitizedCountry);
         updateFields.push('City = ?'); updateValues.push(sanitizedCity);
-        updateFields.push('TeamUUID = ?'); updateValues.push(finalTeamUUID); // Використовуємо finalTeamUUID
+        updateFields.push('TeamUUID = ?'); updateValues.push(finalTeamUUID);
         updateFields.push('IsTeamInterested = ?'); updateValues.push(finalIsTeamInterested);
 
         const query = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
@@ -818,7 +814,6 @@ app.post('/profile/update', async (req, res) => {
             return res.status(404).json({ success: false, message: "Користувач не знайдений або немає змін для збереження." });
         }
 
-        // Оновлюємо req.user об'єкт в поточній сесії
         req.user.iRacingCustomerId = sanitizedIRacingCustomerId;
         req.user.LMUName = sanitizedLMUName;
         req.user.DiscordId = sanitizedDiscordId;
@@ -828,10 +823,9 @@ app.post('/profile/update', async (req, res) => {
         req.user.Twitter = sanitizedTwitter;
         req.user.Country = sanitizedCountry;
         req.user.City = sanitizedCity;
-        req.user.TeamUUID = finalTeamUUID; // Оновлюємо з finalTeamUUID
+        req.user.TeamUUID = finalTeamUUID;
         req.user.IsTeamInterested = finalIsTeamInterested;
 
-        // Явно зберігаємо сесію (можливо, не потрібно, але для діагностики можна спробувати)
         req.session.save((err) => {
             if (err) {
                 console.error("[profile/update POST] Error saving session:", err);
@@ -850,10 +844,7 @@ app.post('/profile/update', async (req, res) => {
 });
 
 app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
-    // req.isAuthenticated() и req.user.id теперь гарантированно доступны,
-    // так как Multer уже обработал файл, и Passport.js успел десериализовать пользователя.
     if (!req.isAuthenticated()) {
-        // Если по какой-то причине пользователь не аутентифицирован, удаляем временный файл
         if (req.file) {
             fs.unlink(req.file.path, (err) => {
                 if (err) console.error('Error deleting temporary file for unauthenticated user:', err);
@@ -862,7 +853,7 @@ app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
         return res.status(403).json({ message: "У вас немає прав для завантаження фото." });
     }
 
-    const userId = req.user.id; // Теперь userId гарантированно доступен
+    const userId = req.user.id;
     console.log(`[upload-photo] User ID: ${userId}`);
 
     console.log("Received file upload:", req.file);
@@ -874,45 +865,31 @@ app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
     let connection;
     try {
         connection = await pool.getConnection();
-
-        // Получаем старый путь к фото для удаления
         const [rows] = await connection.execute(`SELECT PhotoPath FROM users WHERE id = ?`, [userId]);
         const oldPhotoPath = rows[0]?.PhotoPath;
-
-        // Определяем новое имя файла с userId
         const fileExtension = path.extname(req.file.originalname);
         const newFilename = `${userId}-${Date.now()}${fileExtension}`;
-        const newPhotoPath = `/avatars/${newFilename}`; // Путь для сохранения в БД
-        const newFilePath = path.join(__dirname, 'public', 'avatars', newFilename); // Абсолютный путь для сохранения на диске
-
-        // Переименовываем временный файл в постоянное имя
-        // req.file.path - это абсолютный путь к временному файлу, сохраненному Multer'ом
+        const newPhotoPath = `/avatars/${newFilename}`;
+        const newFilePath = path.join(__dirname, 'public', 'avatars', newFilename);
         await fs.promises.rename(req.file.path, newFilePath);
         console.log(`[upload-photo] Renamed temporary file ${req.file.filename} to ${newFilename}`);
 
-        // Удаляем старое фото, если оно не дефолтное
         if (oldPhotoPath && oldPhotoPath !== '/avatars/default_avatar_64.png') {
             const oldFilePath = path.join(__dirname, 'public', oldPhotoPath);
-            fs.unlink(oldFilePath, (err) => { // Используем fs.unlink для асинхронного удаления
+            fs.unlink(oldFilePath, (err) => {
                 if (err) console.error('Error deleting old photo file:', err);
                 else console.log(`[upload-photo] Deleted old photo: ${oldFilePath}`);
             });
         }
 
-        // Обновляем PhotoPath в базе данных
         await connection.execute(
             `UPDATE users SET PhotoPath = ? WHERE id = ?`,
             [newPhotoPath, userId]
         );
         console.log(`[upload-photo] Database updated with new PhotoPath: ${newPhotoPath}`);
 
-        // Обновляем req.user в сессии для немедленного отображения
         if (req.user) {
             req.user.PhotoPath = newPhotoPath;
-            // Если вы используете req.session.save(), то это может быть полезно для немедленного обновления сессии
-            // req.session.save((err) => {
-            //     if (err) console.error("Error saving session after photo upload:", err);
-            // });
         }
 
 
@@ -920,7 +897,6 @@ app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
 
     } catch (error) {
         console.error("Error uploading photo:", error);
-        // Если произошла ошибка после сохранения временного файла, удаляем его
         if (req.file) {
             fs.unlink(req.file.path, (err) => {
                 if (err) console.error('Error deleting temporary file after processing error:', err);

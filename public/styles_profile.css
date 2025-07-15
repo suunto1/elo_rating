@@ -243,6 +243,31 @@
     height: 100% !important;
 }
 
+.status-message {
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    font-size: 0.9em;
+    text-align: center;
+    opacity: 0; /* Изначально невидимый */
+    transition: opacity 0.5s ease-in-out; /* Плавное появление/исчезновение */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.status-message.success {
+    background-color: #d4edda; /* Светло-зеленый фон */
+    color: #155724; /* Темно-зеленый текст */
+    border: 1px solid #c3e6cb;
+    opacity: 1; /* Для появления */
+}
+
+.status-message.error {
+    background-color: #f8d7da; /* Светло-красный фон */
+    color: #721c24; /* Темно-красный текст */
+    border: 1px solid #f5c6cb;
+    opacity: 1; /* Для появления */
+}
+
 @media (max-width: 768px) {
     #profile-form {
         grid-template-columns: 1fr;

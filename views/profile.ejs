@@ -26,294 +26,331 @@
 <body>
     <%- include('partials/menu') %>
 
-    <div class="main-content-wrapper">
-        <aside class="sidebar-left"></aside>
-        <main class="profile-main">
-            <div class="profile-background-section">
-                <h2>Профiль</h2>
+        <div class="main-content-wrapper">
+            <aside class="sidebar-left"></aside>
+            <main class="profile-main">
+                <div class="profile-background-section">
+                    <h2>Профiль</h2>
 
-                <div class="hall-of-fame-wrapper">
-                    <div class="hall-of-fame-column">
-                        <div class="profile-card hall-of-fame-category">
-                            <div class="profile-header">
-                                <div class="profile-avatar-container">
-                                    <img id="profile-avatar" src="<%= user.PhotoPath %>" alt="Аватар пилота">
-                                    <button id="upload-avatar-btn" class="upload-btn">Завантажити</button>
-                                    <input type="file" id="avatar-input" accept="image/*" style="display: none;">
-                                    <% const defaultAvatarPath='/avatars/default_avatar_64.png'; %>
-                                    <button id="delete-avatar-btn" class="delete-btn"
-                                        style="display: none;">Видалити</button>
+                    <div class="hall-of-fame-wrapper">
+                        <div class="hall-of-fame-column">
+                            <div class="profile-card hall-of-fame-category">
+                                <div class="profile-header">
+                                    <div class="profile-avatar-container">
+                                        <img id="profile-avatar" src="<%= user.PhotoPath %>" alt="Аватар пилота">
+                                        <button id="upload-avatar-btn" class="upload-btn">Завантажити</button>
+                                        <input type="file" id="avatar-input" accept="image/*" style="display: none;">
+                                        <% const defaultAvatarPath='/avatars/default_avatar_64.png' ; %>
+                                            <button id="delete-avatar-btn" class="delete-btn"
+                                                style="display: none;">Видалити</button>
+                                    </div>
+                                    <div class="profile-title">
+                                        <h2>
+                                            <%= user.username %>
+                                        </h2>
+                                    </div>
                                 </div>
-                                <div class="profile-title">
-                                    <h2>
-                                        <%= user.username %>
-                                    </h2>
-                                </div>
-                            </div>
 
-                            <div class="profile-section">
-                                <form id="profile-form">
-                                    <div class="form-group">
-                                        <label for="iRacingCustomerId">iRacing Customer ID</label>
-                                        <input type="text" id="iRacingCustomerId" name="iRacingCustomerId"
-                                            value="<%= user.iRacingCustomerId || '' %>" pattern="[0-9]*"
-                                            title="Повинно містити лише цифри">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="LMUName">LMU Name</label>
-                                        <input type="text" id="LMUName" name="LMUName"
-                                            value="<%= user.LMUName || '' %>">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="DiscordId">Discord ID</label>
-                                        <input type="text" id="DiscordId" name="DiscordId"
-                                            value="<%= user.DiscordId || '' %>">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="YoutubeChannel">YouTube Channel URL</label>
-                                        <input type="url" id="YoutubeChannel" name="YoutubeChannel"
-                                            value="<%= user.YoutubeChannel || '' %>">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="TwitchChannel">Twitch Channel URL</label>
-                                        <input type="url" id="TwitchChannel" name="TwitchChannel"
-                                            value="<%= user.TwitchChannel || '' %>">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="Instagram">Instagram URL</label>
-                                        <input type="url" id="Instagram" name="Instagram"
-                                            value="<%= user.Instagram || '' %>">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="Country">Країна</label>
-                                        <input type="text" id="Country" name="Country"
-                                            value="<%= user.Country || '' %>">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="Twitter">Twitter URL</label>
-                                        <input type="url" id="Twitter" name="Twitter"
-                                            value="<%= user.Twitter || '' %>">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="City">Мiсто / Село</label>
-                                        <input type="text" id="City" name="City" value="<%= user.City || '' %>">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="TeamUUID">Учасник команди</label>
-                                        <select id="TeamUUID" name="TeamUUID">
-                                            <option value="">-- Вибрати --</option>
-                                            <% teams.forEach(function(team) { %>
-                                            <option value="<%= team.UUID %>" <%=user.TeamUUID===team.UUID
-                                                ? 'selected' : '' %>>
-                                                <%= team.Name %>
-                                            </option>
-                                            <% }); %>
-                                        </select>
-                                    </div>
-                                    <div class="form-group checkbox-group">
-                                        <input type="checkbox" id="IsTeamInterested" name="IsTeamInterested"
-                                            <%=user.IsTeamInterested ? 'checked' : '' %>
+                                <div class="profile-section">
+                                    <form id="profile-form">
+                                        <div class="form-group">
+                                            <label for="iRacingCustomerId">iRacing Customer ID</label>
+                                            <input type="text" id="iRacingCustomerId" name="iRacingCustomerId"
+                                                value="<%= user.iRacingCustomerId || '' %>" pattern="[0-9]*"
+                                                title="Повинно містити лише цифри">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="LMUName">LMU Name</label>
+                                            <input type="text" id="LMUName" name="LMUName"
+                                                value="<%= user.LMUName || '' %>">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="DiscordId">Discord ID</label>
+                                            <input type="text" id="DiscordId" name="DiscordId"
+                                                value="<%= user.DiscordId || '' %>">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="YoutubeChannel">YouTube Channel URL</label>
+                                            <input type="url" id="YoutubeChannel" name="YoutubeChannel"
+                                                value="<%= user.YoutubeChannel || '' %>">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="TwitchChannel">Twitch Channel URL</label>
+                                            <input type="url" id="TwitchChannel" name="TwitchChannel"
+                                                value="<%= user.TwitchChannel || '' %>">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="Instagram">Instagram URL</label>
+                                            <input type="url" id="Instagram" name="Instagram"
+                                                value="<%= user.Instagram || '' %>">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="Country">Країна</label>
+                                            <input type="text" id="Country" name="Country"
+                                                value="<%= user.Country || '' %>">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="Twitter">Twitter URL</label>
+                                            <input type="url" id="Twitter" name="Twitter"
+                                                value="<%= user.Twitter || '' %>">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="City">Мiсто / Село</label>
+                                            <input type="text" id="City" name="City" value="<%= user.City || '' %>">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="TeamUUID">Учасник команди</label>
+                                            <select id="TeamUUID" name="TeamUUID">
+                                                <option value="">-- Вибрати --</option>
+                                                <% teams.forEach(function(team) { %>
+                                                    <option value="<%= team.UUID %>" <%=user.TeamUUID===team.UUID
+                                                        ? 'selected' : '' %>>
+                                                        <%= team.Name %>
+                                                    </option>
+                                                    <% }); %>
+                                            </select>
+                                        </div>
+                                        <div class="form-group checkbox-group">
+                                            <input type="checkbox" id="IsTeamInterested" name="IsTeamInterested"
+                                                <%=user.IsTeamInterested ? 'checked' : '' %>
                                             <%= user.TeamUUID ? 'disabled' : '' %>> <label
-                                                for="IsTeamInterested">Зацікавлений у створенні команди / Приєднанні
-                                                до існуючої команди</label>
-                                    </div>
-                                    <button type="submit" class="save-btn">Зберегти</button>
-                                </form>
+                                                    for="IsTeamInterested">Зацікавлений у створенні команди / Приєднанні
+                                                    до існуючої команди</label>
+                                        </div>
+
+                                        <div id="profile-status-message" class="status-message" style="display: none;">
+                                        </div>
+                                        <button type="submit" class="save-btn">Зберегти</button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
+
                     </div>
-
                 </div>
-            </div>
-        </main>
-        <aside class="sidebar-right"></aside>
-    </div>
+            </main>
+            <aside class="sidebar-right"></aside>
+        </div>
 
-    <%- include('partials/footer') %>
+        <%- include('partials/footer') %>
 
-    <script>
-        // Обертываем весь ваш JavaScript код в событие DOMContentLoaded
-        // Это гарантирует, что скрипт выполнится только после того, как весь HTML документа будет загружен.
-        document.addEventListener('DOMContentLoaded', () => {
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
 
-            const currentUserId = "<%= user.id %>"; // Приклад отримання ID користувача з EJS
-            const form = document.getElementById('profile-form');
-            const profileAvatar = document.getElementById('profile-avatar');
-            const uploadAvatarBtn = document.getElementById('upload-avatar-btn');
-            const avatarInput = document.getElementById('avatar-input');
-            const deleteAvatarBtn = document.getElementById('delete-avatar-btn'); // Получаем кнопку удаления
-            const teamUUIDSelect = document.getElementById('TeamUUID');
-            const isTeamInterestedCheckbox = document.getElementById('IsTeamInterested');
-            const DEFAULT_AVATAR_PATH = '/avatars/default_avatar_64.png';
+                    const currentUserId = "<%= user.id %>"; // Приклад отримання ID користувача з EJS
+                    const form = document.getElementById('profile-form');
+                    const profileAvatar = document.getElementById('profile-avatar');
+                    const uploadAvatarBtn = document.getElementById('upload-avatar-btn');
+                    const avatarInput = document.getElementById('avatar-input');
+                    const deleteAvatarBtn = document.getElementById('delete-avatar-btn'); // Получаем кнопку удаления
+                    const teamUUIDSelect = document.getElementById('TeamUUID');
+                    const isTeamInterestedCheckbox = document.getElementById('IsTeamInterested');
+                    const DEFAULT_AVATAR_PATH = '/avatars/default_avatar_64.png';
 
-            // Добавляем проверку, что форма была найдена
-            if (!form) {
-                console.error('Ошибка: Форма с ID "profile-form" не найдена в DOM!');
-                return;
-            }
-
-            // Функция для обновления видимости кнопки "Видалити"
-            function updateDeleteButtonVisibility() {
-                // Проверяем, содержит ли текущий src аватара путь к дефолтному
-                const isDefaultAvatar = profileAvatar.src.includes(DEFAULT_AVATAR_PATH);
-
-                if (deleteAvatarBtn) { // Убедимся, что кнопка существует в DOM
-                    if (isDefaultAvatar) {
-                        deleteAvatarBtn.style.display = 'none'; // Скрываем, если аватар дефолтный
-                    } else {
-                        deleteAvatarBtn.style.display = 'inline-block'; // Показываем, если аватар пользовательский
-                    }
-                } else {
-                    console.error('Ошибка: Кнопка удаления аватара не найдена в DOM.');
-                }
-            }
-
-            // Вызываем функцию при загрузке страницы для установки начального состояния
-            updateDeleteButtonVisibility();
-
-            // Функция для обновления состояния чекбокса "Зацікавлений у створенні команди"
-            function updateIsTeamInterestedState() {
-                if (teamUUIDSelect.value) {
-                    isTeamInterestedCheckbox.checked = false;
-                    isTeamInterestedCheckbox.disabled = true;
-                } else {
-                    isTeamInterestedCheckbox.disabled = false;
-                }
-            }
-
-            // Вызываем при загрузке страницы для установки начального состояния
-            updateIsTeamInterestedState();
-
-            // Добавляем слушатель события на изменение выбора команды
-            teamUUIDSelect.addEventListener('change', updateIsTeamInterestedState);
-
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault(); // Это предотвращает стандартную отправку формы и перезагрузку страницы
-                console.log('Кнопка "Зберегти" нажата. Обработчик submit запущен.'); // Лог для отладки
-
-                const iRacingCustomerIdInput = document.getElementById('iRacingCustomerId');
-                let clientErrorMessage = '';
-
-                // Проверка на корректность ввода iRacingCustomerId
-                if (iRacingCustomerIdInput.value && !/^[0-9]+$/.test(iRacingCustomerIdInput.value)) {
-                    clientErrorMessage += 'Поле "iRacing Customer ID" повинно містити лише цифри\n';
-                }
-
-                if (clientErrorMessage) {
-                    alert(clientErrorMessage);
-                    return; // Останавливаем выполнение, если есть ошибки валидации на клиенте
-                }
-
-                const formData = {
-                    LMUName: document.getElementById('LMUName').value,
-                    DiscordId: document.getElementById('DiscordId').value,
-                    YoutubeChannel: document.getElementById('YoutubeChannel').value,
-                    TwitchChannel: document.getElementById('TwitchChannel').value,
-                    Instagram: document.getElementById('Instagram').value,
-                    Twitter: document.getElementById('Twitter').value,
-                    iRacingCustomerId: iRacingCustomerIdInput.value,
-                    Country: document.getElementById('Country').value,
-                    City: document.getElementById('City').value,
-                    TeamUUID: teamUUIDSelect.value || '', // Изменено на пустую строку, если TeamUUID не выбран
-                    IsTeamInterested: isTeamInterestedCheckbox.checked
-                };
-
-                console.log('Отправляемые данные формы:', formData); // Лог для проверки данных перед отправкой
-
-                try {
-                    const response = await fetch(`/profile/update`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(formData),
-                        credentials: 'include' // Это важно для отправки кукисов (сессии)
-                    });
-
-                    const data = await response.json(); // Ожидаем JSON ответ
-
-                    if (response.ok) { // Проверяем, был ли статус ответа 2xx (успешно)
-                        alert(data.message);
-                        location.reload(); // Перезагружаем страницу, чтобы отобразить обновленные данные
-                    } else {
-                        // Если сервер вернул ошибку (например, 400, 401, 500)
-                        console.error('Ошибка от сервера при обновлении профиля:', data.message || response.statusText);
-                        alert('Помилка: ' + (data.message || 'Неизвестная ошибка'));
-                    }
-                } catch (error) {
-                    // Если произошла сетевая ошибка или ошибка в Fetch API
-                    console.error('Ошибка при оновленні профілю (сеть/Fetch API):', error);
-                    alert('Помилка при оновленні профілю. Проверьте подключение к интернету.');
-                }
-            });
-
-            // Обработчики для загрузки и удаления аватара
-            uploadAvatarBtn.addEventListener('click', () => {
-                avatarInput.click();
-            });
-
-            avatarInput.addEventListener('change', async (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                const formData = new FormData();
-                formData.append('photo', file);
-
-                console.log('Загрузка аватара: выбран файл', file.name);
-
-                try {
-                    const response = await fetch(`/profile/upload-photo`, {
-                        method: 'POST',
-                        body: formData,
-                        credentials: 'include'
-                    });
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        profileAvatar.src = data.photoPath;
-                        alert(data.message);
-                        updateDeleteButtonVisibility(); // Обновляем видимость кнопки после загрузки
-                    } else {
-                        console.error('Ошибка от сервера при загрузке фото:', data.message || response.statusText);
-                        alert('Помилка: ' + (data.message || 'Неизвестная ошибка при загрузке фото'));
-                    }
-                } catch (error) {
-                    console.error('Помилка завантаження фото (сеть/Fetch API):', error);
-                    alert('Помилка завантаження фото.');
-                }
-            });
-
-            // Использование делегирования событий для кнопки удаления, так как она может быть скрыта/показана
-            document.addEventListener('click', async (event) => {
-                if (event.target.id === 'delete-avatar-btn') {
-                    if (!confirm('Ви впевнені, що хочете видалити фото профілю?')) {
+                    // Добавляем проверку, что форма была найдена
+                    if (!form) {
+                        console.error('Ошибка: Форма с ID "profile-form" не найдена в DOM!');
                         return;
                     }
 
-                    console.log('Попытка удаления аватара.'); // Лог для отладки
+                    // --- ЗДЕСЬ НАЧИНАЕТСЯ НОВЫЙ КОД ---
 
-                    try {
-                        const response = await fetch(`/profile/delete-photo`, {
-                            method: 'DELETE',
-                            credentials: 'include'
-                        });
-                        const data = await response.json();
-                        if (response.ok) {
-                            profileAvatar.src = data.photoPath; // Предполагается, что сервер вернет путь к дефолтному аватару
-                            alert(data.message);
-                            updateDeleteButtonVisibility(); // Обновляем видимость кнопки после удаления
-                        } else {
-                            console.error('Ошибка от сервера при удалении фото:', data.message || response.statusText);
-                            alert('Помилка: ' + (data.message || 'Неизвестная ошибка при удалении фото'));
-                        }
-                    } catch (error) {
-                        console.error('Помилка при видаленні фото (сеть/Fetch API):', error);
-                        alert('Сталася помилка при видаленні фото. Проверьте подключение.');
+                    // 1. Объявления новых DOM-элементов для сообщений
+                    const profileStatusMessageDiv = document.getElementById('profile-status-message');
+                    const avatarStatusMessageDiv = document.getElementById('avatar-status-message');
+
+
+                    // 2. Универсальная функция для показа сообщений
+                    function showStatusMessage(element, message, type = 'success', duration = 3000) {
+                        if (!element) return;
+
+                        element.className = 'status-message';
+                        element.textContent = message;
+                        element.style.display = 'block';
+                        element.classList.add(type);
+
+                        void element.offsetWidth;
+                        element.style.opacity = '1';
+
+                        setTimeout(() => {
+                            element.style.opacity = '0';
+                            setTimeout(() => {
+                                element.style.display = 'none';
+                            }, 500);
+                        }, duration);
                     }
-                }
-            });
-        });
-    </script>
+
+                    // --- ЗДЕСЬ ЗАКАНЧИВАЕТСЯ НОВЫЙ КОД, КРОМЕ ИЗМЕНЕНИЙ В ОБРАБОТЧИКАХ ---
+
+                    // Функция для обновления видимости кнопки "Видалити"
+                    function updateDeleteButtonVisibility() {
+                        const isDefaultAvatar = profileAvatar.src.includes(DEFAULT_AVATAR_PATH);
+                        if (deleteAvatarBtn) {
+                            if (isDefaultAvatar) {
+                                deleteAvatarBtn.style.display = 'none';
+                            } else {
+                                deleteAvatarBtn.style.display = 'inline-block';
+                            }
+                        } else {
+                            console.error('Ошибка: Кнопка удаления аватара не найдена в DOM.');
+                        }
+                    }
+
+                    // Вызываем функцию при загрузке страницы для установки начального состояния
+                    updateDeleteButtonVisibility();
+
+                    // Функция для обновления состояния чекбокса "Зацікавлений у створенні команди"
+                    function updateIsTeamInterestedState() {
+                        if (teamUUIDSelect.value) {
+                            isTeamInterestedCheckbox.checked = false;
+                            isTeamInterestedCheckbox.disabled = true;
+                        } else {
+                            isTeamInterestedCheckbox.disabled = false;
+                        }
+                    }
+
+                    // Вызываем при загрузке страницы для установки начального состояния
+                    updateIsTeamInterestedState();
+
+                    // Добавляем слушатель события на изменение выбора команды
+                    teamUUIDSelect.addEventListener('change', updateIsTeamInterestedState);
+
+                    // ----- ОБНОВЛЕНИЕ ПРОФИЛЯ -----
+                    form.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        console.log('Кнопка "Зберегти" нажата. Обработчик submit запущен.');
+
+                        const iRacingCustomerIdInput = document.getElementById('iRacingCustomerId');
+                        let clientErrorMessage = '';
+
+                        if (iRacingCustomerIdInput.value && !/^[0-9]+$/.test(iRacingCustomerIdInput.value)) {
+                            clientErrorMessage += 'Поле "iRacing Customer ID" повинно містити лише цифры\n';
+                        }
+
+                        if (clientErrorMessage) {
+                            // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage ***
+                            showStatusMessage(profileStatusMessageDiv, clientErrorMessage, 'error', 5000);
+                            return;
+                        }
+
+                        const formData = {
+                            LMUName: document.getElementById('LMUName').value,
+                            DiscordId: document.getElementById('DiscordId').value,
+                            YoutubeChannel: document.getElementById('YoutubeChannel').value,
+                            TwitchChannel: document.getElementById('TwitchChannel').value,
+                            Instagram: document.getElementById('Instagram').value,
+                            Twitter: document.getElementById('Twitter').value,
+                            iRacingCustomerId: iRacingCustomerIdInput.value,
+                            Country: document.getElementById('Country').value,
+                            City: document.getElementById('City').value,
+                            TeamUUID: teamUUIDSelect.value || '',
+                            IsTeamInterested: isTeamInterestedCheckbox.checked
+                        };
+
+                        console.log('Отправляемые данные формы:', formData);
+
+                        try {
+                            const response = await fetch(`/profile/update`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify(formData),
+                                credentials: 'include'
+                            });
+
+                            const data = await response.json();
+
+                            if (response.ok) {
+                                // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage вместо alert ***
+                                showStatusMessage(profileStatusMessageDiv, data.message, 'success');
+                                // Если вы уверены, что все поля обновились, можете убрать location.reload()
+                                // location.reload();
+                            } else {
+                                console.error('Ошибка от сервера при обновлении профиля:', data.message || response.statusText);
+                                // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage ***
+                                showStatusMessage(profileStatusMessageDiv, 'Помилка: ' + (data.message || 'Неизвестная ошибка'), 'error', 5000);
+                            }
+                        } catch (error) {
+                            console.error('Ошибка при оновленні профілю (сеть/Fetch API):', error);
+                            // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage ***
+                            showStatusMessage(profileStatusMessageDiv, 'Помилка при оновленні профілю. Проверьте подключение к интернету.', 'error', 5000);
+                        }
+                    });
+
+                    // ----- ЗАГРУЗКА АВАТАРА -----
+                    uploadAvatarBtn.addEventListener('click', () => {
+                        avatarInput.click();
+                    });
+
+                    avatarInput.addEventListener('change', async (event) => {
+                        const file = event.target.files[0];
+                        if (!file) return;
+
+                        const formData = new FormData();
+                        formData.append('photo', file);
+
+                        console.log('Загрузка аватара: выбран файл', file.name);
+
+                        try {
+                            const response = await fetch(`/profile/upload-photo`, {
+                                method: 'POST',
+                                body: formData,
+                                credentials: 'include'
+                            });
+                            const data = await response.json();
+
+                            if (response.ok) {
+                                profileAvatar.src = data.photoPath;
+                                // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage ***
+                                showStatusMessage(avatarStatusMessageDiv, data.message, 'success');
+                                updateDeleteButtonVisibility();
+                            } else {
+                                console.error('Ошибка от сервера при загрузке фото:', data.message || response.statusText);
+                                // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage ***
+                                showStatusMessage(avatarStatusMessageDiv, 'Помилка: ' + (data.message || 'Неизвестная ошибка при загрузке фото'), 'error', 5000);
+                            }
+                        } catch (error) {
+                            console.error('Помилка завантаження фото (сеть/Fetch API):', error);
+                            // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage ***
+                            showStatusMessage(avatarStatusMessageDiv, 'Помилка завантаження фото.', 'error', 5000);
+                        }
+                    });
+
+                    // ----- УДАЛЕНИЕ АВАТАРА -----
+                    document.addEventListener('click', async (event) => {
+                        if (event.target.id === 'delete-avatar-btn') {
+                            if (!confirm('Ви впевнені, що хочете видалити фото профілю?')) {
+                                return;
+                            }
+
+                            console.log('Попытка удаления аватара.');
+
+                            try {
+                                const response = await fetch(`/profile/delete-photo`, {
+                                    method: 'DELETE',
+                                    credentials: 'include'
+                                });
+                                const data = await response.json();
+                                if (response.ok) {
+                                    profileAvatar.src = data.photoPath;
+                                    // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage ***
+                                    showStatusMessage(avatarStatusMessageDiv, data.message, 'success');
+                                    updateDeleteButtonVisibility();
+                                } else {
+                                    console.error('Ошибка от сервера при удалении фото:', data.message || response.statusText);
+                                    // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage ***
+                                    showStatusMessage(avatarStatusMessageDiv, 'Помилка: ' + (data.message || 'Неизвестная ошибка при удалении фото'), 'error', 5000);
+                                }
+                            } catch (error) {
+                                console.error('Помилка при видаленні фото (сеть/Fetch API):', error);
+                                // *** ИЗМЕНЕНИЕ ЗДЕСЬ: используем showStatusMessage ***
+                                showStatusMessage(avatarStatusMessageDiv, 'Сталася помилка при видаленні фото. Проверьте подключение.', 'error', 5000);
+                            }
+                        }
+                    });
+                });
+            </script>
 </body>
 
 </html>
