@@ -3,6 +3,7 @@
     justify-content: center;
     width: 100%;
     padding: 20px;
+    padding-top: 80px;
 }
 
 .profile-background-section {
@@ -249,8 +250,8 @@
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
-    max-width: 600px;
-    padding: 15px 20px;
+    max-width: 400px;
+    padding: 10px 15px;
     text-align: center;
     color: white;
     font-weight: bold;
@@ -274,10 +275,6 @@
 
 .pop-up-message.error {
     background-color: #f44336;
-}
-
-body {
-    padding-top: 60px;
 }
 
 @media (max-width: 768px) {
