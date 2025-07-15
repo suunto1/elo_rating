@@ -266,13 +266,26 @@ const checkUsernameCompletion = async (req, res, next) => {
         '/auth/steam/return',
         '/logout',
         '/api/events',
-        '/track-view'
+        '/track-view',
+        '/',
+        '/api/search-pilots',
+        '/teams',
+        '/team/',
+        '/events',
+        '/event/',
+        '/race/',
+        '/login',
+        '/rules',
+        '/contacts',
+        '/privacy-policy',
+        '/tracks',
+        '/api/tracks',
+        '/new-participants',
+        '/analytics',
     ];
 
     // Проверяем, находится ли текущий путь в списке разрешенных
-    // const isAllowedPath = allowedPaths.some(path => req.path.startsWith(path));
-        const isAllowedPath = allowedPaths.some(path => req.path.startsWith(path))
-        || /^\/profile(\/.*)?$/.test(req.path); // разрешить все /profile и /profile/:pilotName
+    const isAllowedPath = allowedPaths.some(path => req.path === path || req.path.startsWith(path + '/'));
 
     // Если пользователь авторизован, но у него не заполнены first_name ИЛИ last_name
     if (req.isAuthenticated() && (!req.user.first_name || req.user.first_name.trim().length === 0 ||
@@ -281,7 +294,6 @@ const checkUsernameCompletion = async (req, res, next) => {
         // Если пользователь пытается получить доступ к любой странице, кроме разрешенных
         if (!isAllowedPath) {
             console.log(`[checkUsernameCompletion] Redirecting user ${req.user.id} to /complete-profile as first_name or last_name is missing.`);
-            // Перенаправляем на чистый /complete-profile, без параметров
             return res.redirect('/complete-profile');
         }
     }
