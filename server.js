@@ -13,6 +13,7 @@ const cookieParser = require('cookie-parser');
 
 const app = express();
 const port = process.env.PORT || 3000;
+const pool = require('./db');
 
 // Multer для загрузки файлов
 const multer = require('multer');
@@ -54,18 +55,18 @@ const createDOMPurify = require('dompurify');
 const window = new JSDOM('').window;
 const DOMPurify = createDOMPurify(window);
 
-const dbConfig = {
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE,
-    port: process.env.DB_PORT,
-    waitForConnections: true,
-    connectionLimit: 60,
-    queueLimit: 1000
-};
+// const dbConfig = {
+//     host: process.env.DB_HOST,
+//     user: process.env.DB_USER,
+//     password: process.env.DB_PASSWORD,
+//     database: process.env.DB_DATABASE,
+//     port: process.env.DB_PORT,
+//     waitForConnections: true,
+//     connectionLimit: 60,
+//     queueLimit: 1000
+// };
 
-const pool = mysql.createPool(dbConfig);
+// const pool = mysql.createPool(dbConfig);
 
 // --- Конфигурация Steam и сессий ---
 const STEAM_API_KEY = process.env.STEAM_API_KEY;
