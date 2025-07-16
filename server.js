@@ -1,16 +1,7 @@
 require('dotenv').config();
 const session = require('express-session');
-const knexSessionModule = require('connect-session-knex');
-console.log('knexSessionModule:', knexSessionModule);
-
-let KnexSessionStore;
-if (typeof knexSessionModule === 'function') {
-    KnexSessionStore = knexSessionModule(session);
-} else if (knexSessionModule && typeof knexSessionModule.default === 'function') {
-    KnexSessionStore = knexSessionModule.default(session);
-} else {
-    throw new Error('Cannot initialize KnexSessionStore: connect-session-knex export is not a function');
-}
+const { ConnectSessionKnexStore } = require('connect-session-knex');
+const KnexSessionStore = ConnectSessionKnexStore;
 
 const db = require('./db');
 
@@ -236,27 +227,26 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-const sessionStore = new KnexSessionStore({
-    knex: db,
-    tablename: 'sessions',
-    createtable: true,
-    sidfieldname: 'sid',
-    clearInterval: 1000 * 60 * 15 // чистка каждые 15 мин
+const store = new KnexSessionStore({
+  knex: db,            // ваш объект knex (из db.js)
+  tablename: 'sessions',
+  createtable: true,
+  sidfieldname: 'sid',
+  clearInterval: 600000 // Очистка просроченных сессий каждые 10 мин
 });
+
 
 app.set('trust proxy', 1);
 
 // Настройка сессий
 app.use(session({
-    secret: SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    store: sessionStore,
-    cookie: {
-        secure: true,
-        sameSite: 'none',
-        maxAge: 1000 * 60 * 60 * 24 * 7 // 1 неделя
-    }
+  secret: process.env.SESSION_SECRET || 'defaultsecret',
+  resave: false,
+  saveUninitialized: false,
+  store: store,
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24 * 7 // 7 дней
+  }
 }));
 
 // Инициализация Passport
