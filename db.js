@@ -12,8 +12,16 @@ const db = knex({
     },
     pool: {
         min: 2,
-        max: 20
+        max: 5
     }
 });
 
 module.exports = db;
+
+db.client.pool.on('acquire', (connection) => {
+  console.log(`[DB] Connection acquired (threadId: ${connection.threadId})`);
+});
+
+db.client.pool.on('release', (connection) => {
+  console.log(`[DB] Connection released (threadId: ${connection.threadId})`);
+});
