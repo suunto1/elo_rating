@@ -215,12 +215,13 @@
                     let isEditingName = false;
 
                     editNameBtn.addEventListener('click', () => {
-                        const isEditing = nameEditFields.style.display === 'flex';
+                        isEditingName = !isEditingName;
                         if (isEditingName) {
                             fullNameDisplay.style.display = 'none';
                             nameEditFields.style.display = 'flex';
                             firstNameInput.focus();
                         } else {
+                            fullNameDisplay.textContent = `${firstNameInput.value.trim()} ${lastNameInput.value.trim()}`;
                             fullNameDisplay.style.display = 'block';
                             nameEditFields.style.display = 'none';
                         }
@@ -231,8 +232,7 @@
                     });
 
                     nameEditContainer.addEventListener('mouseleave', () => {
-                        const isEditing = nameEditFields.style.display === 'flex';
-                        if (!isEditing) {
+                        if (!isEditingName) {
                             editNameBtn.style.display = 'none';
                         }
                     });
