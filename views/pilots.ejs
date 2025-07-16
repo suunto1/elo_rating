@@ -205,15 +205,13 @@
                       mode: 'index',
                       intersect: false,
                       callbacks: {
-                        // Додаємо кастомний заголовок і футер для підказки
                         title: function (context) {
-                          return `Дата: ${context[0].label}`;
+                          return `${context[0].label}`;
                         },
                         label: function (context) {
-                          return `Рейтинг: ${context.parsed.y}`;
+                          return `ELO: ${context.parsed.y}`;
                         },
                         footer: function (context) {
-                          // Ви можете додати додаткову інформацію тут, якщо потрібно
                           return '';
                         }
                       }
