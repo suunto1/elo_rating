@@ -1,6 +1,7 @@
 require('dotenv').config();
 const session = require('express-session');
-const KnexSessionStore = require('connect-session-knex')(session);
+const knexSessionModule = require('connect-session-knex');
+const KnexSessionStore = knexSessionModule.default ? knexSessionModule.default(session) : knexSessionModule(session);
 const db = require('./db');
 
 const express = require("express");
