@@ -118,8 +118,6 @@ passport.deserializeUser(async (id, done) => {
     } catch (err) {
         console.error("Error in deserializeUser:", err);
         done(err);
-    } finally {
-        if (connection) connection.release();
     }
 });
 
