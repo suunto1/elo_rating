@@ -129,86 +129,82 @@ passport.use(new SteamStrategy({
     realm: STEAM_REALM,
     apiKey: STEAM_API_KEY
 },
-    async (identifier, profile, done) => {
-        const steamId64 = profile.id;
-        const steamDisplayName = profile.displayName;
-        console.log("[Passport] SteamStrategy: identifier =", identifier);
-        console.log("[Passport] SteamStrategy: profile =", profile);
-        let connection;
-        try {
-            const userRows = await db('users')
+async (identifier, profile, done) => {
+    const steamId64 = profile.id;
+    const steamDisplayName = profile.displayName;
+    console.log("[Passport] SteamStrategy: identifier =", identifier);
+    console.log("[Passport] SteamStrategy: profile =", profile);
+
+    try {
+        // Получаем пользователя из таблицы users по steam_id_64
+        const userRows = await db('users')
+            .select('id', 'steam_id_64', 'pilot_uuid', 'username', 'first_name', 'last_name', 'is_admin')
+            .where('steam_id_64', steamId64);
+        let user = userRows[0];
+
+        // Ищем UUID пилота по steam_id_64
+        const pilotRows = await db('pilots').select('UUID').where('steam_id_64', steamId64);
+        let pilotUuidToLink = pilotRows.length > 0 ? pilotRows[0].UUID : null;
+
+        if (user) {
+            console.log("[SteamStrategy] Existing user found in `users` table:", user.id);
+
+            // Если у пользователя нет linked pilot_uuid, но он есть в таблице pilots - связываем
+            if (!user.pilot_uuid && pilotUuidToLink) {
+                console.log(`[SteamStrategy] Linking existing pilot ${pilotUuidToLink} to user ${user.id}`);
+                await db('users').where('id', user.id).update({ pilot_uuid: pilotUuidToLink });
+                user.pilot_uuid = pilotUuidToLink;
+            }
+
+            // Если username пустой или равен steamId64, обновляем его на Steam Display Name
+            if (user.username === '' || user.username === steamId64) {
+                console.log(`[SteamStrategy] Updating username for user ${user.id} to Steam Display Name: ${steamDisplayName}`);
+                await db('users').where('id', user.id).update({ username: steamDisplayName });
+                user.username = steamDisplayName;
+            }
+
+            // Обновляем время последнего входа
+            await db('users').where('id', user.id).update({ last_login_at: db.fn.now() });
+
+            return done(null, {
+                id: user.id,
+                steam_id_64: user.steam_id_64,
+                pilot_uuid: user.pilot_uuid,
+                username: user.username,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                is_admin: user.is_admin
+            });
+
+        } else {
+            console.log("[SteamStrategy] New Steam user. Creating new entry in `users` table.");
+
+            // Вставляем нового пользователя
+            const [newUserId] = await db('users').insert({
+                steam_id_64: steamId64,
+                username: steamDisplayName,
+                first_name: '',
+                last_name: '',
+                pilot_uuid: pilotUuidToLink,
+                last_login_at: db.fn.now(),
+                registered_at: db.fn.now()
+            });
+
+            // Получаем вновь созданного пользователя из базы
+            const newUserRows = await db('users')
                 .select('id', 'steam_id_64', 'pilot_uuid', 'username', 'first_name', 'last_name', 'is_admin')
-                .where('steam_id_64', steamId64);
-            let user = userRows[0];
-            let pilotUuidToLink = null;
+                .where('id', newUserId);
+            const newUser = newUserRows[0];
+            console.log("[SteamStrategy] New user created:", newUser);
 
-            const [pilotRows] = await connection.execute(
-                `SELECT UUID FROM pilots WHERE steam_id_64 = ?`,
-                [steamId64]
-            );
-            if (pilotRows.length > 0) {
-                pilotUuidToLink = pilotRows[0].UUID;
-                console.log(`[SteamStrategy] Found existing pilot UUID ${pilotUuidToLink} for Steam ID ${steamId64}`);
-            }
-
-            if (user) {
-                console.log("[SteamStrategy] Existing user found in `users` table:", user.id);
-                if (!user.pilot_uuid && pilotUuidToLink) {
-                    console.log(`[SteamStrategy] Linking existing pilot ${pilotUuidToLink} to user ${user.id}`);
-                    await connection.execute(
-                        `UPDATE users SET pilot_uuid = ? WHERE id = ?`,
-                        [pilotUuidToLink, user.id]
-                    );
-                    user.pilot_uuid = pilotUuidToLink;
-                }
-
-                if (user.username === '' || user.username === steamId64) {
-                    console.log(`[SteamStrategy] Updating username for user ${user.id} to Steam Display Name: ${steamDisplayName}`);
-                    await connection.execute(
-                        `UPDATE users SET username = ? WHERE id = ?`,
-                        [steamDisplayName, user.id]
-                    );
-                    user.username = steamDisplayName;
-                }
-
-                await connection.execute(
-                    `UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?`,
-                    [user.id]
-                );
-
-                return done(null, {
-                    id: user.id,
-                    steam_id_64: user.steam_id_64,
-                    pilot_uuid: user.pilot_uuid,
-                    username: user.username,
-                    first_name: user.first_name,
-                    last_name: user.last_name,
-                    is_admin: user.is_admin
-                });
-            } else {
-                console.log("[SteamStrategy] New Steam user. Creating new entry in `users` table.");
-
-                const [insertResult] = await connection.execute(
-                    `INSERT INTO users (steam_id_64, username, first_name, last_name, pilot_uuid, last_login_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-                    [steamId64, steamDisplayName, '', '', pilotUuidToLink]
-                );
-                const newUserId = insertResult.insertId;
-
-                const [newUserRows] = await connection.execute(
-                    `SELECT id, steam_id_64, pilot_uuid, username, first_name, last_name, is_admin FROM users WHERE id = ?`,
-                    [newUserId]
-                );
-                const newUser = newUserRows[0];
-                console.log("[SteamStrategy] New user created:", newUser);
-                return done(null, newUser);
-            }
-        } catch (error) {
-            console.error("[SteamStrategy] Error during Steam authentication strategy:", error);
-            return done(error);
-        } finally {
-            if (connection) connection.release();
+            return done(null, newUser);
         }
-    }));
+    } catch (error) {
+        console.error("[SteamStrategy] Error during Steam authentication strategy:", error);
+        return done(error);
+    }
+}));
+
 
 
 // --- Middleware ---
@@ -346,24 +342,21 @@ app.get('/auth/steam/return',
     async (req, res) => {
         console.log(`[auth/steam/return] Successful authentication. req.user (from Passport SteamStrategy):`, req.user);
 
-        let connection;
         try {
             const steamId64 = req.user.id;
             const steamDisplayName = req.user.displayName;
 
+            // Получаем пользователя по steam_id_64
             const userRows = await db('users')
                 .select('id', 'steam_id_64', 'pilot_uuid', 'username', 'first_name', 'last_name', 'is_admin', 'PhotoPath')
                 .where('steam_id_64', steamId64);
-
             let userInDb = userRows[0];
 
             const defaultPhotoPath = '/avatars/default_avatar_64.png';
             let currentPilotUuid = null;
 
-            const [pilotRows] = await connection.execute(
-                `SELECT UUID FROM pilots WHERE steam_id_64 = ?`,
-                [steamId64]
-            );
+            // Получаем UUID пилота по steam_id_64
+            const pilotRows = await db('pilots').select('UUID').where('steam_id_64', steamId64);
             if (pilotRows.length > 0) {
                 currentPilotUuid = pilotRows[0].UUID;
                 console.log(`[auth/steam/return] Found existing pilot UUID ${currentPilotUuid} for Steam ID ${steamId64}`);
@@ -371,16 +364,21 @@ app.get('/auth/steam/return',
 
             if (!userInDb) {
                 console.log("[auth/steam/return] === DEBUG: Entering NEW USER creation block ===");
-                const defaultPhotoPath = '/avatars/default_avatar_64.png';
-                console.log(`[auth/steam/return] DEBUG: defaultPhotoPath defined as: ${defaultPhotoPath}`);
 
-                const [insertResult] = await connection.execute(
-                    `INSERT INTO users (steam_id_64, username, first_name, last_name, pilot_uuid, PhotoPath, registered_at, last_login_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-                    [steamId64, steamDisplayName, '', '', currentPilotUuid, defaultPhotoPath]
-                );
-                console.log(`[auth/steam/return] DEBUG: INSERT query executed. insertResult:`, insertResult);
+                // Вставляем нового пользователя с дефолтным аватаром и pilot_uuid (если есть)
+                const [newUserId] = await db('users').insert({
+                    steam_id_64: steamId64,
+                    username: steamDisplayName,
+                    first_name: '',
+                    last_name: '',
+                    pilot_uuid: currentPilotUuid,
+                    PhotoPath: defaultPhotoPath,
+                    registered_at: db.fn.now(),
+                    last_login_at: db.fn.now()
+                });
+
                 userInDb = {
-                    id: insertResult.insertId,
+                    id: newUserId,
                     steam_id_64: steamId64,
                     username: steamDisplayName,
                     first_name: '',
@@ -389,6 +387,7 @@ app.get('/auth/steam/return',
                     PhotoPath: defaultPhotoPath,
                     is_admin: 0
                 };
+
                 console.log("[auth/steam/return] DEBUG: userInDb object after creation:", userInDb);
                 Object.assign(req.user, userInDb);
                 console.log("[auth/steam/return] DEBUG: req.user after Object.assign:", req.user);
@@ -398,35 +397,23 @@ app.get('/auth/steam/return',
 
                 if (!userInDb.pilot_uuid && currentPilotUuid) {
                     console.log(`[auth/steam/return] Linking existing pilot ${currentPilotUuid} to user ${userInDb.id}`);
-                    await connection.execute(
-                        `UPDATE users SET pilot_uuid = ? WHERE id = ?`,
-                        [currentPilotUuid, userInDb.id]
-                    );
+                    await db('users').where('id', userInDb.id).update({ pilot_uuid: currentPilotUuid });
                     userInDb.pilot_uuid = currentPilotUuid;
                 }
 
                 if (userInDb.username === '' || userInDb.username === steamId64) {
                     console.log(`[auth/steam/return] Updating username for user ${userInDb.id} to Steam Display Name: ${steamDisplayName}`);
-                    await connection.execute(
-                        `UPDATE users SET username = ? WHERE id = ?`,
-                        [steamDisplayName, userInDb.id]
-                    );
+                    await db('users').where('id', userInDb.id).update({ username: steamDisplayName });
                     userInDb.username = steamDisplayName;
                 }
 
-                if (userInDb.PhotoPath === null || userInDb.PhotoPath === undefined || userInDb.PhotoPath === '') {
+                if (!userInDb.PhotoPath || userInDb.PhotoPath.trim() === '') {
                     console.log(`[auth/steam/return] Updating PhotoPath for existing user ${userInDb.id} to default.`);
-                    await connection.execute(
-                        `UPDATE users SET PhotoPath = ? WHERE id = ?`,
-                        [defaultPhotoPath, userInDb.id]
-                    );
+                    await db('users').where('id', userInDb.id).update({ PhotoPath: defaultPhotoPath });
                     userInDb.PhotoPath = defaultPhotoPath;
                 }
 
-                await connection.execute(
-                    `UPDATE users SET last_login_at = NOW() WHERE id = ?`,
-                    [userInDb.id]
-                );
+                await db('users').where('id', userInDb.id).update({ last_login_at: db.fn.now() });
                 Object.assign(req.user, userInDb);
             }
 
@@ -437,11 +424,8 @@ app.get('/auth/steam/return',
             }
 
             if (req.user.pilot_uuid) {
-                const [pilotNameRow] = await connection.execute(
-                    `SELECT Name FROM pilots WHERE UUID = ?`,
-                    [req.user.pilot_uuid]
-                );
-                const pilotName = pilotNameRow[0]?.Name;
+                const pilotNameRow = await db('pilots').select('Name').where('UUID', req.user.pilot_uuid).first();
+                const pilotName = pilotNameRow?.Name;
                 if (pilotName) {
                     console.log(`[auth/steam/return] User ${req.user.id} (Pilot ${pilotName}) redirected to /profile/${encodeURIComponent(pilotName)}`);
                     return res.redirect(`/profile/${encodeURIComponent(pilotName)}`);
@@ -453,11 +437,10 @@ app.get('/auth/steam/return',
 
         } catch (error) {
             console.error("[auth/steam/return] Error during Steam authentication processing:", error);
-            return res.redirect('/'); // В случае серьезной ошибки перенаправляем на главную
-        } finally {
-            if (connection) connection.release();
+            return res.redirect('/'); // В случае ошибки - на главную
         }
     });
+
 
 app.get('/logout', (req, res, next) => {
     console.log(`[logout] User ${req.user ? req.user.id : 'N/A'} attempting to log out.`);
