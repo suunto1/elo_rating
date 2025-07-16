@@ -100,12 +100,18 @@
     opacity: 1;
 }
 
+.profile-title {
+    display: flex;
+    flex-direction: column; /* Щоб username був під іменем */
+    align-items: flex-start; /* Вирівнювання по лівому краю */
+    margin-left: 20px; /* Відступ від аватара */
+}
 
-.profile-title h2 {
+/* .profile-title h2 {
     margin: 0;
     color: #f0a020;
     font-size: 2.2em;
-}
+} */
 
 .profile-section h3 {
     margin-top: 0;
@@ -276,33 +282,46 @@
 }
 
 .name-edit-container {
-    display: flex; /* Розмістить ім'я/поля та кнопку в одному рядку */
-    align-items: center; /* Вирівняє їх по центру по вертикалі */
-    gap: 10px; /* Відстань між елементами */
+    display: flex;
+    align-items: center;
+    position: relative;
 }
 
-.name-edit-container h2 {
-    margin: 0; /* Прибираємо стандартні відступи у h2, якщо вони заважають */
-    white-space: nowrap; /* Щоб ім'я та прізвище не переносилися на новий рядок */
+.editable-name {
+    margin: 0; /* Прибираємо стандартні відступи у h2 */
+    padding-right: 5px; /* Невеликий відступ від олівця, коли він видимий */
+}
+
+.name-edit-fields {
+    display: flex; /* Розміщуємо поля вводу поруч */
+    gap: 10px; /* Відстань між полями "Ім'я" та "Прізвище" */
+    align-items: center;
 }
 
 .name-edit-container input[type="text"] {
+    background-color: #333; /* Темний фон для полів */
+    color: #fff; /* Білий текст */
+    border: 1px solid #555;
     padding: 5px 10px;
-    border: 1px solid #ccc;
     border-radius: 5px;
-    font-size: 1em; /* Забезпечуємо такий же розмір шрифту, як і в h2, або налаштуйте */
-    box-sizing: border-box; /* Для коректного відображення padding */
-    width: 150px; /* Приклад ширини, можете налаштувати */
+    font-size: 24px; /* Або будь-який інший розмір, що відповідає h2 */
+    min-width: 100px; /* Мінімальна ширина для полів */
 }
 
 .edit-icon-btn {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 1.2em; /* Розмір іконки */
-    padding: 5px;
-    color: #555; /* Колір олівця */
-    transition: color 0.2s ease;
+    font-size: 20px; /* Розмір олівця */
+    color: #ffcc00; /* Колір олівця, наприклад, золотий */
+    margin-left: 5px;
+    display: none;
+    transition: opacity 0.2s ease-in-out; /* Плавна поява/зникнення */
+    padding: 0 5px; /* Невеликий padding для зручності наведення */
+}
+
+.profile-title h2:last-of-type {
+    margin-top: 5px; /* Відступ між "Андрей Shumarin" та "username" */
 }
 
 .edit-icon-btn:hover {
