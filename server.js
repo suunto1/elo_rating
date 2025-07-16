@@ -1,22 +1,19 @@
 require('dotenv').config();
-const session = require('express-session');
-const { ConnectSessionKnexStore } = require('connect-session-knex');
-const KnexSessionStore = ConnectSessionKnexStore;
-
-const db = require('./db');
-
 const express = require("express");
+const session = require("express-session");
+const { ConnectSessionKnexStore } = require("connect-session-knex");
+const KnexSessionStore = ConnectSessionKnexStore;
 const path = require("path");
-const mysql = require("mysql2/promise");
-const geoip = require('geoip-lite');
-const fs = require('fs');
-const passport = require('passport');
-const SteamStrategy = require('passport-steam').Strategy;
-const cookieParser = require('cookie-parser');
+const fs = require("fs");
+const passport = require("passport");
+const SteamStrategy = require("passport-steam").Strategy;
+const cookieParser = require("cookie-parser");
+const geoip = require("geoip-lite");
+
+const db = require("./db");
 
 const app = express();
 const port = process.env.PORT || 3000;
-const pool = require('./db');
 
 // Multer для загрузки файлов
 const multer = require('multer');
@@ -57,19 +54,6 @@ const { JSDOM } = require('jsdom');
 const createDOMPurify = require('dompurify');
 const window = new JSDOM('').window;
 const DOMPurify = createDOMPurify(window);
-
-// const dbConfig = {
-//     host: process.env.DB_HOST,
-//     user: process.env.DB_USER,
-//     password: process.env.DB_PASSWORD,
-//     database: process.env.DB_DATABASE,
-//     port: process.env.DB_PORT,
-//     waitForConnections: true,
-//     connectionLimit: 60,
-//     queueLimit: 1000
-// };
-
-// const pool = mysql.createPool(dbConfig);
 
 // --- Конфигурация Steam и сессий ---
 const STEAM_API_KEY = process.env.STEAM_API_KEY;
