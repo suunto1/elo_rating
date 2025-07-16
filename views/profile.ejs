@@ -32,103 +32,93 @@
             <main class="profile-main">
                 <div class="profile-background-section">
                     <h2>Профiль</h2>
-
-                    <div class="hall-of-fame-wrapper">
-                        <div class="hall-of-fame-column">
-                            <div class="profile-card hall-of-fame-category">
-                                <div class="profile-header">
-                                    <div class="profile-avatar-container">
-                                        <img id="profile-avatar" src="<%= user.PhotoPath %>" alt="Аватар пилота">
-                                        <button id="upload-avatar-btn" class="upload-btn">Завантажити</button>
-                                        <input type="file" id="avatar-input" accept="image/*" style="display: none;">
-                                        <% const defaultAvatarPath='/avatars/default_avatar_64.png' ; %>
-                                            <button id="delete-avatar-btn" class="delete-btn"
-                                                style="display: none;">Видалити</button>
-                                    </div>
-                                    <div class="profile-title">
-                                        <h2>
-                                            <%= user.username %>
-                                        </h2>
-                                    </div>
-                                </div>
-
-                                <div class="profile-section">
-                                    <form id="profile-form">
-                                        <div class="form-group">
-                                            <label for="iRacingCustomerId">iRacing Customer ID</label>
-                                            <input type="text" id="iRacingCustomerId" name="iRacingCustomerId"
-                                                value="<%= user.iRacingCustomerId || '' %>" pattern="[0-9]*"
-                                                title="Повинно містити лише цифри">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="LMUName">LMU Name</label>
-                                            <input type="text" id="LMUName" name="LMUName"
-                                                value="<%= user.LMUName || '' %>">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="DiscordId">Discord ID</label>
-                                            <input type="text" id="DiscordId" name="DiscordId"
-                                                value="<%= user.DiscordId || '' %>">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="YoutubeChannel">YouTube Channel URL</label>
-                                            <input type="url" id="YoutubeChannel" name="YoutubeChannel"
-                                                value="<%= user.YoutubeChannel || '' %>">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="TwitchChannel">Twitch Channel URL</label>
-                                            <input type="url" id="TwitchChannel" name="TwitchChannel"
-                                                value="<%= user.TwitchChannel || '' %>">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="Instagram">Instagram URL</label>
-                                            <input type="url" id="Instagram" name="Instagram"
-                                                value="<%= user.Instagram || '' %>">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="Country">Країна</label>
-                                            <input type="text" id="Country" name="Country"
-                                                value="<%= user.Country || '' %>">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="Twitter">Twitter URL</label>
-                                            <input type="url" id="Twitter" name="Twitter"
-                                                value="<%= user.Twitter || '' %>">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="City">Мiсто / Село</label>
-                                            <input type="text" id="City" name="City" value="<%= user.City || '' %>">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="TeamUUID">Учасник команди</label>
-                                            <select id="TeamUUID" name="TeamUUID">
-                                                <option value="">-- Вибрати --</option>
-                                                <% teams.forEach(function(team) { %>
-                                                    <option value="<%= team.UUID %>" <%=user.TeamUUID===team.UUID
-                                                        ? 'selected' : '' %>>
-                                                        <%= team.Name %>
-                                                    </option>
-                                                    <% }); %>
-                                            </select>
-                                        </div>
-                                        <div class="form-group checkbox-group">
-                                            <input type="checkbox" id="IsTeamInterested" name="IsTeamInterested"
-                                                <%=user.IsTeamInterested ? 'checked' : '' %>
-                                            <%= user.TeamUUID ? 'disabled' : '' %>> <label
-                                                    for="IsTeamInterested">Зацікавлений у створенні команди / Приєднанні
-                                                    до існуючої команди</label>
-                                        </div>
-                                        <button type="submit" class="save-btn">Зберегти</button>
-                                </div>
-                                </form>
+                    <div class="profile-card">
+                        <div class="profile-header">
+                            <div class="profile-avatar-container">
+                                <img id="profile-avatar" src="<%= user.PhotoPath %>" alt="Аватар пилота">
+                                <button id="upload-avatar-btn" class="upload-btn">Завантажити</button>
+                                <input type="file" id="avatar-input" accept="image/*" style="display: none;">
+                                <% const defaultAvatarPath='/avatars/default_avatar_64.png' ; %>
+                                    <button id="delete-avatar-btn" class="delete-btn"
+                                        style="display: none;">Видалити</button>
+                            </div>
+                            <div class="profile-title">
+                                <h2>
+                                    <%= user.username %>
+                                </h2>
                             </div>
                         </div>
-                    </div>
 
+                        <div class="profile-section">
+                            <form id="profile-form">
+                                <div class="form-group">
+                                    <label for="iRacingCustomerId">iRacing Customer ID</label>
+                                    <input type="text" id="iRacingCustomerId" name="iRacingCustomerId"
+                                        value="<%= user.iRacingCustomerId || '' %>" pattern="[0-9]*"
+                                        title="Повинно містити лише цифри">
+                                </div>
+                                <div class="form-group">
+                                    <label for="LMUName">LMU Name</label>
+                                    <input type="text" id="LMUName" name="LMUName" value="<%= user.LMUName || '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="DiscordId">Discord ID</label>
+                                    <input type="text" id="DiscordId" name="DiscordId"
+                                        value="<%= user.DiscordId || '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="YoutubeChannel">YouTube Channel URL</label>
+                                    <input type="url" id="YoutubeChannel" name="YoutubeChannel"
+                                        value="<%= user.YoutubeChannel || '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="TwitchChannel">Twitch Channel URL</label>
+                                    <input type="url" id="TwitchChannel" name="TwitchChannel"
+                                        value="<%= user.TwitchChannel || '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="Instagram">Instagram URL</label>
+                                    <input type="url" id="Instagram" name="Instagram"
+                                        value="<%= user.Instagram || '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="Country">Країна</label>
+                                    <input type="text" id="Country" name="Country" value="<%= user.Country || '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="Twitter">Twitter URL</label>
+                                    <input type="url" id="Twitter" name="Twitter" value="<%= user.Twitter || '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="City">Мiсто / Село</label>
+                                    <input type="text" id="City" name="City" value="<%= user.City || '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="TeamUUID">Учасник команди</label>
+                                    <select id="TeamUUID" name="TeamUUID">
+                                        <option value="">-- Вибрати --</option>
+                                        <% teams.forEach(function(team) { %>
+                                            <option value="<%= team.UUID %>" <%=user.TeamUUID===team.UUID ? 'selected'
+                                                : '' %>>
+                                                <%= team.Name %>
+                                            </option>
+                                            <% }); %>
+                                    </select>
+                                </div>
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" id="IsTeamInterested" name="IsTeamInterested"
+                                        <%=user.IsTeamInterested ? 'checked' : '' %>
+                                    <%= user.TeamUUID ? 'disabled' : '' %>> <label for="IsTeamInterested">Зацікавлений у
+                                            створенні команди / Приєднанні
+                                            до існуючої команди</label>
+                                </div>
+                                <button type="submit" class="save-btn">Зберегти</button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-        </div>
-        </main>
-        <aside class="sidebar-right"></aside>
+            </main>
+            <aside class="sidebar-right"></aside>
         </div>
 
         <%- include('partials/footer') %>

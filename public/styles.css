@@ -782,19 +782,19 @@ ul.footer-nav {
 
 @media (max-width: 768px) {
     .main-content-wrapper-registration {
-        flex-direction: column; /* На маленьких екранах сайдбари та main можуть вишиковуватися вертикально */
-        align-items: center; /* Центруємо вміст вертикального флекс-контейнера */
+        flex-direction: column;
+        align-items: center;
         padding: 10px;
     }
     .sidebar-left,
     .sidebar-right {
-        flex: auto; /* Дозволити сайдбарам займати автоматичну ширину */
-        width: 100%; /* Щоб вони займали всю ширину в колонці */
-        padding: 0; /* Або зменшити padding */
+        flex: auto;
+        width: 100%;
+        padding: 0;
     }
     .container {
-        width: 100%; /* Займає всю ширину обгортки */
-        max-width: none; /* Прибираємо обмеження, щоб вміст адаптувався */
-        margin: 10px 0; /* Відступи по вертикалі */
+        width: 100%;
+        max-width: none;
+        margin: 10px 0;
     }
 }
