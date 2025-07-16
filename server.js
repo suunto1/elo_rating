@@ -1,6 +1,7 @@
 require('dotenv').config();
 const session = require('express-session');
-const MySQLStore = require('express-mysql-session')(session);
+const KnexSessionStore = require('connect-session-knex')(session);
+const db = require('./db');
 
 const express = require("express");
 const path = require("path");
@@ -224,13 +225,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Настройка MySQL Session Store
-const sessionStore = new MySQLStore({
-    expiration: 1000 * 60 * 60 * 24 * 7, // 1 неделя хранения сессий
-    clearExpired: true,
-    checkExpirationInterval: 1000 * 60 * 15,
-    createDatabaseTable: true
-}, pool);
+const sessionStore = new KnexSessionStore({
+    knex: db,
+    tablename: 'sessions',
+    createtable: true,
+    sidfieldname: 'sid',
+    clearInterval: 1000 * 60 * 15 // чистка каждые 15 мин
+});
 
 app.set('trust proxy', 1);
 
