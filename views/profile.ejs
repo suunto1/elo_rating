@@ -44,10 +44,10 @@
                             </div>
                             <div class="profile-title">
                                 <div class="name-edit-container">
-                                    <h2 id="fullNameDisplay" class="editable-name">
+                                    <h3 id="fullNameDisplay" class="editable-name">
                                         <%= user.first_name %>
                                             <%= user.last_name %>
-                                    </h2>
+                                    </h3>
                                     <div id="nameEditFields" class="name-edit-fields" style="display: none;">
                                         <input type="text" id="firstNameInput" value="<%= user.first_name %>"
                                             pattern="[a-zA-Z]+" title="Лише латинські літери (A-Z, a-z)"
@@ -185,16 +185,16 @@
                     }
 
                     // function updateDeleteButtonVisibility() {
-                        // const isDefaultAvatar = profileAvatar.src.includes(DEFAULT_AVATAR_PATH);
-                        // if (deleteAvatarBtn) {
-                        //     if (isDefaultAvatar) {
-                        //         deleteAvatarBtn.style.display = 'none';
-                        //     } else {
-                        //         deleteAvatarBtn.style.display = 'inline-block';
-                        //     }
-                        // } else {
-                        //     console.error('Ошибка: Кнопка удаления аватара не найдена в DOM.');
-                        // }
+                    // const isDefaultAvatar = profileAvatar.src.includes(DEFAULT_AVATAR_PATH);
+                    // if (deleteAvatarBtn) {
+                    //     if (isDefaultAvatar) {
+                    //         deleteAvatarBtn.style.display = 'none';
+                    //     } else {
+                    //         deleteAvatarBtn.style.display = 'inline-block';
+                    //     }
+                    // } else {
+                    //     console.error('Ошибка: Кнопка удаления аватара не найдена в DOM.');
+                    // }
                     // }
 
                     // updateDeleteButtonVisibility();
@@ -212,15 +212,17 @@
 
                     teamUUIDSelect.addEventListener('change', updateIsTeamInterestedState);
 
+                    let isEditingName = false;
+
                     editNameBtn.addEventListener('click', () => {
-                        const isEditing = nameEditFields.style.display === 'flex'; // Перевіряємо, чи поля вводу видимі
-                        if (isEditing) {
-                            fullNameDisplay.style.display = 'block';
-                            nameEditFields.style.display = 'none';
-                        } else {
+                        const isEditing = nameEditFields.style.display === 'flex';
+                        if (isEditingName) {
                             fullNameDisplay.style.display = 'none';
                             nameEditFields.style.display = 'flex';
                             firstNameInput.focus();
+                        } else {
+                            fullNameDisplay.style.display = 'block';
+                            nameEditFields.style.display = 'none';
                         }
                     });
 
@@ -305,9 +307,10 @@
                             if (response.ok) {
                                 showStatusMessage(data.message, 'success');
                                 fullNameDisplay.textContent = `${newFirstName} ${newLastName}`;
-                                fullNameDisplay.style.display = 'inline';
-                                firstNameInput.style.display = 'none';
-                                lastNameInput.style.display = 'none';
+                                fullNameDisplay.style.display = 'block';
+                                nameEditFields.style.display = 'none';
+                                isEditingName = false;
+                                editNameBtn.style.display = 'none';
                                 if (data.updatedUser && data.updatedUser.username) {
                                     document.querySelector('.profile-title h2:last-of-type').textContent = data.updatedUser.username;
                                 }
