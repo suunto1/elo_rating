@@ -245,7 +245,7 @@
     height: 100% !important;
 }
 
-.pop-up-message {
+/* .pop-up-message {
     position: fixed;
     top: 0;
     left: 50%;
@@ -276,7 +276,7 @@
 
 .pop-up-message.error {
     background-color: #f44336;
-}
+} */
 
 @media (max-width: 768px) {
     #profile-form {

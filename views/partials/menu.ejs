@@ -30,7 +30,6 @@
                     <li class="nav-item user-auth-item">
                         <div id="auth-section">
                             <% if (user && user.username && user.username !== '') { %>
-                                <!-- Если пользователь авторизован и имя заполнено -->
                                 <button id="user-auth-button" class="user-auth-button profile-image-style">
                                     <span id="user-auth-text"><%= user.username %></span>
                                     <img id="user-auth-icon" src="/images/Helmet_100.png" alt="Auth Icon" class="auth-icon">
@@ -47,7 +46,6 @@
                                     </a>
                                 </div>
                             <% } else { %>
-                                <!-- Если пользователь не авторизован или имя не заполнено -->
                                 <button id="user-auth-button" class="user-auth-button login-link-style">
                                     <span id="user-auth-text">Steam</span>
                                     <!-- <img id="user-auth-icon" src="/images/Login.png" alt="Auth Icon" class="auth-icon"> -->
@@ -71,10 +69,10 @@
         </div>
     </div>
 
-    <div id="profile-page-content" style="display: none;">
-        <h1>Ваш Профіль</h1>
+    <!-- <div id="profile-page-content" style="display: none;">
+        <h1>Профіль</h1>
         <p>Тут буде інформація про користувача та можливість редагування профілю.</p>
-    </div>
+    </div> -->
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -82,17 +80,12 @@
             const userDropdown = document.getElementById('user-dropdown');
             const authSection = document.getElementById('auth-section');
 
-            // Обработчик для кнопки авторизации
             userAuthButton.addEventListener('click', (event) => {
-                event.stopPropagation(); // Предотвращаем всплытие события
+                event.stopPropagation();
 
-                // Если userDropdown существует, значит пользователь авторизован и имя заполнено
                 if (userDropdown) {
                     userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
                 } else {
-                    // Если userDropdown не существует, значит пользователь не авторизован
-                    // или авторизован, но имя не заполнено (в этом случае он будет перенаправлен на /complete-profile)
-                    // В любом случае, инициируем вход через Steam.
                     window.location.href = '/auth/steam';
                 }
             });
