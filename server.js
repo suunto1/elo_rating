@@ -225,7 +225,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Настройка MySQL Session Store
-const sessionStore = new MySQLStore({}, pool);
+const sessionStore = new MySQLStore({
+    expiration: 1000 * 60 * 60 * 24 * 7, // 1 неделя хранения сессий
+    clearExpired: true,
+    checkExpirationInterval: 1000 * 60 * 15,
+    createDatabaseTable: true
+}, pool);
 
 app.set('trust proxy', 1);
 
