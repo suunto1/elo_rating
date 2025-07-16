@@ -1,7 +1,17 @@
 require('dotenv').config();
 const session = require('express-session');
 const knexSessionModule = require('connect-session-knex');
-const KnexSessionStore = knexSessionModule.default ? knexSessionModule.default(session) : knexSessionModule(session);
+console.log('knexSessionModule:', knexSessionModule);
+
+let KnexSessionStore;
+if (typeof knexSessionModule === 'function') {
+    KnexSessionStore = knexSessionModule(session);
+} else if (knexSessionModule && typeof knexSessionModule.default === 'function') {
+    KnexSessionStore = knexSessionModule.default(session);
+} else {
+    throw new Error('Cannot initialize KnexSessionStore: connect-session-knex export is not a function');
+}
+
 const db = require('./db');
 
 const express = require("express");
