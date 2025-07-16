@@ -832,7 +832,7 @@ app.post('/profile/update', async (req, res) => {
                 return res.status(500).json({ success: false, message: "Помилка збереження сесії." });
             }
             console.log(`[profile/update POST] User ${userId} profile updated successfully and session saved.`);
-            res.json({ success: true, message: "Профіль успішно оновлено!" });
+            res.json({ success: true, message: "Профіль оновлено." });
         });
 
     } catch (error) {

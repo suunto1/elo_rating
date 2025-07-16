@@ -2,19 +2,15 @@ const mysql = require("mysql2/promise");
 const xlsx = require("xlsx");
 const fs = require("fs");
 const path = require("path");
-// =================================================================================================
-// НАСТРОЙКИ БАЗЫ ДАННЫХ
-// =================================================================================================
+
 const dbConfig = {
   host: "localhost",
   user: "root",
   password: "SQLsuunto",
   database: "elo_ranking",
 };
-const INITIAL_ELO = 1500; // Начальный ELO рейтинг для новых пилотов
-// =================================================================================================
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (без изменений, кроме removePilotEloAtRace, где мы убрали EloAtRace)
-// =================================================================================================
+const INITIAL_ELO = 1500;
+
 async function executeQuery(connection, sql, params) {
   try {
     const [rows] = await connection.execute(sql, params);
@@ -46,17 +42,14 @@ function readXlsxFiles(folderPath) {
 }
 function convertDate(excelDate) {
   if (typeof excelDate === "number") {
-    // Excel date is days since 1900-01-01 (or 1904 for Mac). Assuming 1900.
-    // Subtract 25569 to convert to JavaScript date epoch (January 1, 1970).
-    // Multiply by 86400000 (milliseconds in a day)
     const date = new Date((excelDate - 25569) * 86400000);
-    return date.toISOString().split("T")[0]; // Format as YYYY-MM-DD
+    return date.toISOString().split("T")[0];
   }
-  return excelDate; // Assume it's already in a readable date format if not a number
+  return excelDate;
 }
 function convertLapTimeToString(lapTime) {
   if (typeof lapTime === "number") {
-    const totalSeconds = lapTime * 24 * 60 * 60; // Convert from Excel's fraction of a day to seconds
+    const totalSeconds = lapTime * 24 * 60 * 60;
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = Math.floor(totalSeconds % 60);
     const milliseconds = Math.round(
@@ -66,7 +59,7 @@ function convertLapTimeToString(lapTime) {
       .toString()
       .padStart(2, "0")}.${milliseconds.toString().padStart(3, "0")}`;
   }
-  return lapTime; // If it's already a string, return as is
+  return lapTime;
 }
 async function getOrCreatePilot(connection, pilotName) {
   const [rows] = await connection.execute(
@@ -83,7 +76,6 @@ async function getOrCreatePilot(connection, pilotName) {
         [pilotName, INITIAL_ELO]
       )
     )[0]?.insertId;
-    // После вставки, снова выбрать UUID, так как insertId не возвращает UUID
     const [newRows] = await connection.execute(
       "SELECT UUID FROM Pilots WHERE Name = ?",
       [pilotName]
@@ -120,7 +112,7 @@ async function insertRaceParticipant(
   await executeQuery(
     connection,
     "INSERT INTO RaceParticipants (UUID, CompetitionUUID, RaceUUID, PilotUUID, Place, EloAtRace, EloChange) VALUES (UUID(), ?, ?, ?, ?, ?, ?)",
-    [competitionUUID, raceUUID, pilotUUID, place, INITIAL_ELO, 0] // Начальное EloAtRace и EloChange = 0, они будут обновлены позже
+    [competitionUUID, raceUUID, pilotUUID, place, INITIAL_ELO, 0]
   );
 }
 async function addNewRace(connection, newRace, competitionUUID) {
@@ -189,12 +181,8 @@ function determineK(participants, split) {
 function calculateNewElo(currentElo, K, actualScore, expectedScore) {
   return currentElo + K * (actualScore - expectedScore);
 }
-// =================================================================================================
-// ФУНКЦИЯ: updatePilotStatistics (обновлена для использования EloAtRace)
-// =================================================================================================
-// Функция для обновления статистики пилота (победы, подиумы, топ-5, топ-10, процент подиумов)
+
 async function updatePilotStatistics(connection, pilotUUID) {
-  // Получаем все гонки для пилота, чтобы рассчитать статистику
   const [pilotRaces] = await connection.execute(
     `SELECT rp.Place
          FROM RaceParticipants rp
@@ -202,13 +190,13 @@ async function updatePilotStatistics(connection, pilotUUID) {
     [pilotUUID]
   );
   let wins = 0;
-  let podiums = 0; // 1-е, 2-е, 3-е места
+  let podiums = 0;
   let top5 = 0;
   let top10 = 0;
-  const raceCount = pilotRaces.length; // Обновленное RaceCount
+  const raceCount = pilotRaces.length;
   pilotRaces.forEach((race) => {
     const place = parseInt(race.Place, 10);
-    if (isNaN(place)) return; // Пропускаем, если место не является действительным числом
+    if (isNaN(place)) return;
     if (place === 1) {
       wins++;
     }
@@ -242,10 +230,7 @@ async function updatePilotStatistics(connection, pilotUUID) {
     )}, Стартов=${raceCount}`
   );
 }
-// =================================================================================================
-// КОНЕЦ ФУНКЦИИ: updatePilotStatistics
-// =================================================================================================
-// Функция для обновления ELO рейтингов с учетом сплита и расчета среднего изменения
+
 async function updateEloRankings(connection, raceUUID, split) {
   const raceParticipantsQuery =
     "SELECT PilotUUID, Place FROM RaceParticipants WHERE RaceUUID = ?";
@@ -256,8 +241,8 @@ async function updateEloRankings(connection, raceUUID, split) {
     console.log("Нет данных для обработки.");
     return;
   }
-  const participants = rows.length; // Определяем количество участников
-  const K = determineK(participants, split); // Определяем коэффициент K
+  const participants = rows.length;
+  const K = determineK(participants, split);
   const pilotUUIDs = rows.map((row) => row.PilotUUID);
   const placeholders = pilotUUIDs.map(() => "?").join(", ");
   const pilotsQuery = `SELECT UUID, Name, EloRanking FROM Pilots WHERE UUID IN (${placeholders})`;
@@ -274,7 +259,7 @@ async function updateEloRankings(connection, raceUUID, split) {
       console.log(`Пилот с UUID ${row.PilotUUID} не найден.`);
       continue;
     }
-    // Запоминаем текущий ELO пилота перед расчетом нового ELO для RaceParticipants
+
     const eloAtRace = pilot.EloRanking;
     const expected = 1 / (1 + Math.pow(10, (avgElo - pilot.EloRanking) / 400));
     const actual = 1 - (row.Place - 1) / (rows.length - 1);
@@ -283,7 +268,7 @@ async function updateEloRankings(connection, raceUUID, split) {
     const updatePilotEloQuery =
       "UPDATE Pilots SET EloRanking = ? WHERE UUID = ?";
     await executeQuery(connection, updatePilotEloQuery, [newElo, pilot.UUID]);
-    // Обновляем EloAtRace и EloChange для записи в RaceParticipants
+
     const updateRaceParticipantsQuery =
       "UPDATE RaceParticipants SET EloChange = ?, EloAtRace = ? WHERE PilotUUID = ? AND RaceUUID = ?";
     await executeQuery(connection, updateRaceParticipantsQuery, [
@@ -300,7 +285,7 @@ async function updateEloRankings(connection, raceUUID, split) {
       )}`
     );
   }
-  // Обновление среднего изменения ELO для каждого пилота
+
   for (let pilot of eloRows) {
     const averageChangeQuery = `
             SELECT AVG(EloChange) as AverageChange
@@ -326,7 +311,7 @@ async function updateEloRankings(connection, raceUUID, split) {
   }
   console.log("Elo ratings updated successfully!");
 }
-//Функция для добавления результатов гонок с учетом сплита
+
 async function addRaceResultsForClass(
   connection,
   raceUUID,
@@ -343,7 +328,7 @@ async function addRaceResultsForClass(
     console.log("No race results found.");
     return;
   }
-  const pilotsInThisRaceUUIDs = []; // Собираем UUIDs пилотов, участвующих в текущей гонке
+  const pilotsInThisRaceUUIDs = [];
   for (let result of raceResults) {
     if (result.Place === "Place" && result.PilotName === "Pilot Name") {
       continue;
@@ -353,8 +338,8 @@ async function addRaceResultsForClass(
   for (let result of raceResults) {
     console.log("Adding pilot:", result.PilotName);
     const pilotUUID = await getOrCreatePilot(connection, result.PilotName);
-    result.PilotUUID = pilotUUID; // Убедимся, что UUID записан в объекте результата
-    pilotsInThisRaceUUIDs.push(pilotUUID); // Добавляем UUID в список для инкрементального обновления
+    result.PilotUUID = pilotUUID;
+    pilotsInThisRaceUUIDs.push(pilotUUID);
     const isExistingPilotInRace = await checkExistingPilot(
       connection,
       raceUUID,
@@ -378,33 +363,27 @@ async function addRaceResultsForClass(
   }
   console.log("Race results added successfully!");
   await updateEloRankings(connection, raceUUID, split);
-  // =================================================================================================
-  // ИЗМЕНЕНИЕ: Теперь обновляем статистику ТОЛЬКО для пилотов текущей гонки
-  // =================================================================================================
+
   for (const pilotUUID of pilotsInThisRaceUUIDs) {
-    // Используем собранный список
+
     await updatePilotStatistics(connection, pilotUUID);
   }
-  // =================================================================================================
-  // КОНЕЦ ИЗМЕНЕНИЯ
-  // =================================================================================================
+
 }
-// =================================================================================================
-// НОВАЯ ГЛАВНАЯ ФУНКЦИЯ ДЛЯ ОДНОРАЗОВОГО ПОЛНОГО ОБНОВЛЕНИЯ СТАТИСТИКИ
-// =================================================================================================
+
 async function calculateAllPilotsStatistics() {
-  const connection = await mysql.createConnection(dbConfig); // Используем pool.getConnection() для пула
+  const connection = await mysql.createConnection(dbConfig);
   try {
     await connection.beginTransaction();
     console.log("Запуск полного пересчета статистики для всех пилотов...");
-    // Получаем UUID всех пилотов из базы данных
+
     const [allPilots] = await connection.execute("SELECT UUID FROM Pilots");
     if (allPilots.length === 0) {
       console.log("В базе данных нет пилотов для обновления статистики.");
       await connection.commit();
       return;
     }
-    // Пересчитываем статистику для каждого пилота
+
     for (const pilot of allPilots) {
       await updatePilotStatistics(connection, pilot.UUID);
     }
@@ -420,17 +399,14 @@ async function calculateAllPilotsStatistics() {
     await connection.rollback();
   } finally {
     if (connection) {
-      await connection.end(); // Прямое соединение закрываем через end()
+      await connection.end();
     }
   }
 }
-// =================================================================================================
-// КОНЕЦ НОВОЙ ГЛАВНОЙ ФУНКЦИИ
-// =================================================================================================
-// Основная функция добавления результатов гонок (Остается почти без изменений)
+
 async function addRaceResults() {
-  const connection = await mysql.createConnection(dbConfig); // Используем createConnection для транзакции
-  const folderPath = "./xlsx_files_new"; // Путь к папке с xlsx файлами
+  const connection = await mysql.createConnection(dbConfig);
+  const folderPath = "./xlsx_files_new";
   const filesData = readXlsxFiles(folderPath);
   try {
     await connection.beginTransaction();
@@ -482,7 +458,7 @@ async function addRaceResults() {
         isNaN(split)
       ) {
         console.error("Ошибка: Одно или несколько обязательных полей пусты.");
-        continue; // Пропускаем итерацию, если одно из обязательных полей пусто
+        continue;
       }
       const raceResults = fileData
         .slice(1)
@@ -493,7 +469,7 @@ async function addRaceResults() {
         }))
         .filter((result) => result.Place && result.PilotName);
       console.log("Filtered race results:", raceResults);
-      // Проверка на дубли пилотов
+
       const pilotNamesSet = new Set();
       for (const result of raceResults) {
         if (pilotNamesSet.has(result.PilotName)) {
@@ -501,7 +477,7 @@ async function addRaceResults() {
             `Ошибка: Дубли пилота найдены в результатах гонки. Дублирующийся пилот: ${result.PilotName}. Гонка: ${competitionName}, ${trackName}, ${startDate}, Класс: ${raceClass}, Сплит: ${split}`
           );
           await connection.rollback();
-          return; // Остановить вставку всех данных и выйти из функции
+          return;
         }
         pilotNamesSet.add(result.PilotName);
       }
@@ -558,8 +534,8 @@ async function addRaceResults() {
         competitionUUID,
         split
       );
-      // Обновление лучшего времени на круге для трассы
-      const baseTrackName = trackName.replace(/\s*\(.*\)$/, "").trim(); // Удаляем суффиксы
+
+      const baseTrackName = trackName.replace(/\s*\(.*\)$/, "").trim();
       const [existingTrack] = await connection.execute(
         `
                 SELECT * FROM TrackRecords WHERE TrackName = ?
@@ -567,7 +543,7 @@ async function addRaceResults() {
         [baseTrackName]
       );
       if (existingTrack.length === 0) {
-        // Вставляем новое время круга, если трассы еще нет в базе
+
         await connection.execute(
           `
                     INSERT INTO TrackRecords (TrackName, BestQualifyingLapTime, BestQualifyingLapPilot, BestRaceLapTime, BestRaceLapPilot)
@@ -582,7 +558,7 @@ async function addRaceResults() {
           ]
         );
       } else {
-        // Обновляем время круга, если оно улучшилось
+
         const updateQueries = [];
         if (
           bestQualifyingLapTime &&
@@ -623,7 +599,7 @@ async function addRaceResults() {
     await connection.rollback();
   } finally {
     if (connection) {
-      await connection.end(); // Прямое соединение закрываем через end()
+      await connection.end();
     }
   }
 }
