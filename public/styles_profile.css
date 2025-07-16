@@ -275,6 +275,40 @@
     background-color: #f44336;
 }
 
+.name-edit-container {
+    display: flex; /* Розмістить ім'я/поля та кнопку в одному рядку */
+    align-items: center; /* Вирівняє їх по центру по вертикалі */
+    gap: 10px; /* Відстань між елементами */
+}
+
+.name-edit-container h2 {
+    margin: 0; /* Прибираємо стандартні відступи у h2, якщо вони заважають */
+    white-space: nowrap; /* Щоб ім'я та прізвище не переносилися на новий рядок */
+}
+
+.name-edit-container input[type="text"] {
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1em; /* Забезпечуємо такий же розмір шрифту, як і в h2, або налаштуйте */
+    box-sizing: border-box; /* Для коректного відображення padding */
+    width: 150px; /* Приклад ширини, можете налаштувати */
+}
+
+.edit-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em; /* Розмір іконки */
+    padding: 5px;
+    color: #555; /* Колір олівця */
+    transition: color 0.2s ease;
+}
+
+.edit-icon-btn:hover {
+    color: #007bff; /* Колір при наведенні */
+}
+
 @media (max-width: 768px) {
     #profile-form {
         grid-template-columns: 1fr;

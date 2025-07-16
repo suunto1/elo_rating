@@ -28,17 +28,15 @@ const storage = multer.diskStorage({
         cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
-        // Генерируем уникальное имя файла без userId на этом этапе
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const fileExtension = path.extname(file.originalname);
-        // Временное имя файла
         cb(null, `temp-${uniqueSuffix}${fileExtension}`); 
     }
 });
 
 const upload = multer({ 
     storage: storage,
-    limits: { fileSize: 10 * 1024 * 1024 }, // Ограничение на размер файла (например, 10MB)
+    limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         const filetypes = /jpeg|jpg|png|gif/;
         const mimetype = filetypes.test(file.mimetype);
@@ -694,7 +692,7 @@ app.get("/profile", checkAuthenticated, async (req, res) => {
         const [rows] = await connection.execute(
             `SELECT LMUName, DiscordId, YoutubeChannel, TwitchChannel,
             Instagram, Twitter, iRacingCustomerId, Country, City,
-            TeamUUID, IsTeamInterested, PhotoPath
+            TeamUUID, IsTeamInterested, PhotoPath, first_name, last_name
             FROM users WHERE id = ?`,
             [userId]
         );
@@ -755,7 +753,9 @@ app.post('/profile/update', async (req, res) => {
         Country,
         City,
         TeamUUID,
-        IsTeamInterested
+        IsTeamInterested,
+        first_name,
+        last_name
     } = req.body;
 
     const sanitizedIRacingCustomerId = DOMPurify.sanitize(iRacingCustomerId || '').trim();
@@ -767,6 +767,8 @@ app.post('/profile/update', async (req, res) => {
     const sanitizedTwitter = DOMPurify.sanitize(Twitter || '').trim();
     const sanitizedCountry = DOMPurify.sanitize(Country || '').trim();
     const sanitizedCity = DOMPurify.sanitize(City || '').trim();
+    const sanitizedFirstName = DOMPurify.sanitize(first_name || '').trim();
+    const sanitizedLastName = DOMPurify.sanitize(last_name || '').trim();
 
     const finalTeamUUID = (TeamUUID === '' || TeamUUID === undefined || TeamUUID === null) ? null : DOMPurify.sanitize(TeamUUID).trim();
 
@@ -774,6 +776,28 @@ app.post('/profile/update', async (req, res) => {
         console.warn(`[profile/update POST] Invalid iRacingCustomerId: ${sanitizedIRacingCustomerId}`);
         return res.status(400).json({ success: false, message: 'Поле "iRacing Customer ID" повинно містити лише цифри.' });
     }
+
+    const latinRegex = /^[a-zA-Z]+$/;
+
+    if (!sanitizedFirstName) {
+        console.warn("[profile/update POST] First name is empty.");
+        return res.status(400).json({ success: false, message: 'Ім\'я не може бути пустим.' });
+    }
+    if (!latinRegex.test(sanitizedFirstName)) {
+        console.warn(`[profile/update POST] Invalid first name: ${sanitizedFirstName}`);
+        return res.status(400).json({ success: false, message: 'Ім\'я повинно містити лише латинські літери.' });
+    }
+
+    if (!sanitizedLastName) {
+        console.warn("[profile/update POST] Last name is empty.");
+        return res.status(400).json({ success: false, message: 'Прізвище не може бути пустим.' });
+    }
+    if (!latinRegex.test(sanitizedLastName)) {
+        console.warn(`[profile/update POST] Invalid last name: ${sanitizedLastName}`);
+        return res.status(400).json({ success: false, message: 'Прізвище повинно містити лише латинські літери.' });
+    }
+
+    const newUsername = `${sanitizedFirstName} ${sanitizedLastName}`;
 
     let finalIsTeamInterested = (IsTeamInterested === true || IsTeamInterested === 'on' || IsTeamInterested === 1) ? 1 : 0;
     if (finalTeamUUID) {
@@ -791,6 +815,9 @@ app.post('/profile/update', async (req, res) => {
         const updateFields = [];
         const updateValues = [];
 
+        updateFields.push('first_name = ?'); updateValues.push(sanitizedFirstName);
+        updateFields.push('last_name = ?'); updateValues.push(sanitizedLastName);
+        updateFields.push('username = ?'); updateValues.push(newUsername);
         updateFields.push('iRacingCustomerId = ?'); updateValues.push(sanitizedIRacingCustomerId);
         updateFields.push('LMUName = ?'); updateValues.push(sanitizedLMUName);
         updateFields.push('DiscordId = ?'); updateValues.push(sanitizedDiscordId);
@@ -811,7 +838,7 @@ app.post('/profile/update', async (req, res) => {
 
         if (result.affectedRows === 0) {
             console.warn(`[profile/update POST] No rows updated for user ID: ${userId}. User might not exist or no changes were made.`);
-            return res.status(404).json({ success: false, message: "Користувач не знайдений або немає змін для збереження." });
+            return res.status(404).json({ success: false, message: "Користувач не знайдений або немає змін для збереження" });
         }
 
         req.user.iRacingCustomerId = sanitizedIRacingCustomerId;
@@ -825,6 +852,9 @@ app.post('/profile/update', async (req, res) => {
         req.user.City = sanitizedCity;
         req.user.TeamUUID = finalTeamUUID;
         req.user.IsTeamInterested = finalIsTeamInterested;
+        req.user.first_name = sanitizedFirstName;
+        req.user.last_name = sanitizedLastName;
+        req.user.username = newUsername;
 
         req.session.save((err) => {
             if (err) {
@@ -832,12 +862,12 @@ app.post('/profile/update', async (req, res) => {
                 return res.status(500).json({ success: false, message: "Помилка збереження сесії." });
             }
             console.log(`[profile/update POST] User ${userId} profile updated successfully and session saved.`);
-            res.json({ success: true, message: "Профіль оновлено." });
+            res.json({ success: true, message: "Профіль оновлено" });
         });
 
     } catch (error) {
         console.error("[profile/update POST] Error updating user profile:", error);
-        res.status(500).json({ success: false, message: "Помилка сервера при оновленні профілю." });
+        res.status(500).json({ success: false, message: "Помилка сервера при оновленні профілю" });
     } finally {
         if (connection) connection.release();
     }
@@ -850,7 +880,7 @@ app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
                 if (err) console.error('Error deleting temporary file for unauthenticated user:', err);
             });
         }
-        return res.status(403).json({ message: "У вас немає прав для завантаження фото." });
+        return res.status(403).json({ message: "У вас немає прав для завантаження фото" });
     }
 
     const userId = req.user.id;

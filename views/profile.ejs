@@ -39,10 +39,24 @@
                                 <!-- <button id="upload-avatar-btn" class="upload-btn">Завантажити</button> -->
                                 <input type="file" id="avatar-input" accept="image/*" style="display: none;">
                                 <% const defaultAvatarPath='/avatars/default_avatar_64.png' ; %>
-                                    <button id="delete-avatar-btn" class="delete-btn"
-                                        style="display: none;">Видалити</button>
+                                    <!-- <button id="delete-avatar-btn" class="delete-btn"
+                                        style="display: none;">Видалити</button> -->
                             </div>
                             <div class="profile-title">
+                                <div class="name-edit-container">
+                                    <h2 id="fullNameDisplay">
+                                        <%= user.first_name %> <%= user.last_name %>
+                                    </h2>
+                                    <input type="text" id="firstNameInput" value="<%= user.first_name %>"
+                                        style="display: none;" pattern="[a-zA-Z]+"
+                                        title="Лише латинські літери (A-Z, a-z)">
+                                    <input type="text" id="lastNameInput" value="<%= user.last_name %>"
+                                        style="display: none;" pattern="[a-zA-Z]+"
+                                        title="Лише латинські літери (A-Z, a-z)">
+                                    <button id="editNameBtn" class="edit-icon-btn" aria-label="Редагувати">
+                                        ✏️
+                                    </button>
+                                </div>
                                 <h2>
                                     <%= user.username %>
                                 </h2>
@@ -188,6 +202,20 @@
 
                     teamUUIDSelect.addEventListener('change', updateIsTeamInterestedState);
 
+                    editNameBtn.addEventListener('click', () => {
+                        const isEditing = firstNameInput.style.display === 'inline-block';
+                        if (isEditing) {
+                            fullNameDisplay.style.display = 'inline';
+                            firstNameInput.style.display = 'none';
+                            lastNameInput.style.display = 'none';
+                        } else {
+                            fullNameDisplay.style.display = 'none';
+                            firstNameInput.style.display = 'inline-block';
+                            lastNameInput.style.display = 'inline-block';
+                            firstNameInput.focus();
+                        }
+                    });
+
                     form.addEventListener('submit', async (e) => {
                         e.preventDefault();
                         console.log('Кнопка "Зберегти" нажата. Обработчик submit запущен.');
@@ -196,7 +224,26 @@
                         let clientErrorMessage = '';
 
                         if (iRacingCustomerIdInput.value && !/^[0-9]+$/.test(iRacingCustomerIdInput.value)) {
-                            clientErrorMessage += 'Поле "iRacing Customer ID" повинно містити лише цифры\n';
+                            clientErrorMessage += 'Поле "iRacing Customer ID" повинно містити лише цифри\n';
+                        }
+
+                        const newFirstName = firstNameInput.value.trim();
+                        const newLastName = lastNameInput.value.trim();
+
+                        const latinRegex = /^[a-zA-Z]+$/;
+
+                        if (firstNameInput.style.display === 'inline-block') {
+                            if (!newFirstName) {
+                                clientErrorMessage += 'Ім\'я не може бути пустим.\n';
+                            } else if (!latinRegex.test(newFirstName)) {
+                                clientErrorMessage += 'Ім\'я повинно містити лише латинські літери.\n';
+                            }
+
+                            if (!newLastName) {
+                                clientErrorMessage += 'Прізвище не може бути пустим.\n';
+                            } else if (!latinRegex.test(newLastName)) {
+                                clientErrorMessage += 'Прізвище повинно містити лише латинські літери.\n';
+                            }
                         }
 
                         if (clientErrorMessage) {
@@ -205,6 +252,8 @@
                         }
 
                         const formData = {
+                            first_name: newFirstName,
+                            last_name: newLastName,
                             LMUName: document.getElementById('LMUName').value,
                             DiscordId: document.getElementById('DiscordId').value,
                             YoutubeChannel: document.getElementById('YoutubeChannel').value,
@@ -234,13 +283,20 @@
 
                             if (response.ok) {
                                 showStatusMessage(data.message, 'success');
+                                fullNameDisplay.textContent = `${newFirstName} ${newLastName}`;
+                                fullNameDisplay.style.display = 'inline';
+                                firstNameInput.style.display = 'none';
+                                lastNameInput.style.display = 'none';
+                                if (data.updatedUser && data.updatedUser.username) {
+                                    document.querySelector('.profile-title h2:last-of-type').textContent = data.updatedUser.username;
+                                }
                             } else {
                                 console.error('Ошибка от сервера при обновлении профиля:', data.message || response.statusText);
-                                showStatusMessage('Помилка: ' + (data.message || 'Неизвестная ошибка'), 'error', 5000);
+                                showStatusMessage('Помилка: ' + (data.message || 'Невiдома помилка'), 'error', 5000);
                             }
                         } catch (error) {
-                            console.error('Ошибка при оновленні профілю (сеть/Fetch API):', error);
-                            showStatusMessage('Помилка при оновленні профілю. Проверьте подключение к интернету.', 'error', 5000);
+                            console.error('Помилка при оновленні профілю (сеть/Fetch API):', error);
+                            showStatusMessage('Помилка при оновленні профілю.', 'error', 5000);
                         }
                     });
 
