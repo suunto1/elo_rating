@@ -23,8 +23,8 @@ const multer = require('multer');
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        const uploadDir = path.join(__dirname, 'public', 'avatars'); 
-        
+        const uploadDir = path.join(__dirname, 'public', 'avatars');
+
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
             console.log(`Created upload directory: ${uploadDir}`);
@@ -34,11 +34,11 @@ const storage = multer.diskStorage({
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const fileExtension = path.extname(file.originalname);
-        cb(null, `temp-${uniqueSuffix}${fileExtension}`); 
+        cb(null, `temp-${uniqueSuffix}${fileExtension}`);
     }
 });
 
-const upload = multer({ 
+const upload = multer({
     storage: storage,
     limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
@@ -96,17 +96,12 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser(async (id, done) => {
     console.log("[Passport] deserializeUser - Attempting to deserialize user with ID:", id);
-    let connection;
     try {
-        connection = await pool.getConnection();
-        const [rows] = await connection.execute(
-            `SELECT id, username, PhotoPath, LMUName, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, TeamUUID, IsTeamInterested, steam_id_64, first_name, last_name 
-             FROM users 
-             WHERE id = ?`,
-            [id]
-        );
-        let user = rows[0];
+        const rows = await db('users')
+            .select('id', 'username', 'PhotoPath', 'LMUName', 'DiscordId', 'YoutubeChannel', 'TwitchChannel', 'Instagram', 'Twitter', 'iRacingCustomerId', 'Country', 'City', 'TeamUUID', 'IsTeamInterested', 'steam_id_64', 'first_name', 'last_name')
+            .where('id', id);
 
+        const user = rows[0];
         if (!user) {
             console.warn("[Passport] deserializeUser - User not found for ID:", id);
             return done(null, false);
@@ -141,12 +136,9 @@ passport.use(new SteamStrategy({
         console.log("[Passport] SteamStrategy: profile =", profile);
         let connection;
         try {
-            connection = await pool.getConnection();
-
-            const [userRows] = await connection.execute(
-                `SELECT id, steam_id_64, pilot_uuid, username, first_name, last_name, is_admin FROM users WHERE steam_id_64 = ?`,
-                [steamId64]
-            );
+            const userRows = await db('users')
+                .select('id', 'steam_id_64', 'pilot_uuid', 'username', 'first_name', 'last_name', 'is_admin')
+                .where('steam_id_64', steamId64);
             let user = userRows[0];
             let pilotUuidToLink = null;
 
@@ -228,11 +220,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 const store = new KnexSessionStore({
-  knex: db,            // ваш объект knex (из db.js)
-  tablename: 'sessions',
-  createtable: true,
-  sidfieldname: 'sid',
-  clearInterval: 600000 // Очистка просроченных сессий каждые 10 мин
+    knex: db,            // ваш объект knex (из db.js)
+    tablename: 'sessions',
+    createtable: true,
+    sidfieldname: 'sid',
+    clearInterval: 600000 // Очистка просроченных сессий каждые 10 мин
 });
 
 
@@ -240,13 +232,13 @@ app.set('trust proxy', 1);
 
 // Настройка сессий
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'defaultsecret',
-  resave: false,
-  saveUninitialized: false,
-  store: store,
-  cookie: {
-    maxAge: 1000 * 60 * 60 * 24 * 7 // 7 дней
-  }
+    secret: process.env.SESSION_SECRET || 'defaultsecret',
+    resave: false,
+    saveUninitialized: false,
+    store: store,
+    cookie: {
+        maxAge: 1000 * 60 * 60 * 24 * 7 // 7 дней
+    }
 }));
 
 // Инициализация Passport
@@ -356,15 +348,13 @@ app.get('/auth/steam/return',
 
         let connection;
         try {
-            connection = await pool.getConnection();
-
             const steamId64 = req.user.id;
             const steamDisplayName = req.user.displayName;
 
-            const [userRows] = await connection.execute(
-                `SELECT id, steam_id_64, pilot_uuid, username, first_name, last_name, is_admin, PhotoPath FROM users WHERE steam_id_64 = ?`,
-                [steamId64]
-            );
+            const userRows = await db('users')
+                .select('id', 'steam_id_64', 'pilot_uuid', 'username', 'first_name', 'last_name', 'is_admin', 'PhotoPath')
+                .where('steam_id_64', steamId64);
+
             let userInDb = userRows[0];
 
             const defaultPhotoPath = '/avatars/default_avatar_64.png';
@@ -386,7 +376,7 @@ app.get('/auth/steam/return',
 
                 const [insertResult] = await connection.execute(
                     `INSERT INTO users (steam_id_64, username, first_name, last_name, pilot_uuid, PhotoPath, registered_at, last_login_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-                    [steamId64, steamDisplayName, '', '', currentPilotUuid, defaultPhotoPath] 
+                    [steamId64, steamDisplayName, '', '', currentPilotUuid, defaultPhotoPath]
                 );
                 console.log(`[auth/steam/return] DEBUG: INSERT query executed. insertResult:`, insertResult);
                 userInDb = {
@@ -520,18 +510,21 @@ app.get('/complete-profile', (req, res) => {
 });
 
 app.post("/complete-profile", checkAuthenticated, async (req, res) => {
-    let connection;
     try {
-        connection = await pool.getConnection();
         const { first_name, last_name } = req.body;
         const userId = req.user.id;
         const username = `${first_name} ${last_name}`;
 
-        await connection.execute(
-            "UPDATE users SET first_name = ?, last_name = ?, username = ? WHERE id = ?",
-            [first_name, last_name, username, userId]
-        );
+        // Обновляем профиль пользователя
+        await db('users')
+            .where('id', userId)
+            .update({
+                first_name,
+                last_name,
+                username
+            });
 
+        // Обновляем сессионного пользователя
         req.user.first_name = first_name;
         req.user.last_name = last_name;
         req.user.username = username;
@@ -539,17 +532,20 @@ app.post("/complete-profile", checkAuthenticated, async (req, res) => {
         req.session.save(async (err) => {
             if (err) {
                 console.error("Ошибка сохранения сессии после обновления профиля:", err);
-                return res.status(500).render("complete_profile", { message: "Помилка збереження сесії. Спробуйте ще раз.", messageType: "danger" });
+                return res.status(500).render("complete_profile", {
+                    message: "Помилка збереження сесії. Спробуйте ще раз.",
+                    messageType: "danger"
+                });
             }
 
             let pilotName = null;
             if (req.user.pilot_uuid) {
-                const [rows] = await connection.execute(
-                    "SELECT Name FROM pilots WHERE UUID = ?",
-                    [req.user.pilot_uuid]
-                );
-                if (rows.length > 0) {
-                    pilotName = rows[0].Name;
+                const pilotRows = await db('pilots')
+                    .select('Name')
+                    .where('UUID', req.user.pilot_uuid);
+
+                if (pilotRows.length > 0) {
+                    pilotName = pilotRows[0].Name;
                 }
             }
 
@@ -562,76 +558,59 @@ app.post("/complete-profile", checkAuthenticated, async (req, res) => {
 
     } catch (error) {
         console.error("Ошибка завершения профиля:", error);
-        res.status(500).render("complete_profile", { message: "Помилка збереження даних. Спробуйте ще раз.", messageType: "danger" });
-    } finally {
-        if (connection) {
-            connection.release();
-        }
+        res.status(500).render("complete_profile", {
+            message: "Помилка збереження даних. Спробуйте ще раз.",
+            messageType: "danger"
+        });
     }
 });
-
 
 app.get("/", async (req, res) => {
     console.log(`[Root GET] Path: ${req.path}`);
     console.log(`[Root GET] isAuthenticated(): ${req.isAuthenticated()}`);
     console.log(`[Root GET] req.user:`, req.user);
 
-    let connection;
     try {
-        connection = await pool.getConnection();
-        const [rows] = await connection.execute(`
-            SELECT
-                p.Name,
-                p.EloRanking,
-                p.RaceCount,
-                p.UUID,
-                p.AverageChange
-            FROM pilots p
-            ORDER BY p.EloRanking DESC
-        `);
+        const rows = await db('pilots')
+            .select('Name', 'EloRanking', 'RaceCount', 'UUID', 'AverageChange')
+            .orderBy('EloRanking', 'desc');
+
         console.log("Pilots data:", rows.length > 0 ? `Fetched ${rows.length} pilots.` : 'No pilots found.');
         res.render("pilots", { pilots: rows, activeMenu: 'pilots' });
     } catch (error) {
         console.error("[Root GET] Error fetching data for / (root):", error);
         res.status(500).send("Error fetching data");
-    } finally {
-        if (connection) {
-            connection.release();
-        }
     }
 });
 
+
 app.get("/pilot/:name", async (req, res) => {
     const pilotName = req.params.name;
-    let connection;
+
     try {
-        connection = await pool.getConnection();
         console.log(`[Pilot Profile GET] Fetching data for pilot: ${pilotName}`);
 
-        const [pilotLookupRows] = await connection.execute(
-            `SELECT UUID FROM pilots WHERE Name = ?`,
-            [pilotName]
-        );
+        // 1. Найти UUID пилота по имени
+        const pilotLookupRows = await db('pilots')
+            .select('UUID')
+            .where('Name', pilotName);
 
         if (pilotLookupRows.length === 0) {
             console.warn(`[Pilot Profile GET] Pilot with name ${pilotName} not found.`);
             return res.status(404).send("Pilot not found");
         }
+
         const pilotUUID = pilotLookupRows[0].UUID;
 
+        // 2. Получить данные для построения графика ELO
+        const eloRaceRows = await db('raceparticipants as rp')
+            .join('pilots as p', 'rp.PilotUUID', 'p.UUID')
+            .join('races as r', 'rp.RaceUUID', 'r.UUID')
+            .select('r.StartDate as Date', 'rp.EloChange')
+            .where('p.UUID', pilotUUID)
+            .orderBy('r.StartDate');
 
-        let initialEloRanking = 1500;
-        const [eloRaceRows] = await connection.execute(
-            `SELECT r.StartDate as Date, rp.EloChange
-             FROM raceparticipants rp
-             JOIN pilots p ON rp.PilotUUID = p.UUID
-             JOIN races r ON rp.RaceUUID = r.UUID
-             WHERE p.UUID = ?
-             ORDER BY r.StartDate`,
-            [pilotUUID]
-        );
-
-        let cumulativeElo = initialEloRanking;
+        let cumulativeElo = 1500;
         const eloChartData = eloRaceRows.map((race) => {
             const date = new Date(race.Date);
             const utcDate = new Date(date.toISOString());
@@ -642,18 +621,17 @@ app.get("/pilot/:name", async (req, res) => {
             };
         });
 
-        const [pilotStatsRows] = await connection.execute(
-            `SELECT
-                RaceCount,
-                Wins,
-                Podiums,
-                Top5,
-                Top10,
-                PodiumPercentage
-            FROM pilots
-            WHERE UUID = ?`,
-            [pilotUUID]
-        );
+        // 3. Получить статистику пилота
+        const pilotStatsRows = await db('pilots')
+            .select(
+                'RaceCount',
+                'Wins',
+                'Podiums',
+                'Top5',
+                'Top10',
+                'PodiumPercentage'
+            )
+            .where('UUID', pilotUUID);
 
         const pilotStats = pilotStatsRows[0] || {
             RaceCount: 0,
@@ -664,6 +642,7 @@ app.get("/pilot/:name", async (req, res) => {
             PodiumPercentage: 0,
         };
 
+        // 4. Ответ JSON
         res.json({
             eloChartData: eloChartData,
             stats: {
@@ -679,10 +658,6 @@ app.get("/pilot/:name", async (req, res) => {
     } catch (error) {
         console.error("[Pilot Profile GET] Error fetching pilot data:", error);
         res.status(500).send("Error fetching pilot data");
-    } finally {
-        if (connection) {
-            connection.release();
-        }
     }
 });
 
@@ -693,31 +668,33 @@ app.get("/profile", checkAuthenticated, async (req, res) => {
 
     const userId = req.user.id;
 
-    let connection;
     try {
-        connection = await pool.getConnection();
+        // Получаем данные пользователя
+        const userRows = await db('users')
+            .select(
+                'LMUName',
+                'DiscordId',
+                'YoutubeChannel',
+                'TwitchChannel',
+                'Instagram',
+                'Twitter',
+                'iRacingCustomerId',
+                'Country',
+                'City',
+                'TeamUUID',
+                'IsTeamInterested',
+                'PhotoPath',
+                'first_name',
+                'last_name'
+            )
+            .where({ id: userId });
 
-        const [rows] = await connection.execute(
-            `SELECT LMUName, DiscordId, YoutubeChannel, TwitchChannel,
-            Instagram, Twitter, iRacingCustomerId, Country, City,
-            TeamUUID, IsTeamInterested, PhotoPath, first_name, last_name
-            FROM users WHERE id = ?`,
-            [userId]
-        );
+        const userProfile = userRows[0] || {};
 
-        if (rows.length === 0) {
-            return res.render("profile", {
-                userProfile: {},
-                availableTeams: [],
-                activeMenu: 'profile',
-                isAuthenticated: req.isAuthenticated(),
-                user: req.user
-            });
-        }
+        // Получаем список команд
+        const teamRows = await db('teams').select('UUID', 'Name');
 
-        const userProfile = rows[0];
-        const [teams] = await connection.execute(`SELECT UUID, Name FROM teams`);
-        const availableTeams = teams.map(team => ({
+        const availableTeams = teamRows.map(team => ({
             uuid: team.UUID,
             name: team.Name
         }));
@@ -733,10 +710,9 @@ app.get("/profile", checkAuthenticated, async (req, res) => {
     } catch (error) {
         console.error("Error fetching user profile:", error);
         res.status(500).send("Error fetching user profile data.");
-    } finally {
-        if (connection) connection.release();
     }
 });
+
 
 app.post('/profile/update', async (req, res) => {
     console.log(`[profile/update POST] Path: ${req.path}`);
@@ -777,92 +753,53 @@ app.post('/profile/update', async (req, res) => {
     const sanitizedCity = DOMPurify.sanitize(City || '').trim();
     const sanitizedFirstName = DOMPurify.sanitize(first_name || '').trim();
     const sanitizedLastName = DOMPurify.sanitize(last_name || '').trim();
-
     const finalTeamUUID = (TeamUUID === '' || TeamUUID === undefined || TeamUUID === null) ? null : DOMPurify.sanitize(TeamUUID).trim();
 
-     if (sanitizedIRacingCustomerId && !/^[0-9]+$/.test(sanitizedIRacingCustomerId)) {
-        console.warn(`[profile/update POST] Invalid iRacingCustomerId: ${sanitizedIRacingCustomerId}`);
+    if (sanitizedIRacingCustomerId && !/^[0-9]+$/.test(sanitizedIRacingCustomerId)) {
         return res.status(400).json({ success: false, message: 'Поле "iRacing Customer ID" повинно містити лише цифри.' });
     }
 
     const latinRegex = /^[a-zA-Z]+$/;
-
-    if (!sanitizedFirstName) {
-        console.warn("[profile/update POST] First name is empty.");
-        return res.status(400).json({ success: false, message: 'Ім\'я не може бути пустим.' });
+    if (!sanitizedFirstName || !latinRegex.test(sanitizedFirstName)) {
+        return res.status(400).json({ success: false, message: 'Ім\'я повинно містити лише латинські літери і не бути пустим.' });
     }
-    if (!latinRegex.test(sanitizedFirstName)) {
-        console.warn(`[profile/update POST] Invalid first name: ${sanitizedFirstName}`);
-        return res.status(400).json({ success: false, message: 'Ім\'я повинно містити лише латинські літери.' });
-    }
-
-    if (!sanitizedLastName) {
-        console.warn("[profile/update POST] Last name is empty.");
-        return res.status(400).json({ success: false, message: 'Прізвище не може бути пустим.' });
-    }
-    if (!latinRegex.test(sanitizedLastName)) {
-        console.warn(`[profile/update POST] Invalid last name: ${sanitizedLastName}`);
-        return res.status(400).json({ success: false, message: 'Прізвище повинно містити лише латинські літери.' });
+    if (!sanitizedLastName || !latinRegex.test(sanitizedLastName)) {
+        return res.status(400).json({ success: false, message: 'Прізвище повинно містити лише латинські літери і не бути пустим.' });
     }
 
     const newUsername = `${sanitizedFirstName} ${sanitizedLastName}`;
 
     let finalIsTeamInterested = (IsTeamInterested === true || IsTeamInterested === 'on' || IsTeamInterested === 1) ? 1 : 0;
-    if (finalTeamUUID) {
-        finalIsTeamInterested = 0;
-        console.log(`[profile/update POST] TeamUUID is present, setting IsTeamInterested to 0.`);
-    } else {
-        console.log(`[profile/update POST] TeamUUID is NOT present, IsTeamInterested is: ${finalIsTeamInterested}`);
-    }
+    if (finalTeamUUID) finalIsTeamInterested = 0;
 
+    const updateData = {
+        first_name: sanitizedFirstName,
+        last_name: sanitizedLastName,
+        username: newUsername,
+        iRacingCustomerId: sanitizedIRacingCustomerId,
+        LMUName: sanitizedLMUName,
+        DiscordId: sanitizedDiscordId,
+        YoutubeChannel: sanitizedYoutubeChannel,
+        TwitchChannel: sanitizedTwitchChannel,
+        Instagram: sanitizedInstagram,
+        Twitter: sanitizedTwitter,
+        Country: sanitizedCountry,
+        City: sanitizedCity,
+        TeamUUID: finalTeamUUID,
+        IsTeamInterested: finalIsTeamInterested
+    };
 
-    let connection;
     try {
-        connection = await pool.getConnection();
+        const result = await db('users')
+            .where({ id: userId })
+            .update(updateData);
 
-        const updateFields = [];
-        const updateValues = [];
-
-        updateFields.push('first_name = ?'); updateValues.push(sanitizedFirstName);
-        updateFields.push('last_name = ?'); updateValues.push(sanitizedLastName);
-        updateFields.push('username = ?'); updateValues.push(newUsername);
-        updateFields.push('iRacingCustomerId = ?'); updateValues.push(sanitizedIRacingCustomerId);
-        updateFields.push('LMUName = ?'); updateValues.push(sanitizedLMUName);
-        updateFields.push('DiscordId = ?'); updateValues.push(sanitizedDiscordId);
-        updateFields.push('YoutubeChannel = ?'); updateValues.push(sanitizedYoutubeChannel);
-        updateFields.push('TwitchChannel = ?'); updateValues.push(sanitizedTwitchChannel);
-        updateFields.push('Instagram = ?'); updateValues.push(sanitizedInstagram);
-        updateFields.push('Twitter = ?'); updateValues.push(sanitizedTwitter);
-        updateFields.push('Country = ?'); updateValues.push(sanitizedCountry);
-        updateFields.push('City = ?'); updateValues.push(sanitizedCity);
-        updateFields.push('TeamUUID = ?'); updateValues.push(finalTeamUUID);
-        updateFields.push('IsTeamInterested = ?'); updateValues.push(finalIsTeamInterested);
-
-        const query = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
-        updateValues.push(userId);
-
-        console.log("[profile/update POST] Executing update query:", query, "with values:", updateValues);
-        const [result] = await connection.execute(query, updateValues);
-
-        if (result.affectedRows === 0) {
-            console.warn(`[profile/update POST] No rows updated for user ID: ${userId}. User might not exist or no changes were made.`);
+        if (result === 0) {
             return res.status(404).json({ success: false, message: "Користувач не знайдений або немає змін для збереження" });
         }
 
-        req.user.iRacingCustomerId = sanitizedIRacingCustomerId;
-        req.user.LMUName = sanitizedLMUName;
-        req.user.DiscordId = sanitizedDiscordId;
-        req.user.YoutubeChannel = sanitizedYoutubeChannel;
-        req.user.TwitchChannel = sanitizedTwitchChannel;
-        req.user.Instagram = sanitizedInstagram;
-        req.user.Twitter = sanitizedTwitter;
-        req.user.Country = sanitizedCountry;
-        req.user.City = sanitizedCity;
-        req.user.TeamUUID = finalTeamUUID;
-        req.user.IsTeamInterested = finalIsTeamInterested;
-        req.user.first_name = sanitizedFirstName;
-        req.user.last_name = sanitizedLastName;
-        req.user.username = newUsername;
+        // Обновляем req.user
+        Object.assign(req.user, updateData);
 
         req.session.save((err) => {
             if (err) {
@@ -876,10 +813,9 @@ app.post('/profile/update', async (req, res) => {
     } catch (error) {
         console.error("[profile/update POST] Error updating user profile:", error);
         res.status(500).json({ success: false, message: "Помилка сервера при оновленні профілю" });
-    } finally {
-        if (connection) connection.release();
     }
 });
+
 
 app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -893,25 +829,28 @@ app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
 
     const userId = req.user.id;
     console.log(`[upload-photo] User ID: ${userId}`);
-
     console.log("Received file upload:", req.file);
 
     if (!req.file) {
         return res.status(400).json({ message: "Файл не завантажено" });
     }
 
-    let connection;
     try {
-        connection = await pool.getConnection();
-        const [rows] = await connection.execute(`SELECT PhotoPath FROM users WHERE id = ?`, [userId]);
-        const oldPhotoPath = rows[0]?.PhotoPath;
+        const user = await db('users')
+            .select('PhotoPath')
+            .where({ id: userId })
+            .first();
+
+        const oldPhotoPath = user?.PhotoPath;
         const fileExtension = path.extname(req.file.originalname);
         const newFilename = `${userId}-${Date.now()}${fileExtension}`;
         const newPhotoPath = `/avatars/${newFilename}`;
         const newFilePath = path.join(__dirname, 'public', 'avatars', newFilename);
+
         await fs.promises.rename(req.file.path, newFilePath);
         console.log(`[upload-photo] Renamed temporary file ${req.file.filename} to ${newFilename}`);
 
+        // Удаляем старое фото (если оно не дефолтное)
         if (oldPhotoPath && oldPhotoPath !== '/avatars/default_avatar_64.png') {
             const oldFilePath = path.join(__dirname, 'public', oldPhotoPath);
             fs.unlink(oldFilePath, (err) => {
@@ -920,18 +859,18 @@ app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
             });
         }
 
-        await connection.execute(
-            `UPDATE users SET PhotoPath = ? WHERE id = ?`,
-            [newPhotoPath, userId]
-        );
+        await db('users')
+            .where({ id: userId })
+            .update({ PhotoPath: newPhotoPath });
+
         console.log(`[upload-photo] Database updated with new PhotoPath: ${newPhotoPath}`);
 
-        if (req.user) {
-            req.user.PhotoPath = newPhotoPath;
-        }
+        req.user.PhotoPath = newPhotoPath;
 
-
-        res.status(200).json({ message: "Фото успішно завантажено", photoPath: newPhotoPath });
+        res.status(200).json({
+            message: "Фото успішно завантажено",
+            photoPath: newPhotoPath
+        });
 
     } catch (error) {
         console.error("Error uploading photo:", error);
@@ -941,67 +880,69 @@ app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
             });
         }
         res.status(500).json({ message: "Помилка при завантаженні фото", error: error.message });
-    } finally {
-        if (connection) connection.release();
     }
 });
 
-app.delete("/profile/delete-photo", async (req, res) => {
 
+app.delete("/profile/delete-photo", async (req, res) => {
     if (!req.isAuthenticated()) {
         return res.status(403).json({ message: "У вас немає прав для видалення фото." });
     }
 
     const userId = req.user.id;
 
-    let connection;
     try {
-        connection = await pool.getConnection();
+        const user = await db("users")
+            .select("PhotoPath")
+            .where({ id: userId })
+            .first();
 
-        const [rows] = await connection.execute(`SELECT PhotoPath FROM users WHERE id = ?`, [userId]);
-        const oldPhotoPath = rows[0]?.PhotoPath;
+        const oldPhotoPath = user?.PhotoPath;
+        const defaultAvatarPath = "/avatars/default_avatar_64.png";
 
-        if (oldPhotoPath && oldPhotoPath !== '/avatars/default_avatar_64.png') {
-            const filePath = path.join(__dirname, 'public', oldPhotoPath);
+        if (oldPhotoPath && oldPhotoPath !== defaultAvatarPath) {
+            const filePath = path.join(__dirname, "public", oldPhotoPath);
             fs.unlink(filePath, (err) => {
-                if (err) console.error('Error deleting old photo file:', err);
+                if (err) console.error("Error deleting old photo file:", err);
+                else console.log(`[delete-photo] Deleted photo file: ${filePath}`);
             });
         }
 
-        const defaultAvatarPath = '/avatars/default_avatar_64.png';
+        await db("users")
+            .where({ id: userId })
+            .update({ PhotoPath: defaultAvatarPath });
 
-        await connection.execute(
-            `UPDATE users SET PhotoPath = ? WHERE id = ?`,
-            [defaultAvatarPath, userId]
-        );
-        res.status(200).json({ message: "Фото видалено", photoPath: defaultAvatarPath });
+        req.user.PhotoPath = defaultAvatarPath;
+
+        res.status(200).json({
+            message: "Фото видалено",
+            photoPath: defaultAvatarPath
+        });
+
     } catch (error) {
         console.error("Помилка видалення фото:", error);
-        res.status(500).json({ message: "Помилка видалення фото" });
-    } finally {
-        if (connection) connection.release();
+        res.status(500).json({ message: "Помилка видалення фото", error: error.message });
     }
 });
 
+
 app.get("/profile/:pilotName", async (req, res) => {
     const pilotName = req.params.pilotName;
-    let connection;
-    try {
-        connection = await pool.getConnection();
-        const [pilotRows] = await connection.execute(
-            `SELECT Name, DiscordId, YoutubeChannel, TwitchChannel, Instagram, Twitter, iRacingCustomerId, Country, City, PhotoPath, TeamUUID, IsTeamInterested FROM pilots WHERE Name = ?`,
-            [pilotName]
-        );
 
-        let pilot = pilotRows[0];
+    try {
+        const pilot = await db("pilots")
+            .select("Name", "DiscordId", "YoutubeChannel", "TwitchChannel", "Instagram", "Twitter", "iRacingCustomerId", "Country", "City", "PhotoPath", "TeamUUID", "IsTeamInterested")
+            .where({ Name: pilotName })
+            .first();
+
         if (!pilot) {
             console.warn(`[Public Profile GET] Public pilot profile for ${pilotName} not found.`);
-            return res.status(404).send("Пилот не найден");
+            return res.status(404).send("Пілот не знайдений");
         }
 
-        const [teamsRows] = await connection.execute(`SELECT UUID, Name FROM teams ORDER BY Name`);
-        const teams = teamsRows;
+        const teams = await db("teams").select("UUID", "Name").orderBy("Name");
 
+        // Подставляем значения по умолчанию
         pilot.PhotoPath = pilot.PhotoPath || '/avatars/default_avatar_64.png';
         pilot.DiscordId = pilot.DiscordId || '';
         pilot.YoutubeChannel = pilot.YoutubeChannel || '';
@@ -1014,25 +955,26 @@ app.get("/profile/:pilotName", async (req, res) => {
         pilot.TeamUUID = pilot.TeamUUID || null;
         pilot.IsTeamInterested = pilot.IsTeamInterested || false;
 
-        res.render("profile", { pilot: pilot, teams: teams, activeMenu: 'profile' });
+        res.render("profile", {
+            pilot,
+            teams,
+            activeMenu: 'profile'
+        });
+
     } catch (error) {
         console.error("[Public Profile GET] Error fetching public pilot profile:", error);
         res.status(500).send("Помилка завантаження профілю");
-    } finally {
-        if (connection) connection.release();
     }
 });
 
+
 app.get("/new-participants", async (req, res) => {
-    let connection;
     try {
-        connection = await pool.getConnection();
-        const [rows] = await connection.execute(`
-            SELECT rp.PilotUUID, rp.RaceUUID, r.StartDate
-            FROM raceparticipants rp
-            JOIN races r ON rp.RaceUUID = r.UUID
-            ORDER BY r.StartDate
-        `);
+        const rows = await db("raceparticipants as rp")
+            .join("races as r", "rp.RaceUUID", "r.UUID")
+            .select("rp.PilotUUID", "rp.RaceUUID", "r.StartDate")
+            .orderBy("r.StartDate");
+
         const races = {};
         const cumulativeParticipantsCount = [];
         const newParticipantsCount = [];
@@ -1040,7 +982,7 @@ app.get("/new-participants", async (req, res) => {
         const allParticipants = new Set();
 
         rows.forEach((row) => {
-            const date = new Date(row.StartDate).toISOString().split('T')[0];
+            const date = new Date(row.StartDate).toISOString().split("T")[0];
             if (!races[date]) {
                 races[date] = new Set();
                 raceDates.push(date);
@@ -1070,267 +1012,239 @@ app.get("/new-participants", async (req, res) => {
             raceDates: JSON.stringify(raceDates),
             activeMenu: 'new-participants'
         });
+
     } catch (error) {
         console.error("Error fetching data:", error);
         res.status(500).send("Error fetching data");
-    } finally {
-        if (connection) {
-            connection.release();
-        }
     }
 });
+
 
 app.get("/tracks", async (req, res) => {
-    let connection;
-    try {
-        connection = await pool.getConnection();
-        console.log("Connected to database for tracks page.");
+  try {
+    console.log("Connected to database for tracks page.");
 
-        const [tracks] = await connection.execute(`
-            SELECT
-                tr.TrackName,
-                tr.BestQualifyingLapTime,
-                tr.BestQualifyingLapPilot,
-                tr.BestRaceLapTime,
-                tr.BestRaceLapPilot,
-                ti.ImagePath
-            FROM trackrecords tr
-            LEFT JOIN trackimages ti ON tr.TrackName = ti.TrackName
-            ORDER BY tr.TrackName
-        `);
-        console.log("Tracks data fetched successfully.");
+    // Основные треки с изображениями
+    const tracks = await db("trackrecords as tr")
+      .leftJoin("trackimages as ti", "tr.TrackName", "ti.TrackName")
+      .select(
+        "tr.TrackName",
+        "tr.BestQualifyingLapTime",
+        "tr.BestQualifyingLapPilot",
+        "tr.BestRaceLapTime",
+        "tr.BestRaceLapPilot",
+        "ti.ImagePath"
+      )
+      .orderBy("tr.TrackName");
 
-        const [topRaceCountPilots] = await connection.execute(
-            'SELECT Name, RaceCount FROM pilots ORDER BY RaceCount DESC LIMIT 15'
-        );
+    // Топ пилотов по количеству гонок
+    const topRaceCountPilots = await db("pilots")
+      .select("Name", "RaceCount")
+      .orderBy("RaceCount", "desc")
+      .limit(15);
 
-        const [topWinsPilots] = await connection.execute(
-            'SELECT Name, Wins FROM pilots ORDER BY Wins DESC LIMIT 15'
-        );
+    // Топ по победам
+    const topWinsPilots = await db("pilots")
+      .select("Name", "Wins")
+      .orderBy("Wins", "desc")
+      .limit(15);
 
-        const [topPodiumsPilots] = await connection.execute(
-            'SELECT Name, Podiums FROM pilots ORDER BY Podiums DESC LIMIT 15'
-        );
+    // Топ по подиумам
+    const topPodiumsPilots = await db("pilots")
+      .select("Name", "Podiums")
+      .orderBy("Podiums", "desc")
+      .limit(15);
 
-        const [topPolesPilots] = await connection.execute(
-            `SELECT BestQualifyingLapPilot AS Name, COUNT(UUID) AS PoleCount
-             FROM trackrecords
-             WHERE BestQualifyingLapPilot IS NOT NULL AND BestQualifyingLapPilot != ''
-             GROUP BY BestQualifyingLapPilot
-             ORDER BY PoleCount DESC
-             LIMIT 15`
-        );
+    // Топ по поулам (лучшие квалификации)
+    const topPolesPilots = await db("trackrecords")
+      .select("BestQualifyingLapPilot as Name")
+      .count("UUID as PoleCount")
+      .whereNotNull("BestQualifyingLapPilot")
+      .andWhere("BestQualifyingLapPilot", "!=", "")
+      .groupBy("BestQualifyingLapPilot")
+      .orderBy("PoleCount", "desc")
+      .limit(15);
 
-        const [topFastestLapsPilots] = await connection.execute(
-            `SELECT BestRaceLapPilot AS Name, COUNT(UUID) AS FastestLapCount
-             FROM trackrecords
-             WHERE BestRaceLapPilot IS NOT NULL AND BestRaceLapPilot != ''
-             GROUP BY BestRaceLapPilot
-             ORDER BY FastestLapCount DESC
-             LIMIT 15`
-        );
+    // Топ по быстрым кругам гонки
+    const topFastestLapsPilots = await db("trackrecords")
+      .select("BestRaceLapPilot as Name")
+      .count("UUID as FastestLapCount")
+      .whereNotNull("BestRaceLapPilot")
+      .andWhere("BestRaceLapPilot", "!=", "")
+      .groupBy("BestRaceLapPilot")
+      .orderBy("FastestLapCount", "desc")
+      .limit(15);
 
-        const processedTracks = tracks.map((row) => ({
-            TrackName: row.TrackName,
-            Image: row.ImagePath,
-            BestQualifyingLapTime: row.BestQualifyingLapTime,
-            BestQualifyingLapPilot: row.BestQualifyingLapPilot,
-            BestRaceLapTime: row.BestRaceLapTime,
-            BestRaceLapPilot: row.BestRaceLapPilot,
-        }));
-        console.log("Processed tracks data for rendering.");
+    const processedTracks = tracks.map((row) => ({
+      TrackName: row.TrackName,
+      Image: row.ImagePath,
+      BestQualifyingLapTime: row.BestQualifyingLapTime,
+      BestQualifyingLapPilot: row.BestQualifyingLapPilot,
+      BestRaceLapTime: row.BestRaceLapTime,
+      BestRaceLapPilot: row.BestRaceLapPilot,
+    }));
 
-        res.render("tracks", {
-            tracks: processedTracks,
-            topRaceCountPilots,
-            topWinsPilots,
-            topPodiumsPilots,
-            topPolesPilots,
-            topFastestLapsPilots,
-            activeMenu: 'tracks'
-        });
+    console.log("Processed tracks data for rendering.");
 
-    } catch (error) {
-        console.error("Error fetching data for tracks page:", error);
-        res.status(500).send("Error fetching data for tracks page");
-    } finally {
-        if (connection) {
-            connection.release();
-        }
-    }
+    res.render("tracks", {
+      tracks: processedTracks,
+      topRaceCountPilots,
+      topWinsPilots,
+      topPodiumsPilots,
+      topPolesPilots,
+      topFastestLapsPilots,
+      activeMenu: "tracks",
+    });
+  } catch (error) {
+    console.error("Error fetching data for tracks page:", error);
+    res.status(500).send("Error fetching data for tracks page");
+  }
 });
+
 
 app.get("/api/events", async (req, res) => {
-    let connection;
-    try {
-        connection = await pool.getConnection();
-        const [rows] = await connection.execute(`
-            SELECT id, date, description, url
-            FROM events
-            ORDER BY date
-        `);
-        res.json({ events: rows });
-    } catch (error) {
-        console.error("Error fetching events:", error);
-        res.status(500).send("Error fetching events");
-    } finally {
-        if (connection) {
-            connection.release();
-        }
-    }
+  try {
+    const rows = await db("events")
+      .select("id", "date", "description", "url")
+      .orderBy("date");
+
+    res.json({ events: rows });
+  } catch (error) {
+    console.error("Error fetching events:", error);
+    res.status(500).send("Error fetching events");
+  }
 });
+
 
 app.get("/calendar", async (req, res) => {
-    let connection;
-    try {
-        connection = await pool.getConnection();
-        const [rows] = await connection.execute(`
-            SELECT id, date, description, url
-            FROM events
-            ORDER BY date
-        `);
-        console.log("Events data:", rows);
-        res.render("calendar", { events: rows, activeMenu: 'calendar' });
-    } catch (error) {
-        console.error("Error fetching data:", error);
-        res.status(500).send("Error fetching data");
-    } finally {
-        if (connection) {
-            connection.release();
-        }
-    }
+  try {
+    const rows = await db("events")
+      .select("id", "date", "description", "url")
+      .orderBy("date");
+
+    console.log("Events data:", rows);
+    res.render("calendar", { events: rows, activeMenu: 'calendar' });
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    res.status(500).send("Error fetching data");
+  }
 });
+
 
 app.post("/track-view", async (req, res) => {
-    let connection;
-    try {
-        connection = await pool.getConnection();
-        const ip = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
-        const userAgent = req.headers['user-agent'];
-        const pageUrl = req.headers.referer || req.headers.referrer || req.originalUrl;
+  try {
+    const ip = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+    const pageUrl = req.headers.referer || req.headers.referrer || req.originalUrl;
 
-        let processedIp = ip;
+    let processedIp = ip;
 
-        if (ip && ip.includes('.') && ip.split('.').length === 4) {
-            const parts = ip.split('.');
-            processedIp = parts[0] + '.' + parts[1] + '.' + parts[2] + '.0';
-        }
-        else if (ip && ip.includes(':')) {
-            const parts = ip.split(':');
-            if (parts.length > 4) {
-                processedIp = parts.slice(0, Math.ceil(parts.length / 2)).join(':') + '::';
-            }
-        }
-
-        const geo = geoip.lookup(processedIp);
-        const countryCode = geo ? geo.country : 'XX';
-
-        console.log(`Tracking view from IP: ${ip} (processed: ${processedIp}), Country: ${countryCode}, User-Agent: ${userAgent}, Page: ${pageUrl}`);
-
-        await connection.execute(
-            `INSERT INTO page_views (ip_address, country, user_agent, page_url) VALUES (?, ?, ?, ?)`,
-            [processedIp, countryCode, userAgent, pageUrl]
-        );
-
-        res.status(200).send("View tracked successfully");
-    } catch (error) {
-        console.error("Error tracking view:", error);
-        res.status(500).send("Error tracking view");
-    } finally {
-        if (connection) {
-            connection.release();
-        }
+    if (ip && ip.includes('.') && ip.split('.').length === 4) {
+      const parts = ip.split('.');
+      processedIp = parts[0] + '.' + parts[1] + '.' + parts[2] + '.0';
+    } else if (ip && ip.includes(':')) {
+      const parts = ip.split(':');
+      if (parts.length > 4) {
+        processedIp = parts.slice(0, Math.ceil(parts.length / 2)).join(':') + '::';
+      }
     }
+
+    const geo = geoip.lookup(processedIp);
+    const countryCode = geo ? geo.country : 'XX';
+
+    console.log(`Tracking view from IP: ${ip} (processed: ${processedIp}), Country: ${countryCode}, User-Agent: ${userAgent}, Page: ${pageUrl}`);
+
+    await db('page_views').insert({
+      ip_address: processedIp,
+      country: countryCode,
+      user_agent: userAgent,
+      page_url: pageUrl
+    });
+
+    res.status(200).send("View tracked successfully");
+  } catch (error) {
+    console.error("Error tracking view:", error);
+    res.status(500).send("Error tracking view");
+  }
 });
+
 
 app.get("/analytics", async (req, res) => {
-    let connection;
-    try {
-        connection = await pool.getConnection();
+  try {
+    const uniqueVisitorsResult = await db('page_views')
+      .countDistinct('ip_address as count');
+    const uniqueVisitorsCount = uniqueVisitorsResult[0].count;
 
-        const [uniqueVisitors] = await connection.execute(`SELECT COUNT(DISTINCT ip_address) as count FROM page_views`);
-        const uniqueVisitorsCount = uniqueVisitors[0].count;
+    const viewsByPage = await db('page_views')
+      .select('page_url')
+      .countDistinct('ip_address as count')
+      .groupBy('page_url')
+      .orderBy('count', 'desc');
 
-        const [viewsByPage] = await connection.execute(`
-            SELECT page_url, COUNT(DISTINCT ip_address) as count
-            FROM page_views
-            GROUP BY page_url
-            ORDER BY count DESC
-        `);
+    const viewsByCountry = await db('page_views')
+      .select('country')
+      .countDistinct('ip_address as count')
+      .groupBy('country')
+      .orderBy('count', 'desc');
 
-        const [viewsByCountry] = await connection.execute(`
-            SELECT country, COUNT(DISTINCT ip_address) as count
-            FROM page_views
-            GROUP BY country
-            ORDER BY count DESC
-        `);
+    const uniqueVisitorsTodayResult = await db('page_views')
+      .countDistinct('ip_address as count')
+      .where('visit_time', '>=', db.raw('CURDATE()'));
+    const uniqueVisitorsTodayCount = uniqueVisitorsTodayResult[0].count;
 
-        const [uniqueVisitorsToday] = await connection.execute(`
-            SELECT COUNT(DISTINCT ip_address) as count
-            FROM page_views
-            WHERE visit_time >= CURDATE()
-        `);
-        const uniqueVisitorsTodayCount = uniqueVisitorsToday[0].count;
+    const uniqueVisitorsThisWeekResult = await db('page_views')
+      .countDistinct('ip_address as count')
+      .where('visit_time', '>=', db.raw('CURDATE() - INTERVAL WEEKDAY(CURDATE()) DAY'));
+    const uniqueVisitorsThisWeekCount = uniqueVisitorsThisWeekResult[0].count;
 
-        const [uniqueVisitorsThisWeek] = await connection.execute(`
-            SELECT COUNT(DISTINCT ip_address) as count
-            FROM page_views
-            WHERE visit_time >= CURDATE() - INTERVAL WEEKDAY(CURDATE()) DAY
-        `);
-        const uniqueVisitorsThisWeekCount = uniqueVisitorsThisWeek[0].count;
+    const uniqueVisitorsThisMonthResult = await db('page_views')
+      .countDistinct('ip_address as count')
+      .where('visit_time', '>=', db.raw("DATE_FORMAT(CURDATE(), '%Y-%m-01')"));
+    const uniqueVisitorsThisMonthCount = uniqueVisitorsThisMonthResult[0].count;
 
-        const [uniqueVisitorsThisMonth] = await connection.execute(`
-            SELECT COUNT(DISTINCT ip_address) as count
-            FROM page_views
-            WHERE visit_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
-        `);
-        const uniqueVisitorsThisMonthCount = uniqueVisitorsThisMonth[0].count;
+    const uniqueVisitorsLastWeekResult = await db('page_views')
+      .countDistinct('ip_address as count')
+      .whereBetween('visit_time', [
+        db.raw('CURDATE() - INTERVAL (WEEKDAY(CURDATE()) + 7) DAY'),
+        db.raw('CURDATE() - INTERVAL WEEKDAY(CURDATE()) DAY')
+      ]);
+    const uniqueVisitorsLastWeekCount = uniqueVisitorsLastWeekResult[0].count;
 
-        const [uniqueVisitorsLastWeek] = await connection.execute(`
-            SELECT COUNT(DISTINCT ip_address) as count
-            FROM page_views
-            WHERE visit_time >= CURDATE() - INTERVAL (WEEKDAY(CURDATE()) + 7) DAY
-              AND visit_time < CURDATE() - INTERVAL WEEKDAY(CURDATE()) DAY
-        `);
-        const uniqueVisitorsLastWeekCount = uniqueVisitorsLastWeek[0].count;
+    const uniqueVisitorsLastMonthResult = await db('page_views')
+      .countDistinct('ip_address as count')
+      .whereBetween('visit_time', [
+        db.raw("DATE_FORMAT(CURDATE() - INTERVAL 1 MONTH, '%Y-%m-01')"),
+        db.raw("DATE_FORMAT(CURDATE(), '%Y-%m-01')")
+      ]);
+    const uniqueVisitorsLastMonthCount = uniqueVisitorsLastMonthResult[0].count;
 
-        const [uniqueVisitorsLastMonth] = await connection.execute(`
-            SELECT COUNT(DISTINCT ip_address) as count
-            FROM page_views
-            WHERE visit_time >= DATE_FORMAT(CURDATE() - INTERVAL 1 MONTH, '%Y-%m-01')
-              AND visit_time < DATE_FORMAT(CURDATE(), '%Y-%m-01')
-        `);
-        const uniqueVisitorsLastMonthCount = uniqueVisitorsLastMonth[0].count;
+    const uniqueVisitorsLastYearResult = await db('page_views')
+      .countDistinct('ip_address as count')
+      .whereBetween('visit_time', [
+        db.raw("DATE_FORMAT(CURDATE() - INTERVAL 1 YEAR, '%Y-01-01')"),
+        db.raw("DATE_FORMAT(CURDATE(), '%Y-01-01')")
+      ]);
+    const uniqueVisitorsLastYearCount = uniqueVisitorsLastYearResult[0].count;
 
-        const [uniqueVisitorsLastYear] = await connection.execute(`
-            SELECT COUNT(DISTINCT ip_address) as count
-            FROM page_views
-            WHERE visit_time >= DATE_FORMAT(CURDATE() - INTERVAL 1 YEAR, '%Y-01-01')
-              AND visit_time < DATE_FORMAT(CURDATE(), '%Y-01-01')
-        `);
-        const uniqueVisitorsLastYearCount = uniqueVisitorsLastYear[0].count;
+    res.render("analytics", {
+      uniqueVisitorsCount,
+      viewsByPage,
+      viewsByCountry,
+      uniqueVisitorsTodayCount,
+      uniqueVisitorsThisWeekCount,
+      uniqueVisitorsThisMonthCount,
+      uniqueVisitorsLastWeekCount,
+      uniqueVisitorsLastMonthCount,
+      uniqueVisitorsLastYearCount,
+      activeMenu: 'analytics'
+    });
 
-        res.render("analytics", {
-            uniqueVisitorsCount,
-            viewsByPage,
-            viewsByCountry,
-            uniqueVisitorsTodayCount,
-            uniqueVisitorsThisWeekCount,
-            uniqueVisitorsThisMonthCount,
-            uniqueVisitorsLastWeekCount,
-            uniqueVisitorsLastMonthCount,
-            uniqueVisitorsLastYearCount,
-            activeMenu: 'analytics'
-        });
-    } catch (error) {
-        console.error("Error fetching analytics data:", error);
-        res.status(500).send("Error fetching analytics data");
-    } finally {
-        if (connection) {
-            connection.release();
-        }
-    }
+  } catch (error) {
+    console.error("Error fetching analytics data:", error);
+    res.status(500).send("Error fetching analytics data");
+  }
 });
+
 
 // Запуск сервера
 app.listen(port, () => {
