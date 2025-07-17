@@ -9,13 +9,13 @@ const db = knex({
         password: process.env.DB_PASSWORD,
         database: process.env.DB_DATABASE,
         port: process.env.DB_PORT || 3306,
-        connectTimeout: 10000 // ⏱️ 10 сек таймаут подключения
+        connectTimeout: 20000 // ⏱️ 10 сек таймаут подключения
     },
     pool: {
-        min: 1,
-        max: 5,
-        acquireTimeoutMillis: 10000, // ⏱️ ожидание свободного соединения
-        idleTimeoutMillis: 5000     // ⏱️ сколько держать неиспользуемое соединение
+        min: 2,
+        max: 20,
+        acquireTimeoutMillis: 30000, // ⏱️ ожидание свободного соединения
+        idleTimeoutMillis: 10000     // ⏱️ сколько держать неиспользуемое соединение
     }
 });
 
