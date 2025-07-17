@@ -183,6 +183,23 @@ tbody tr.selected {
     max-height: 520px;
 }
 
+.streamer-icon-cell {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.streamer-icon {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+.streamer-link {
+    display: inline-block;
+    /* text-decoration: none; */
+}
+
 @media (max-width: 992px) {
 
     .pilot-stats-grid {

@@ -40,7 +40,8 @@
                   <th>Name</th>
                   <th>ELO Rating</th>
                   <th>Races</th>
-                  <th>Avg. change</th>
+                  <th>Avg.</th>
+                  <th>Streamer</th>
                 </tr>
               </thead>
               <tbody>
@@ -60,6 +61,15 @@
                     </td>
                     <td>
                       <%= pilot.AverageChange.toFixed(2) %>
+                    </td>
+                    <td class="streamer-icon-cell">
+                      <% if (pilot.YoutubeChannel || pilot.TwitchChannel) { %>
+                        <% let streamerLink=pilot.YoutubeChannel || pilot.TwitchChannel; %>
+                          <a href="<%= streamerLink %>" target="_blank" class="streamer-link"
+                            aria-label="Streamer Channel">
+                            <img src="/images/headphones-100.png" alt="Streamer Icon" class="streamer-icon">
+                          </a>
+                          <% } %>
                     </td>
                   </tr>
                   <% }) %>

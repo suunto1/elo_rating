@@ -460,11 +460,20 @@ app.post("/complete-profile", checkAuthenticated, async (req, res) => {
 });
 
 app.get("/", async (req, res) => {
-
     try {
-        const rows = await db('pilots')
-            .select('Name', 'EloRanking', 'RaceCount', 'UUID', 'AverageChange')
-            .orderBy('EloRanking', 'desc');
+        const rows = await db('pilots as p')
+            .select(
+                'p.Name',
+                'p.EloRanking',
+                'p.RaceCount',
+                'p.UUID',
+                'p.AverageChange',
+                'u."YoutubeChannel"',
+                'u."TwitchChannel"'
+            )
+            .leftJoin('users as u', 'p.steam_id_64', 'u.steam_id_64') // LEFT JOIN по steam_id_64
+            .orderBy('p.EloRanking', 'desc');
+
         res.render("pilots", { pilots: rows, activeMenu: 'pilots' });
     } catch (error) {
         console.error("[Root GET] Error fetching data for / (root):", error);
@@ -551,7 +560,6 @@ app.get("/profile", checkAuthenticated, async (req, res) => {
     const userId = req.user.id;
 
     try {
-        // Получаем данные пользователя
         const userRows = await db('users')
             .select(
                 'LMUName',
@@ -563,19 +571,16 @@ app.get("/profile", checkAuthenticated, async (req, res) => {
                 'iRacingCustomerId',
                 'Country',
                 'City',
+                'PhotoPath',
                 'TeamUUID',
                 'IsTeamInterested',
-                'PhotoPath',
                 'first_name',
                 'last_name'
             )
             .where({ id: userId });
 
         const userProfile = userRows[0] || {};
-
-        // Получаем список команд
         const teamRows = await db('teams').select('UUID', 'Name');
-
         const availableTeams = teamRows.map(team => ({
             uuid: team.UUID,
             name: team.Name
