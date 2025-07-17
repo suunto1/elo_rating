@@ -8,20 +8,29 @@ const db = knex({
         user: process.env.DB_USER,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_DATABASE,
-        port: process.env.DB_PORT
+        port: process.env.DB_PORT || 3306,
+        connectTimeout: 10000 // ⏱️ 10 сек таймаут подключения
     },
     pool: {
         min: 2,
-        max: 15
+        max: 15,
+        acquireTimeoutMillis: 10000, // ⏱️ ожидание свободного соединения
+        idleTimeoutMillis: 10000     // ⏱️ сколько держать неиспользуемое соединение
     }
 });
 
-module.exports = db;
-
+// Логирование соединений — полезно для отладки
 db.client.pool.on('acquire', (connection) => {
-  console.log(`[DB] Connection acquired (threadId: ${connection.threadId})`);
+    console.log(`[DB] Connection acquired (threadId: ${connection.threadId})`);
 });
 
 db.client.pool.on('release', (connection) => {
-  console.log(`[DB] Connection released (threadId: ${connection.threadId})`);
+    console.log(`[DB] Connection released (threadId: ${connection.threadId})`);
 });
+
+// Обработка ошибок пула (особенно важна!)
+db.client.pool.on('error', (err) => {
+    console.error('[DB] Pool error:', err);
+});
+
+module.exports = db;

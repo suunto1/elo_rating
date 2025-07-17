@@ -11,6 +11,35 @@ const cookieParser = require("cookie-parser");
 const geoip = require("geoip-lite");
 
 const db = require("./db");
+// 🛡️ Защита от необработанных ошибок
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled Rejection:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('❌ Uncaught Exception:', err);
+});
+
+// 🔁 Тест подключения к БД
+async function connectWithRetry(retries = 5) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            await db.raw('SELECT 1');
+            console.log('✅ DB connection successful');
+            return;
+        } catch (err) {
+            console.error(`❌ DB connection failed (attempt ${i + 1}/${retries}):`, err.code);
+            if (i < retries - 1) {
+                await new Promise(res => setTimeout(res, 5000)); // ждём 5 сек
+            } else {
+                console.error('❌ Could not connect to DB after retries. Exiting.');
+                process.exit(1);
+            }
+        }
+    }
+}
+
+connectWithRetry();
 
 const app = express();
 const port = process.env.PORT || 3000;
