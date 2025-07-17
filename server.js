@@ -325,18 +325,18 @@ app.get('/auth/steam/return',
         try {
             const steamId64 = req.user.id;
             const steamDisplayName = req.user.displayName;
-
-            // Получаем пользователя по steam_id_64
-            const userRows = await db('users')
-                .select('id', 'steam_id_64', 'pilot_uuid', 'username', 'first_name', 'last_name', 'is_admin', 'PhotoPath')
-                .where('steam_id_64', steamId64);
-            let userInDb = userRows[0];
-
             const defaultPhotoPath = '/avatars/default_avatar_64.png';
             let currentPilotUuid = null;
+            let updates = {}; // Объект для сбора всех обновлений для пользователя
 
-            // Получаем UUID пилота по steam_id_64
-            const pilotRows = await db('pilots').select('UUID').where('steam_id_64', steamId64);
+            const [userRows, pilotRows] = await Promise.all([
+                db('users')
+                    .select('id', 'steam_id_64', 'pilot_uuid', 'username', 'first_name', 'last_name', 'is_admin', 'PhotoPath')
+                    .where('steam_id_64', steamId64),
+                db('pilots').select('UUID', 'Name').where('steam_id_64', steamId64) // Получаем Name сразу, если пилот существует
+            ]);
+
+            let userInDb = userRows[0];
             if (pilotRows.length > 0) {
                 currentPilotUuid = pilotRows[0].UUID;
                 console.log(`[auth/steam/return] Found existing pilot UUID ${currentPilotUuid} for Steam ID ${steamId64}`);
@@ -344,14 +344,13 @@ app.get('/auth/steam/return',
 
             if (!userInDb) {
                 console.log("[auth/steam/return] === DEBUG: Entering NEW USER creation block ===");
-
-                // Вставляем нового пользователя с дефолтным аватаром и pilot_uuid (если есть)
+                // Если userInDb пуст, создаем нового пользователя
                 const [newUserId] = await db('users').insert({
                     steam_id_64: steamId64,
                     username: steamDisplayName,
                     first_name: '',
                     last_name: '',
-                    pilot_uuid: currentPilotUuid,
+                    pilot_uuid: currentPilotUuid, // Привязываем pilot_uuid сразу при создании
                     PhotoPath: defaultPhotoPath,
                     registered_at: db.fn.now(),
                     last_login_at: db.fn.now()
@@ -367,59 +366,69 @@ app.get('/auth/steam/return',
                     PhotoPath: defaultPhotoPath,
                     is_admin: 0
                 };
-
-                console.log("[auth/steam/return] DEBUG: userInDb object after creation:", userInDb);
-                Object.assign(req.user, userInDb);
-                console.log("[auth/steam/return] DEBUG: req.user after Object.assign:", req.user);
+                Object.assign(req.user, userInDb); // Обновляем req.user для Passport
                 console.log("[auth/steam/return] === DEBUG: Exiting NEW USER creation block ===");
+
             } else {
                 console.log("[auth/steam/return] === DEBUG: Entering EXISTING USER update block ===");
-
+                // Проверяем и собираем обновления для существующего пользователя
                 if (!userInDb.pilot_uuid && currentPilotUuid) {
                     console.log(`[auth/steam/return] Linking existing pilot ${currentPilotUuid} to user ${userInDb.id}`);
-                    await db('users').where('id', userInDb.id).update({ pilot_uuid: currentPilotUuid });
-                    userInDb.pilot_uuid = currentPilotUuid;
+                    updates.pilot_uuid = currentPilotUuid;
+                    userInDb.pilot_uuid = currentPilotUuid; // Обновляем локально для дальнейших проверок
                 }
 
                 if (userInDb.username === '' || userInDb.username === steamId64) {
                     console.log(`[auth/steam/return] Updating username for user ${userInDb.id} to Steam Display Name: ${steamDisplayName}`);
-                    await db('users').where('id', userInDb.id).update({ username: steamDisplayName });
+                    updates.username = steamDisplayName;
                     userInDb.username = steamDisplayName;
                 }
 
                 if (!userInDb.PhotoPath || userInDb.PhotoPath.trim() === '') {
                     console.log(`[auth/steam/return] Updating PhotoPath for existing user ${userInDb.id} to default.`);
-                    await db('users').where('id', userInDb.id).update({ PhotoPath: defaultPhotoPath });
+                    updates.PhotoPath = defaultPhotoPath;
                     userInDb.PhotoPath = defaultPhotoPath;
                 }
 
-                await db('users').where('id', userInDb.id).update({ last_login_at: db.fn.now() });
-                Object.assign(req.user, userInDb);
+                updates.last_login_at = db.fn.now(); // Всегда обновляем время последнего входа
+
+                if (Object.keys(updates).length > 0) {
+                    console.log("[auth/steam/return] Applying combined updates to existing user:", updates);
+                    await db('users').where('id', userInDb.id).update(updates);
+                }
+                Object.assign(req.user, userInDb); // Обновляем req.user для Passport
+                console.log("[auth/steam/return] === DEBUG: Exiting EXISTING USER update block ===");
             }
 
+            // После всех обновлений и создания, проверяем необходимость заполнить профиль
             if (!req.user.first_name || req.user.first_name.trim().length === 0 ||
                 !req.user.last_name || req.user.last_name.trim().length === 0) {
                 console.log(`[auth/steam/return] User ${req.user.id} needs to complete profile. Redirecting to /complete-profile.`);
                 return res.redirect('/complete-profile');
             }
 
+            // Определяем куда перенаправить
+            let redirectPath = '/profile'; // Путь по умолчанию
             if (req.user.pilot_uuid) {
-                const pilotNameRow = await db('pilots').select('Name').where('UUID', req.user.pilot_uuid).first();
-                const pilotName = pilotNameRow?.Name;
+                const pilotName = pilotRows.length > 0 ? pilotRows[0].Name : null; // Используем уже полученное имя пилота
                 if (pilotName) {
-                    console.log(`[auth/steam/return] User ${req.user.id} (Pilot ${pilotName}) redirected to /profile/${encodeURIComponent(pilotName)}`);
-                    return res.redirect(`/profile/${encodeURIComponent(pilotName)}`);
+                    redirectPath = `/profile/${encodeURIComponent(pilotName)}`;
+                    console.log(`[auth/steam/return] User ${req.user.id} (Pilot ${pilotName}) redirected to ${redirectPath}`);
+                } else {
+                    console.log(`[auth/steam/return] User ${req.user.id} has pilot_uuid but pilot name not found. Redirecting to /profile.`);
                 }
+            } else {
+                console.log(`[auth/steam/return] User ${req.user.id} is authenticated but not linked to a pilot. Redirecting to /profile.`);
             }
 
-            console.log(`[auth/steam/return] User ${req.user.id} is authenticated but not linked to a pilot or pilot name not found. Redirecting to /profile.`);
-            return res.redirect('/profile');
+            return res.redirect(redirectPath);
 
         } catch (error) {
             console.error("[auth/steam/return] Error during Steam authentication processing:", error);
             return res.redirect('/'); // В случае ошибки - на главную
         }
-    });
+    }
+);
 
 
 app.get('/logout', (req, res, next) => {
