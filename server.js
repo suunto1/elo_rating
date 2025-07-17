@@ -20,6 +20,12 @@ process.on('uncaughtException', (err) => {
     console.error('❌ Uncaught Exception:', err);
 });
 
+process.on('SIGINT', async () => {
+    console.log('[DB] Shutting down DB connections...');
+    await db.destroy();
+    process.exit(0);
+});
+
 // 🔁 Тест подключения к БД
 async function connectWithRetry(retries = 5) {
     for (let i = 0; i < retries; i++) {
@@ -202,11 +208,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 const store = new KnexSessionStore({
-    knex: db,            // ваш объект knex (из db.js)
+    knex: db,
     tablename: 'sessions',
     createtable: true,
     sidfieldname: 'sid',
-    clearInterval: 600000
+    clearInterval: false
 });
 
 

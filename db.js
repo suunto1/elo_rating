@@ -12,10 +12,10 @@ const db = knex({
         connectTimeout: 10000 // ⏱️ 10 сек таймаут подключения
     },
     pool: {
-        min: 2,
-        max: 15,
+        min: 1,
+        max: 5,
         acquireTimeoutMillis: 10000, // ⏱️ ожидание свободного соединения
-        idleTimeoutMillis: 10000     // ⏱️ сколько держать неиспользуемое соединение
+        idleTimeoutMillis: 5000     // ⏱️ сколько держать неиспользуемое соединение
     }
 });
 
