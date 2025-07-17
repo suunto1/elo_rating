@@ -13,7 +13,7 @@ const db = knex({
     },
     pool: {
         min: 2,
-        max: 20,
+        max: 50,
         acquireTimeoutMillis: 30000, // ⏱️ ожидание свободного соединения
         idleTimeoutMillis: 10000     // ⏱️ сколько держать неиспользуемое соединение
     }
