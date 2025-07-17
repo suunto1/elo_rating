@@ -111,81 +111,81 @@ passport.use(new SteamStrategy({
     realm: STEAM_REALM,
     apiKey: STEAM_API_KEY
 },
-async (identifier, profile, done) => {
-    const steamId64 = profile.id;
-    const steamDisplayName = profile.displayName;
-    console.log("[Passport] SteamStrategy: identifier =", identifier);
-    console.log("[Passport] SteamStrategy: profile =", profile);
+    async (identifier, profile, done) => {
+        const steamId64 = profile.id;
+        const steamDisplayName = profile.displayName;
+        console.log("[Passport] SteamStrategy: identifier =", identifier);
+        console.log("[Passport] SteamStrategy: profile =", profile);
 
-    try {
-        // Получаем пользователя из таблицы users по steam_id_64
-        const userRows = await db('users')
-            .select('id', 'steam_id_64', 'pilot_uuid', 'username', 'first_name', 'last_name', 'is_admin')
-            .where('steam_id_64', steamId64);
-        let user = userRows[0];
-
-        // Ищем UUID пилота по steam_id_64
-        const pilotRows = await db('pilots').select('UUID').where('steam_id_64', steamId64);
-        let pilotUuidToLink = pilotRows.length > 0 ? pilotRows[0].UUID : null;
-
-        if (user) {
-            console.log("[SteamStrategy] Existing user found in `users` table:", user.id);
-
-            // Если у пользователя нет linked pilot_uuid, но он есть в таблице pilots - связываем
-            if (!user.pilot_uuid && pilotUuidToLink) {
-                console.log(`[SteamStrategy] Linking existing pilot ${pilotUuidToLink} to user ${user.id}`);
-                await db('users').where('id', user.id).update({ pilot_uuid: pilotUuidToLink });
-                user.pilot_uuid = pilotUuidToLink;
-            }
-
-            // Если username пустой или равен steamId64, обновляем его на Steam Display Name
-            if (user.username === '' || user.username === steamId64) {
-                console.log(`[SteamStrategy] Updating username for user ${user.id} to Steam Display Name: ${steamDisplayName}`);
-                await db('users').where('id', user.id).update({ username: steamDisplayName });
-                user.username = steamDisplayName;
-            }
-
-            // Обновляем время последнего входа
-            await db('users').where('id', user.id).update({ last_login_at: db.fn.now() });
-
-            return done(null, {
-                id: user.id,
-                steam_id_64: user.steam_id_64,
-                pilot_uuid: user.pilot_uuid,
-                username: user.username,
-                first_name: user.first_name,
-                last_name: user.last_name,
-                is_admin: user.is_admin
-            });
-
-        } else {
-            console.log("[SteamStrategy] New Steam user. Creating new entry in `users` table.");
-
-            // Вставляем нового пользователя
-            const [newUserId] = await db('users').insert({
-                steam_id_64: steamId64,
-                username: steamDisplayName,
-                first_name: '',
-                last_name: '',
-                pilot_uuid: pilotUuidToLink,
-                last_login_at: db.fn.now(),
-                registered_at: db.fn.now()
-            });
-
-            // Получаем вновь созданного пользователя из базы
-            const newUserRows = await db('users')
+        try {
+            // Получаем пользователя из таблицы users по steam_id_64
+            const userRows = await db('users')
                 .select('id', 'steam_id_64', 'pilot_uuid', 'username', 'first_name', 'last_name', 'is_admin')
-                .where('id', newUserId);
-            const newUser = newUserRows[0];
-            console.log("[SteamStrategy] New user created:", newUser);
+                .where('steam_id_64', steamId64);
+            let user = userRows[0];
 
-            return done(null, newUser);
+            // Ищем UUID пилота по steam_id_64
+            const pilotRows = await db('pilots').select('UUID').where('steam_id_64', steamId64);
+            let pilotUuidToLink = pilotRows.length > 0 ? pilotRows[0].UUID : null;
+
+            if (user) {
+                console.log("[SteamStrategy] Existing user found in `users` table:", user.id);
+
+                // Если у пользователя нет linked pilot_uuid, но он есть в таблице pilots - связываем
+                if (!user.pilot_uuid && pilotUuidToLink) {
+                    console.log(`[SteamStrategy] Linking existing pilot ${pilotUuidToLink} to user ${user.id}`);
+                    await db('users').where('id', user.id).update({ pilot_uuid: pilotUuidToLink });
+                    user.pilot_uuid = pilotUuidToLink;
+                }
+
+                // Если username пустой или равен steamId64, обновляем его на Steam Display Name
+                if (user.username === '' || user.username === steamId64) {
+                    console.log(`[SteamStrategy] Updating username for user ${user.id} to Steam Display Name: ${steamDisplayName}`);
+                    await db('users').where('id', user.id).update({ username: steamDisplayName });
+                    user.username = steamDisplayName;
+                }
+
+                // Обновляем время последнего входа
+                await db('users').where('id', user.id).update({ last_login_at: db.fn.now() });
+
+                return done(null, {
+                    id: user.id,
+                    steam_id_64: user.steam_id_64,
+                    pilot_uuid: user.pilot_uuid,
+                    username: user.username,
+                    first_name: user.first_name,
+                    last_name: user.last_name,
+                    is_admin: user.is_admin
+                });
+
+            } else {
+                console.log("[SteamStrategy] New Steam user. Creating new entry in `users` table.");
+
+                // Вставляем нового пользователя
+                const [newUserId] = await db('users').insert({
+                    steam_id_64: steamId64,
+                    username: steamDisplayName,
+                    first_name: '',
+                    last_name: '',
+                    pilot_uuid: pilotUuidToLink,
+                    last_login_at: db.fn.now(),
+                    registered_at: db.fn.now()
+                });
+
+                // Получаем вновь созданного пользователя из базы
+                const newUserRows = await db('users')
+                    .select('id', 'steam_id_64', 'pilot_uuid', 'username', 'first_name', 'last_name', 'is_admin')
+                    .where('id', newUserId);
+                const newUser = newUserRows[0];
+                console.log("[SteamStrategy] New user created:", newUser);
+
+                return done(null, newUser);
+            }
+        } catch (error) {
+            console.error("[SteamStrategy] Error during Steam authentication strategy:", error);
+            return done(error);
         }
-    } catch (error) {
-        console.error("[SteamStrategy] Error during Steam authentication strategy:", error);
-        return done(error);
-    }
-}));
+    }));
 
 
 
@@ -256,14 +256,12 @@ app.use((req, res, next) => {
 // Middleware для проверки, заполнено ли имя пользователя (для новых Steam-пользователей)
 const checkUsernameCompletion = async (req, res, next) => {
     console.log(`[checkUsernameCompletion] Path: ${req.path}`);
-    console.log(`[checkUsernameCompletion] isAuthenticated(): ${req.isAuthenticated()}`);
-    console.log(`[checkUsernameCompletion] req.user (at start of middleware):`, req.user);
 
-    // Дополнительная проверка, чтобы избежать ошибки, если req.user действительно undefined
-    if (!req.user) {
-        console.warn("[checkUsernameCompletion] req.user is undefined despite isAuthenticated() potentially being true. Skipping check.");
+    if (!req.isAuthenticated()) {
+        console.log("[checkUsernameCompletion] User not authenticated. Skipping profile completion check.");
         return next();
     }
+    console.log(`[checkUsernameCompletion] req.user (at start of middleware):`, req.user);
 
     // Определяем пути, которые не требуют полного профиля для доступа
     const allowedPaths = [
@@ -294,8 +292,8 @@ const checkUsernameCompletion = async (req, res, next) => {
     const isAllowedPath = allowedPaths.some(path => req.path === path || req.path.startsWith(path + '/'));
 
     // Если пользователь авторизован, но у него не заполнены first_name ИЛИ last_name
-    if (req.isAuthenticated() && (!req.user.first_name || req.user.first_name.trim().length === 0 ||
-        !req.user.last_name || req.user.last_name.trim().length === 0)) {
+    if (!req.user.first_name || req.user.first_name.trim().length === 0 ||
+        !req.user.last_name || req.user.last_name.trim().length === 0) {
 
         // Если пользователь пытается получить доступ к любой странице, кроме разрешенных
         if (!isAllowedPath) {
@@ -986,228 +984,228 @@ app.get("/new-participants", async (req, res) => {
 
 
 app.get("/tracks", async (req, res) => {
-  try {
-    console.log("Connected to database for tracks page.");
+    try {
+        console.log("Connected to database for tracks page.");
 
-    // Основные треки с изображениями
-    const tracks = await db("trackrecords as tr")
-      .leftJoin("trackimages as ti", "tr.TrackName", "ti.TrackName")
-      .select(
-        "tr.TrackName",
-        "tr.BestQualifyingLapTime",
-        "tr.BestQualifyingLapPilot",
-        "tr.BestRaceLapTime",
-        "tr.BestRaceLapPilot",
-        "ti.ImagePath"
-      )
-      .orderBy("tr.TrackName");
+        // Основные треки с изображениями
+        const tracks = await db("trackrecords as tr")
+            .leftJoin("trackimages as ti", "tr.TrackName", "ti.TrackName")
+            .select(
+                "tr.TrackName",
+                "tr.BestQualifyingLapTime",
+                "tr.BestQualifyingLapPilot",
+                "tr.BestRaceLapTime",
+                "tr.BestRaceLapPilot",
+                "ti.ImagePath"
+            )
+            .orderBy("tr.TrackName");
 
-    // Топ пилотов по количеству гонок
-    const topRaceCountPilots = await db("pilots")
-      .select("Name", "RaceCount")
-      .orderBy("RaceCount", "desc")
-      .limit(15);
+        // Топ пилотов по количеству гонок
+        const topRaceCountPilots = await db("pilots")
+            .select("Name", "RaceCount")
+            .orderBy("RaceCount", "desc")
+            .limit(15);
 
-    // Топ по победам
-    const topWinsPilots = await db("pilots")
-      .select("Name", "Wins")
-      .orderBy("Wins", "desc")
-      .limit(15);
+        // Топ по победам
+        const topWinsPilots = await db("pilots")
+            .select("Name", "Wins")
+            .orderBy("Wins", "desc")
+            .limit(15);
 
-    // Топ по подиумам
-    const topPodiumsPilots = await db("pilots")
-      .select("Name", "Podiums")
-      .orderBy("Podiums", "desc")
-      .limit(15);
+        // Топ по подиумам
+        const topPodiumsPilots = await db("pilots")
+            .select("Name", "Podiums")
+            .orderBy("Podiums", "desc")
+            .limit(15);
 
-    // Топ по поулам (лучшие квалификации)
-    const topPolesPilots = await db("trackrecords")
-      .select("BestQualifyingLapPilot as Name")
-      .count("UUID as PoleCount")
-      .whereNotNull("BestQualifyingLapPilot")
-      .andWhere("BestQualifyingLapPilot", "!=", "")
-      .groupBy("BestQualifyingLapPilot")
-      .orderBy("PoleCount", "desc")
-      .limit(15);
+        // Топ по поулам (лучшие квалификации)
+        const topPolesPilots = await db("trackrecords")
+            .select("BestQualifyingLapPilot as Name")
+            .count("UUID as PoleCount")
+            .whereNotNull("BestQualifyingLapPilot")
+            .andWhere("BestQualifyingLapPilot", "!=", "")
+            .groupBy("BestQualifyingLapPilot")
+            .orderBy("PoleCount", "desc")
+            .limit(15);
 
-    // Топ по быстрым кругам гонки
-    const topFastestLapsPilots = await db("trackrecords")
-      .select("BestRaceLapPilot as Name")
-      .count("UUID as FastestLapCount")
-      .whereNotNull("BestRaceLapPilot")
-      .andWhere("BestRaceLapPilot", "!=", "")
-      .groupBy("BestRaceLapPilot")
-      .orderBy("FastestLapCount", "desc")
-      .limit(15);
+        // Топ по быстрым кругам гонки
+        const topFastestLapsPilots = await db("trackrecords")
+            .select("BestRaceLapPilot as Name")
+            .count("UUID as FastestLapCount")
+            .whereNotNull("BestRaceLapPilot")
+            .andWhere("BestRaceLapPilot", "!=", "")
+            .groupBy("BestRaceLapPilot")
+            .orderBy("FastestLapCount", "desc")
+            .limit(15);
 
-    const processedTracks = tracks.map((row) => ({
-      TrackName: row.TrackName,
-      Image: row.ImagePath,
-      BestQualifyingLapTime: row.BestQualifyingLapTime,
-      BestQualifyingLapPilot: row.BestQualifyingLapPilot,
-      BestRaceLapTime: row.BestRaceLapTime,
-      BestRaceLapPilot: row.BestRaceLapPilot,
-    }));
+        const processedTracks = tracks.map((row) => ({
+            TrackName: row.TrackName,
+            Image: row.ImagePath,
+            BestQualifyingLapTime: row.BestQualifyingLapTime,
+            BestQualifyingLapPilot: row.BestQualifyingLapPilot,
+            BestRaceLapTime: row.BestRaceLapTime,
+            BestRaceLapPilot: row.BestRaceLapPilot,
+        }));
 
-    console.log("Processed tracks data for rendering.");
+        console.log("Processed tracks data for rendering.");
 
-    res.render("tracks", {
-      tracks: processedTracks,
-      topRaceCountPilots,
-      topWinsPilots,
-      topPodiumsPilots,
-      topPolesPilots,
-      topFastestLapsPilots,
-      activeMenu: "tracks",
-    });
-  } catch (error) {
-    console.error("Error fetching data for tracks page:", error);
-    res.status(500).send("Error fetching data for tracks page");
-  }
+        res.render("tracks", {
+            tracks: processedTracks,
+            topRaceCountPilots,
+            topWinsPilots,
+            topPodiumsPilots,
+            topPolesPilots,
+            topFastestLapsPilots,
+            activeMenu: "tracks",
+        });
+    } catch (error) {
+        console.error("Error fetching data for tracks page:", error);
+        res.status(500).send("Error fetching data for tracks page");
+    }
 });
 
 
 app.get("/api/events", async (req, res) => {
-  try {
-    const rows = await db("events")
-      .select("id", "date", "description", "url")
-      .orderBy("date");
+    try {
+        const rows = await db("events")
+            .select("id", "date", "description", "url")
+            .orderBy("date");
 
-    res.json({ events: rows });
-  } catch (error) {
-    console.error("Error fetching events:", error);
-    res.status(500).send("Error fetching events");
-  }
+        res.json({ events: rows });
+    } catch (error) {
+        console.error("Error fetching events:", error);
+        res.status(500).send("Error fetching events");
+    }
 });
 
 
 app.get("/calendar", async (req, res) => {
-  try {
-    const rows = await db("events")
-      .select("id", "date", "description", "url")
-      .orderBy("date");
+    try {
+        const rows = await db("events")
+            .select("id", "date", "description", "url")
+            .orderBy("date");
 
-    console.log("Events data:", rows);
-    res.render("calendar", { events: rows, activeMenu: 'calendar' });
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    res.status(500).send("Error fetching data");
-  }
+        console.log("Events data:", rows);
+        res.render("calendar", { events: rows, activeMenu: 'calendar' });
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        res.status(500).send("Error fetching data");
+    }
 });
 
 
 app.post("/track-view", async (req, res) => {
-  try {
-    const ip = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
-    const userAgent = req.headers['user-agent'];
-    const pageUrl = req.headers.referer || req.headers.referrer || req.originalUrl;
+    try {
+        const ip = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+        const userAgent = req.headers['user-agent'];
+        const pageUrl = req.headers.referer || req.headers.referrer || req.originalUrl;
 
-    let processedIp = ip;
+        let processedIp = ip;
 
-    if (ip && ip.includes('.') && ip.split('.').length === 4) {
-      const parts = ip.split('.');
-      processedIp = parts[0] + '.' + parts[1] + '.' + parts[2] + '.0';
-    } else if (ip && ip.includes(':')) {
-      const parts = ip.split(':');
-      if (parts.length > 4) {
-        processedIp = parts.slice(0, Math.ceil(parts.length / 2)).join(':') + '::';
-      }
+        if (ip && ip.includes('.') && ip.split('.').length === 4) {
+            const parts = ip.split('.');
+            processedIp = parts[0] + '.' + parts[1] + '.' + parts[2] + '.0';
+        } else if (ip && ip.includes(':')) {
+            const parts = ip.split(':');
+            if (parts.length > 4) {
+                processedIp = parts.slice(0, Math.ceil(parts.length / 2)).join(':') + '::';
+            }
+        }
+
+        const geo = geoip.lookup(processedIp);
+        const countryCode = geo ? geo.country : 'XX';
+
+        console.log(`Tracking view from IP: ${ip} (processed: ${processedIp}), Country: ${countryCode}, User-Agent: ${userAgent}, Page: ${pageUrl}`);
+
+        await db('page_views').insert({
+            ip_address: processedIp,
+            country: countryCode,
+            user_agent: userAgent,
+            page_url: pageUrl
+        });
+
+        res.status(200).send("View tracked successfully");
+    } catch (error) {
+        console.error("Error tracking view:", error);
+        res.status(500).send("Error tracking view");
     }
-
-    const geo = geoip.lookup(processedIp);
-    const countryCode = geo ? geo.country : 'XX';
-
-    console.log(`Tracking view from IP: ${ip} (processed: ${processedIp}), Country: ${countryCode}, User-Agent: ${userAgent}, Page: ${pageUrl}`);
-
-    await db('page_views').insert({
-      ip_address: processedIp,
-      country: countryCode,
-      user_agent: userAgent,
-      page_url: pageUrl
-    });
-
-    res.status(200).send("View tracked successfully");
-  } catch (error) {
-    console.error("Error tracking view:", error);
-    res.status(500).send("Error tracking view");
-  }
 });
 
 
 app.get("/analytics", async (req, res) => {
-  try {
-    const uniqueVisitorsResult = await db('page_views')
-      .countDistinct('ip_address as count');
-    const uniqueVisitorsCount = uniqueVisitorsResult[0].count;
+    try {
+        const uniqueVisitorsResult = await db('page_views')
+            .countDistinct('ip_address as count');
+        const uniqueVisitorsCount = uniqueVisitorsResult[0].count;
 
-    const viewsByPage = await db('page_views')
-      .select('page_url')
-      .countDistinct('ip_address as count')
-      .groupBy('page_url')
-      .orderBy('count', 'desc');
+        const viewsByPage = await db('page_views')
+            .select('page_url')
+            .countDistinct('ip_address as count')
+            .groupBy('page_url')
+            .orderBy('count', 'desc');
 
-    const viewsByCountry = await db('page_views')
-      .select('country')
-      .countDistinct('ip_address as count')
-      .groupBy('country')
-      .orderBy('count', 'desc');
+        const viewsByCountry = await db('page_views')
+            .select('country')
+            .countDistinct('ip_address as count')
+            .groupBy('country')
+            .orderBy('count', 'desc');
 
-    const uniqueVisitorsTodayResult = await db('page_views')
-      .countDistinct('ip_address as count')
-      .where('visit_time', '>=', db.raw('CURDATE()'));
-    const uniqueVisitorsTodayCount = uniqueVisitorsTodayResult[0].count;
+        const uniqueVisitorsTodayResult = await db('page_views')
+            .countDistinct('ip_address as count')
+            .where('visit_time', '>=', db.raw('CURDATE()'));
+        const uniqueVisitorsTodayCount = uniqueVisitorsTodayResult[0].count;
 
-    const uniqueVisitorsThisWeekResult = await db('page_views')
-      .countDistinct('ip_address as count')
-      .where('visit_time', '>=', db.raw('CURDATE() - INTERVAL WEEKDAY(CURDATE()) DAY'));
-    const uniqueVisitorsThisWeekCount = uniqueVisitorsThisWeekResult[0].count;
+        const uniqueVisitorsThisWeekResult = await db('page_views')
+            .countDistinct('ip_address as count')
+            .where('visit_time', '>=', db.raw('CURDATE() - INTERVAL WEEKDAY(CURDATE()) DAY'));
+        const uniqueVisitorsThisWeekCount = uniqueVisitorsThisWeekResult[0].count;
 
-    const uniqueVisitorsThisMonthResult = await db('page_views')
-      .countDistinct('ip_address as count')
-      .where('visit_time', '>=', db.raw("DATE_FORMAT(CURDATE(), '%Y-%m-01')"));
-    const uniqueVisitorsThisMonthCount = uniqueVisitorsThisMonthResult[0].count;
+        const uniqueVisitorsThisMonthResult = await db('page_views')
+            .countDistinct('ip_address as count')
+            .where('visit_time', '>=', db.raw("DATE_FORMAT(CURDATE(), '%Y-%m-01')"));
+        const uniqueVisitorsThisMonthCount = uniqueVisitorsThisMonthResult[0].count;
 
-    const uniqueVisitorsLastWeekResult = await db('page_views')
-      .countDistinct('ip_address as count')
-      .whereBetween('visit_time', [
-        db.raw('CURDATE() - INTERVAL (WEEKDAY(CURDATE()) + 7) DAY'),
-        db.raw('CURDATE() - INTERVAL WEEKDAY(CURDATE()) DAY')
-      ]);
-    const uniqueVisitorsLastWeekCount = uniqueVisitorsLastWeekResult[0].count;
+        const uniqueVisitorsLastWeekResult = await db('page_views')
+            .countDistinct('ip_address as count')
+            .whereBetween('visit_time', [
+                db.raw('CURDATE() - INTERVAL (WEEKDAY(CURDATE()) + 7) DAY'),
+                db.raw('CURDATE() - INTERVAL WEEKDAY(CURDATE()) DAY')
+            ]);
+        const uniqueVisitorsLastWeekCount = uniqueVisitorsLastWeekResult[0].count;
 
-    const uniqueVisitorsLastMonthResult = await db('page_views')
-      .countDistinct('ip_address as count')
-      .whereBetween('visit_time', [
-        db.raw("DATE_FORMAT(CURDATE() - INTERVAL 1 MONTH, '%Y-%m-01')"),
-        db.raw("DATE_FORMAT(CURDATE(), '%Y-%m-01')")
-      ]);
-    const uniqueVisitorsLastMonthCount = uniqueVisitorsLastMonthResult[0].count;
+        const uniqueVisitorsLastMonthResult = await db('page_views')
+            .countDistinct('ip_address as count')
+            .whereBetween('visit_time', [
+                db.raw("DATE_FORMAT(CURDATE() - INTERVAL 1 MONTH, '%Y-%m-01')"),
+                db.raw("DATE_FORMAT(CURDATE(), '%Y-%m-01')")
+            ]);
+        const uniqueVisitorsLastMonthCount = uniqueVisitorsLastMonthResult[0].count;
 
-    const uniqueVisitorsLastYearResult = await db('page_views')
-      .countDistinct('ip_address as count')
-      .whereBetween('visit_time', [
-        db.raw("DATE_FORMAT(CURDATE() - INTERVAL 1 YEAR, '%Y-01-01')"),
-        db.raw("DATE_FORMAT(CURDATE(), '%Y-01-01')")
-      ]);
-    const uniqueVisitorsLastYearCount = uniqueVisitorsLastYearResult[0].count;
+        const uniqueVisitorsLastYearResult = await db('page_views')
+            .countDistinct('ip_address as count')
+            .whereBetween('visit_time', [
+                db.raw("DATE_FORMAT(CURDATE() - INTERVAL 1 YEAR, '%Y-01-01')"),
+                db.raw("DATE_FORMAT(CURDATE(), '%Y-01-01')")
+            ]);
+        const uniqueVisitorsLastYearCount = uniqueVisitorsLastYearResult[0].count;
 
-    res.render("analytics", {
-      uniqueVisitorsCount,
-      viewsByPage,
-      viewsByCountry,
-      uniqueVisitorsTodayCount,
-      uniqueVisitorsThisWeekCount,
-      uniqueVisitorsThisMonthCount,
-      uniqueVisitorsLastWeekCount,
-      uniqueVisitorsLastMonthCount,
-      uniqueVisitorsLastYearCount,
-      activeMenu: 'analytics'
-    });
+        res.render("analytics", {
+            uniqueVisitorsCount,
+            viewsByPage,
+            viewsByCountry,
+            uniqueVisitorsTodayCount,
+            uniqueVisitorsThisWeekCount,
+            uniqueVisitorsThisMonthCount,
+            uniqueVisitorsLastWeekCount,
+            uniqueVisitorsLastMonthCount,
+            uniqueVisitorsLastYearCount,
+            activeMenu: 'analytics'
+        });
 
-  } catch (error) {
-    console.error("Error fetching analytics data:", error);
-    res.status(500).send("Error fetching analytics data");
-  }
+    } catch (error) {
+        console.error("Error fetching analytics data:", error);
+        res.status(500).send("Error fetching analytics data");
+    }
 });
 
 
