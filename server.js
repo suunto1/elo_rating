@@ -468,8 +468,8 @@ app.get("/", async (req, res) => {
                 'p.RaceCount',
                 'p.UUID',
                 'p.AverageChange',
-                'u."YoutubeChannel"',
-                'u."TwitchChannel"'
+                'u.YoutubeChannel',
+                'u.TwitchChannel'
             )
             .leftJoin('users as u', 'p.steam_id_64', 'u.steam_id_64') // LEFT JOIN по steam_id_64
             .orderBy('p.EloRanking', 'desc');
