@@ -77,7 +77,11 @@
             </table>
           </div>
           <div id="chart-container">
-            <div id="pilot-name"></div>
+            <div id="pilot-name-wrapper">
+              <a id="pilot-name-link" href="#">
+                <div id="pilot-name"></div>
+              </a>
+            </div>
             <div class="chart-placeholder">
               Оберіть водія для відображення рейтингу
             </div>
@@ -121,10 +125,15 @@
         const searchInput = document.getElementById("search-input");
         const rows = document.querySelectorAll("tbody tr");
         const pilotNameDiv = document.getElementById("pilot-name");
+        const pilotNameLink = document.getElementById("pilot-name-link");
+        const pilotNameWrapper = document.getElementById("pilot-name-wrapper");
         const ctx = document.getElementById("eloChart").getContext("2d");
         let eloChart;
         const chartPlaceholder = document.querySelector(".chart-placeholder");
         const pilotDetailsInfo = document.getElementById("pilot-details-info");
+
+        pilotNameWrapper.style.display = 'none';
+
 
         searchInput.addEventListener("input", function () {
           const searchText = searchInput.value.toLowerCase();
@@ -145,6 +154,10 @@
 
             const pilotName = this.getAttribute("data-pilot");
             pilotNameDiv.textContent = pilotName;
+
+            pilotNameLink.href = `/profile/${encodeURIComponent(pilotName)}`;
+
+            pilotNameWrapper.style.display = 'block';
 
             if (chartPlaceholder) {
               chartPlaceholder.style.display = "none";
@@ -271,6 +284,7 @@
               }
 
               document.getElementById("eloChart").style.display = "none";
+              pilotNameWrapper.style.display = 'none';
 
               document.getElementById("stats-starts").textContent = "0";
               document.getElementById("stats-wins").textContent = "0";

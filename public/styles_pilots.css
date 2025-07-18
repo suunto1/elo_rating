@@ -56,7 +56,7 @@
     text-align: center;
     padding: 20px;
     box-sizing: border-box;
-        flex-grow: 1;
+    flex-grow: 1;
 }
 
 .pilot-stats-grid {
@@ -183,6 +183,21 @@ tbody tr.selected {
     max-height: 520px;
 }
 
+#pilot-name-link {
+    text-decoration: none; /* Убираем подчеркивание */
+    color: rgb(235, 235, 235); /* Цвет текста */
+    font-weight: bold; /* Делаем текст жирным, если нужно */
+    display: block; /* Делаем ссылку блочным элементом, чтобы она занимала всю ширину */
+    text-align: center; /* Центрируем текст внутри блочной ссылки */
+    transition: color 0.2s ease-in-out, transform 0.1s ease-in-out; /* Плавный переход */
+}
+
+#pilot-name-link:hover {
+    color: #2563eb; /* Цвет при наведении */
+    cursor: pointer;
+    transform: translateY(-2px); /* Небольшой эффект поднятия */
+}
+
 .streamer-icon-cell {
     text-align: center;
     vertical-align: middle;
@@ -202,7 +217,7 @@ tbody tr.selected {
 
 .streamer-link:hover {
     cursor: pointer;
-    transform: translateY(-3px);
+    transform: translateY(-2px);
 }
 
 @media (max-width: 992px) {
