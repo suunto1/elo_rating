@@ -18,15 +18,6 @@ const db = knex({
         max: 10,
         acquireTimeoutMillis: 30000, // ⏱️ ожидание свободного соединения
         idleTimeoutMillis: 5000,     // ⏱️ сколько держать неиспользуемое соединение
-        afterCreate: (conn, done) => {
-            // Устанавливаем TCP keep-alive
-            conn.on('error', err => {
-                console.error('[MySQL] Connection error:', err);
-            });
-
-            conn.connection.stream.setKeepAlive(true, 10000); // ⏱️ 10 сек
-            done(null, conn);
-        }
     }
 });
 
