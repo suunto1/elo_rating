@@ -49,7 +49,7 @@ connectWithRetry();
 
 const app = express();
 app.get('/ping', (req, res) => {
-  res.send('OK');
+    res.send('OK');
 });
 const port = process.env.PORT || 3000;
 
@@ -507,7 +507,8 @@ app.get("/", async (req, res) => {
                 'p.UUID',
                 'p.AverageChange',
                 'u.YoutubeChannel',
-                'u.TwitchChannel'
+                'u.TwitchChannel',
+                'p.steam_id_64'
             )
             .leftJoin('users as u', 'p.steam_id_64', 'u.steam_id_64') // LEFT JOIN по steam_id_64
             .orderBy('p.EloRanking', 'desc');
@@ -533,7 +534,7 @@ app.get("/pilot/:name", async (req, res) => {
         }
 
         const pilotUUID = pilotLookupRows[0].UUID;
-
+        const pilotSteamId64 = pilotLookupRows[0].steam_id_64;
         const eloRaceRows = await db('raceparticipants as rp')
             .join('pilots as p', 'rp.PilotUUID', 'p.UUID')
             .join('races as r', 'rp.RaceUUID', 'r.UUID')
@@ -571,6 +572,21 @@ app.get("/pilot/:name", async (req, res) => {
             Top10: 0,
             PodiumPercentage: 0,
         };
+
+        let userDetails = null;
+        if (pilotSteamId64) {
+            const userRows = await db('users')
+                .select('avatar_url')
+                .where('steam_id_64', pilotSteamId64)
+                .first();
+
+            if (userRows) {
+                userDetails = {
+                    steam_id_64: pilotSteamId64,
+                    avatar_url: userRows.avatar_url
+                };
+            }
+        }
 
         res.json({
             eloChartData: eloChartData,
@@ -1156,9 +1172,9 @@ const https = require('https');
 const PING_URL = 'https://elo-rating-1.onrender.com/ping';
 
 setInterval(() => {
-  https.get(PING_URL, (res) => {
-    // success – silent
-  }).on('error', (err) => {
-    console.error('[Auto-Ping] ❌ Ping failed:', err.message);
-  });
+    https.get(PING_URL, (res) => {
+        // success – silent
+    }).on('error', (err) => {
+        console.error('[Auto-Ping] ❌ Ping failed:', err.message);
+    });
 }, 1000 * 60 * 14);
