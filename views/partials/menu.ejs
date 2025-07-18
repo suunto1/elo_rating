@@ -1,111 +1,235 @@
-<% var activeMenu=typeof activeMenu !=='undefined' ? activeMenu : '' ; %>
+<!DOCTYPE html>
+<html lang="uk">
 
-    <div class="menu-container">
-        <div class="menu">
-            <a href="/" class="logo-link"><img src="/images/logo.png" alt="Site Logo" class="site-logo"></a>
-            <div id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link <%= activeMenu === 'pilots' ? 'active' : '' %>" href="/">Рейтинг
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <%= activeMenu === 'new-participants' ? 'active' : '' %>"
-                            href="/new-participants">Учасники</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <%= activeMenu === 'tracks' ? 'active' : '' %>" href="/tracks">
-                            <img src="/images/iconsPod.png" alt="Кубок" class="cup-icon">
-                            Топ
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <%= activeMenu === 'calendar' ? 'active' : '' %>"
-                            href="/calendar">Календар</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="https://send.monobank.ua/jar/8jRFWi2zbt" target="_blank"
-                            class="donate-button">Donate</a>
-                    </li>
-                    <li class="nav-item user-auth-item">
-                        <div id="auth-section">
-                            <% if (user && user.username && user.username !== '') { %>
-                                <button id="user-auth-button" class="user-auth-button profile-image-style">
-                                    <span id="user-auth-text"><%= user.username %></span>
-                                    <img id="user-auth-icon" src="/images/Helmet_100.png" alt="Auth Icon" class="auth-icon">
-                                </button>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Меню КМАМК Sim Racing</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .menu-container {
+      background-color: #222;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-                                <div id="user-dropdown" class="user-dropdown-content">
-                                    <a href="/profile" class="dropdown-item">
-                                        <img src="/images/Edit_96.png" alt="Иконка редактирования" class="dropdown-icon">
-                                        <span>Редагувати</span>
-                                    </a>
-                                    <a href="/logout" id="logout-button" class="dropdown-item">
-                                        <img src="/images/Logout_97.png" alt="Иконка выхода" class="dropdown-icon">
-                                        <span>Вийти</span>
-                                    </a>
-                                </div>
-                            <% } else { %>
-                                <button id="user-auth-button" class="user-auth-button login-link-style">
-                                    <span id="user-auth-text">Steam</span>
-                                    <!-- <img id="user-auth-icon" src="/images/Login.png" alt="Auth Icon" class="auth-icon"> -->
-                                </button>
-                            <% } %>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-    <div id="upcoming-event-strip" class="event-strip-container">
-        <div class="event-strip-content">
-            <span class="event-strip-label">Найближча подія:</span>
-            <span id="event-title" class="event-strip-title">Загрузка...</span>
-            <span id="event-date" class="event-strip-date"></span>
-            <a href="https://www.thesimgrid.com/communities/kmamksimracing" target="_blank" rel="noopener noreferrer"
-                class="simgrid-button">
-                <img src="/images/Logo-SimGrid.png" alt="SimGrid" class="simgrid-icon">
+    .menu a {
+      color: white;
+      text-decoration: none;
+      margin-right: 15px;
+      font-weight: 600;
+    }
+
+    .menu a.active {
+      border-bottom: 2px solid #00aaff;
+    }
+
+    .menu .logo-link img.site-logo {
+      height: 40px;
+      vertical-align: middle;
+    }
+
+    .navbar-nav {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .nav-item {
+      margin-right: 15px;
+      position: relative;
+    }
+
+    .nav-item.user-auth-item {
+      margin-left: auto;
+    }
+
+    .user-auth-button {
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      font-weight: 600;
+      gap: 5px;
+    }
+
+    .profile-image-style img.auth-icon {
+      height: 24px;
+      border-radius: 50%;
+    }
+
+    .login-link-style {
+      font-style: italic;
+      font-weight: normal;
+    }
+
+    .user-dropdown-content {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background-color: #333;
+      min-width: 150px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+      border-radius: 4px;
+      z-index: 1000;
+    }
+
+    .user-dropdown-content a.dropdown-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      color: white;
+      text-decoration: none;
+      gap: 8px;
+    }
+
+    .user-dropdown-content a.dropdown-item:hover {
+      background-color: #444;
+    }
+
+    .dropdown-icon {
+      height: 18px;
+      width: 18px;
+    }
+
+    .event-strip-container {
+      background: #007acc;
+      color: white;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .simgrid-button img.simgrid-icon {
+      height: 24px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="menu-container">
+    <div class="menu">
+      <a href="/" class="logo-link" aria-label="Logo">
+        <img src="/images/logo.png" alt="Site Logo" class="site-logo" />
+      </a>
+      <nav>
+        <ul class="navbar-nav" id="nav-menu">
+          <li class="nav-item"><a href="/" data-menu="pilots" class="nav-link">Рейтинг</a></li>
+          <li class="nav-item"><a href="/new-participants" data-menu="new-participants" class="nav-link">Учасники</a></li>
+          <li class="nav-item">
+            <a href="/tracks" data-menu="tracks" class="nav-link">
+              <img src="/images/iconsPod.png" alt="Кубок" class="cup-icon" style="height:16px; vertical-align:middle; margin-right:4px;">
+              Топ
             </a>
-        </div>
+          </li>
+          <li class="nav-item"><a href="/calendar" data-menu="calendar" class="nav-link">Календар</a></li>
+          <li class="nav-item">
+            <a href="https://send.monobank.ua/jar/8jRFWi2zbt" target="_blank" rel="noopener noreferrer" class="nav-link donate-button">Donate</a>
+          </li>
+          <li class="nav-item user-auth-item" id="user-auth-container">
+            <!-- Пользовательский блок заполнится JS -->
+          </li>
+        </ul>
+      </nav>
     </div>
+  </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const userAuthButton = document.getElementById('user-auth-button');
-            const userDropdown = document.getElementById('user-dropdown');
-            const authSection = document.getElementById('auth-section');
+  <div id="upcoming-event-strip" class="event-strip-container">
+    <div class="event-strip-content">
+      <span class="event-strip-label">Найближча подія:</span>
+      <span id="event-title" class="event-strip-title">Загрузка...</span>
+      <span id="event-date" class="event-strip-date"></span>
+      <a href="https://www.thesimgrid.com/communities/kmamksimracing" target="_blank" rel="noopener noreferrer"
+        class="simgrid-button" aria-label="SimGrid">
+        <img src="/images/Logo-SimGrid.png" alt="SimGrid" class="simgrid-icon" />
+      </a>
+    </div>
+  </div>
 
-            userAuthButton.addEventListener('click', (event) => {
-                event.stopPropagation();
+  <script>
+    // Пример данных: эти переменные должны быть заданы сервером в window (или получены через API)
+    // window.currentUser = { username: 'User123' } или null
+    // window.activeMenu = 'pilots' // или 'calendar', 'new-participants' и т.д.
 
-                if (userDropdown) {
-                    userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
-                } else {
-                    window.location.href = '/auth/steam';
-                }
-            });
+    // Если у вас нет этих переменных, то надо реализовать логику получения состояния
 
-            document.addEventListener('click', (event) => {
-                if (userDropdown && userDropdown.style.display === 'block' && !authSection.contains(event.target)) {
-                    userDropdown.style.display = 'none';
-                }
-            });
+    (function () {
+      // Пример — заглушка. Замените на реальные данные или подгрузите с API
+      window.currentUser = window.currentUser || null;
+      window.activeMenu = window.activeMenu || '';
 
+      const navLinks = document.querySelectorAll('#nav-menu .nav-link');
+      navLinks.forEach(link => {
+        if (link.dataset.menu === window.activeMenu) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      });
 
-            const registrationModal = document.getElementById('registration-modal');
-            if (registrationModal) {
-                registrationModal.remove();
-            }
+      const userAuthContainer = document.getElementById('user-auth-container');
 
-            const closeModalButton = document.querySelector('.modal .close-button');
-            if (closeModalButton) {
-                const newCloseButton = closeModalButton.cloneNode(true);
-                closeModalButton.parentNode.replaceChild(newCloseButton, closeModalButton);
-            }
-            const steamRegisterButton = document.getElementById('steam-register-button');
-            if (steamRegisterButton) {
-                const newSteamButton = steamRegisterButton.cloneNode(true);
-                steamRegisterButton.parentNode.replaceChild(newSteamButton, steamRegisterButton);
-            }
+      if (window.currentUser && window.currentUser.username) {
+        // Пользователь авторизован — показываем имя и меню
+        userAuthContainer.innerHTML = `
+          <button id="user-auth-button" class="user-auth-button profile-image-style" aria-haspopup="true" aria-expanded="false">
+            <span id="user-auth-text">${window.currentUser.username}</span>
+            <img id="user-auth-icon" src="/images/Helmet_100.png" alt="Auth Icon" class="auth-icon" />
+          </button>
+          <div id="user-dropdown" class="user-dropdown-content" role="menu" aria-label="User menu">
+            <a href="/profile" class="dropdown-item" role="menuitem" tabindex="0">
+              <img src="/images/Edit_96.png" alt="Редагувати" class="dropdown-icon" />
+              <span>Редагувати</span>
+            </a>
+            <a href="/logout" id="logout-button" class="dropdown-item" role="menuitem" tabindex="0">
+              <img src="/images/Logout_97.png" alt="Вийти" class="dropdown-icon" />
+              <span>Вийти</span>
+            </a>
+          </div>
+        `;
+
+        const userAuthButton = document.getElementById('user-auth-button');
+        const userDropdown = document.getElementById('user-dropdown');
+
+        userAuthButton.addEventListener('click', e => {
+          e.stopPropagation();
+          const expanded = userAuthButton.getAttribute('aria-expanded') === 'true';
+          userAuthButton.setAttribute('aria-expanded', !expanded);
+          userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
         });
-    </script>
+
+        document.addEventListener('click', () => {
+          if (userDropdown.style.display === 'block') {
+            userDropdown.style.display = 'none';
+            userAuthButton.setAttribute('aria-expanded', 'false');
+          }
+        });
+      } else {
+        // Гость — показываем кнопку Steam входа
+        userAuthContainer.innerHTML = `
+          <button id="user-auth-button" class="user-auth-button login-link-style" aria-label="Вхід через Steam">
+            <span id="user-auth-text">Steam</span>
+          </button>
+        `;
+        const userAuthButton = document.getElementById('user-auth-button');
+        userAuthButton.addEventListener('click', () => {
+          window.location.href = '/auth/steam';
+        });
+      }
+    })();
+  </script>
+</body>
+
+</html>

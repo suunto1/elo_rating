@@ -300,10 +300,10 @@ const checkUsernameCompletion = async (req, res, next) => {
 app.use(checkUsernameCompletion);
 
 function checkAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) {
+    if (req.isAuthenticated && req.isAuthenticated()) {
         return next();
     }
-    res.redirect("/login");
+    return res.status(401).json({ error: "Not authenticated" });
 }
 
 app.get('/auth/steam',
@@ -406,7 +406,7 @@ app.get('/auth/steam/return',
 );
 
 
-app.get('/logout', (req, res, next) => {
+app.post('/api/logout', (req, res, next) => {
     req.logout((err) => {
         if (err) {
             console.error("[logout] Error during req.logout:", err);
@@ -418,32 +418,25 @@ app.get('/logout', (req, res, next) => {
                 return next(err);
             }
             res.clearCookie('connect.sid');
-            res.redirect('/');
+            res.status(200).json({ success: true, message: 'Logged out successfully' });
         });
     });
 });
 
-app.get('/complete-profile', (req, res) => {
-
-    if (!req.isAuthenticated()) {
-        return res.redirect('/');
+app.get('/api/complete-profile', checkAuthenticated, (req, res) => {
+    if (req.user.first_name && req.user.first_name.trim() &&
+        req.user.last_name && req.user.last_name.trim()) {
+        return res.status(200).json({ completed: true });
     }
 
-    if (req.user.first_name && req.user.first_name.trim().length > 0 &&
-        req.user.last_name && req.user.last_name.trim().length > 0) {
-        return res.redirect('/');
-    }
-
-    res.render('complete_profile', {
-        message: null,
-        messageType: null,
-        activeMenu: 'complete-profile',
+    res.status(200).json({
+        completed: false,
         first_name: req.user.first_name || '',
         last_name: req.user.last_name || ''
     });
 });
 
-app.post("/complete-profile", checkAuthenticated, async (req, res) => {
+app.post("/api/complete-profile", checkAuthenticated, async (req, res) => {
     try {
         const { first_name, last_name } = req.body;
         const userId = req.user.id;
@@ -461,43 +454,23 @@ app.post("/complete-profile", checkAuthenticated, async (req, res) => {
         req.user.last_name = last_name;
         req.user.username = username;
 
-        req.session.save(async (err) => {
+        req.session.save((err) => {
             if (err) {
-                console.error("Ошибка сохранения сессии после обновления профиля:", err);
-                return res.status(500).render("complete_profile", {
-                    message: "Помилка збереження сесії. Спробуйте ще раз.",
-                    messageType: "danger"
-                });
+                console.error("Session save error:", err);
+                return res.status(500).json({ success: false, message: "Сесія не збережена" });
             }
 
-            let pilotName = null;
-            if (req.user.pilot_uuid) {
-                const pilotRows = await db('pilots')
-                    .select('Name')
-                    .where('UUID', req.user.pilot_uuid);
-
-                if (pilotRows.length > 0) {
-                    pilotName = pilotRows[0].Name;
-                }
-            }
-
-            if (pilotName) {
-                res.redirect(`/profile/${encodeURIComponent(pilotName)}`);
-            } else {
-                res.redirect("/profile");
-            }
+            res.json({ success: true });
         });
 
     } catch (error) {
         console.error("Ошибка завершения профиля:", error);
-        res.status(500).render("complete_profile", {
-            message: "Помилка збереження даних. Спробуйте ще раз.",
-            messageType: "danger"
-        });
+        res.status(500).json({ success: false, message: "Помилка збереження профілю" });
     }
 });
 
-app.get("/", async (req, res) => {
+
+app.get("/api/pilots", async (req, res) => {
     try {
         const rows = await db('pilots as p')
             .select(
@@ -509,18 +482,19 @@ app.get("/", async (req, res) => {
                 'u.YoutubeChannel',
                 'u.TwitchChannel'
             )
-            .leftJoin('users as u', 'p.steam_id_64', 'u.steam_id_64') // LEFT JOIN по steam_id_64
+            .leftJoin('users as u', 'p.steam_id_64', 'u.steam_id_64')
             .orderBy('p.EloRanking', 'desc');
 
-        res.render("pilots", { pilots: rows, activeMenu: 'pilots' });
+        res.json({ pilots: rows });
     } catch (error) {
-        console.error("[Root GET] Error fetching data for / (root):", error);
-        res.status(500).send("Error fetching data");
+        console.error("[GET /api/pilots] Error:", error);
+        res.status(500).json({ error: "Error fetching data" });
     }
 });
 
 
-app.get("/pilot/:name", async (req, res) => {
+
+app.get("/api/pilot/:name", async (req, res) => {
     const pilotName = req.params.name;
 
     try {
@@ -529,7 +503,7 @@ app.get("/pilot/:name", async (req, res) => {
             .where('Name', pilotName);
 
         if (pilotLookupRows.length === 0) {
-            return res.status(404).send("Pilot not found");
+            return res.status(404).json({ error: "Pilot not found" });
         }
 
         const pilotUUID = pilotLookupRows[0].UUID;
@@ -573,7 +547,7 @@ app.get("/pilot/:name", async (req, res) => {
         };
 
         res.json({
-            eloChartData: eloChartData,
+            eloChartData,
             stats: {
                 starts: pilotStats.RaceCount,
                 wins: pilotStats.Wins,
@@ -585,14 +559,62 @@ app.get("/pilot/:name", async (req, res) => {
         });
 
     } catch (error) {
-        console.error("[Pilot Profile GET] Error fetching pilot data:", error);
-        res.status(500).send("Error fetching pilot data");
+        console.error("[GET /api/pilot/:name] Error fetching pilot data:", error);
+        res.status(500).json({ error: "Error fetching pilot data" });
     }
 });
 
-app.get("/profile", checkAuthenticated, async (req, res) => {
+// app.get("/profile", checkAuthenticated, async (req, res) => {
+//     if (!req.isAuthenticated()) {
+//         return res.redirect("/login");
+//     }
+
+//     const userId = req.user.id;
+
+//     try {
+//         const userRows = await db('users')
+//             .select(
+//                 'LMUName',
+//                 'DiscordId',
+//                 'YoutubeChannel',
+//                 'TwitchChannel',
+//                 'Instagram',
+//                 'Twitter',
+//                 'iRacingCustomerId',
+//                 'Country',
+//                 'City',
+//                 'PhotoPath',
+//                 'TeamUUID',
+//                 'IsTeamInterested',
+//                 'first_name',
+//                 'last_name'
+//             )
+//             .where({ id: userId });
+
+//         const userProfile = userRows[0] || {};
+//         const teamRows = await db('teams').select('UUID', 'Name');
+//         const availableTeams = teamRows.map(team => ({
+//             uuid: team.UUID,
+//             name: team.Name
+//         }));
+
+//         res.render("profile", {
+//             userProfile,
+//             teams: availableTeams,
+//             activeMenu: 'profile',
+//             isAuthenticated: req.isAuthenticated(),
+//             user: req.user
+//         });
+
+//     } catch (error) {
+//         console.error("Error fetching user profile:", error);
+//         res.status(500).send("Error fetching user profile data.");
+//     }
+// });
+
+app.get("/api/profile", checkAuthenticated, async (req, res) => {
     if (!req.isAuthenticated()) {
-        return res.redirect("/login");
+        return res.status(401).json({ error: "Not authenticated" });
     }
 
     const userId = req.user.id;
@@ -619,32 +641,21 @@ app.get("/profile", checkAuthenticated, async (req, res) => {
 
         const userProfile = userRows[0] || {};
         const teamRows = await db('teams').select('UUID', 'Name');
-        const availableTeams = teamRows.map(team => ({
-            uuid: team.UUID,
-            name: team.Name
-        }));
 
-        res.render("profile", {
-            userProfile,
-            teams: availableTeams,
-            activeMenu: 'profile',
-            isAuthenticated: req.isAuthenticated(),
-            user: req.user
+        res.json({
+            user: userProfile,
+            teams: teamRows
         });
 
     } catch (error) {
         console.error("Error fetching user profile:", error);
-        res.status(500).send("Error fetching user profile data.");
+        res.status(500).json({ error: "Error fetching user profile data." });
     }
 });
 
-
-app.post('/profile/update', async (req, res) => {
-    if (!req.isAuthenticated() || !req.user) {
-        return res.status(401).json({ success: false, message: "Не авторизовано. Будь ласка, увійдіть." });
-    }
-
+app.post('/api/profile/update', checkAuthenticated, async (req, res) => {
     const userId = req.user.id;
+
     const {
         iRacingCustomerId,
         LMUName,
@@ -687,7 +698,6 @@ app.post('/profile/update', async (req, res) => {
     }
 
     const newUsername = `${sanitizedFirstName} ${sanitizedLastName}`;
-
     let finalIsTeamInterested = (IsTeamInterested === true || IsTeamInterested === 'on' || IsTeamInterested === 1) ? 1 : 0;
     if (finalTeamUUID) finalIsTeamInterested = 0;
 
@@ -717,22 +727,23 @@ app.post('/profile/update', async (req, res) => {
             return res.status(404).json({ success: false, message: "Користувач не знайдений або немає змін для збереження" });
         }
 
-        // Обновляем req.user
+        // Обновляем req.user вручную
         Object.assign(req.user, updateData);
 
         req.session.save((err) => {
             if (err) {
-                console.error("[profile/update POST] Error saving session:", err);
+                console.error("[api/profile/update POST] Session save error:", err);
                 return res.status(500).json({ success: false, message: "Помилка збереження сесії." });
             }
-            res.json({ success: true, message: "Профіль оновлено" });
+            return res.json({ success: true, message: "Профіль оновлено" });
         });
 
     } catch (error) {
-        console.error("[profile/update POST] Error updating user profile:", error);
+        console.error("[api/profile/update POST] DB error:", error);
         res.status(500).json({ success: false, message: "Помилка сервера при оновленні профілю" });
     }
 });
+
 
 
 // app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
@@ -844,17 +855,30 @@ app.post('/profile/update', async (req, res) => {
 // });
 
 
-app.get("/profile/:pilotName", async (req, res) => {
+app.get("/api/profile/:pilotName", async (req, res) => {
     const pilotName = req.params.pilotName;
 
     try {
         const pilot = await db("pilots")
-            .select("Name", "DiscordId", "YoutubeChannel", "TwitchChannel", "Instagram", "Twitter", "iRacingCustomerId", "Country", "City", "PhotoPath", "TeamUUID", "IsTeamInterested")
+            .select(
+                "Name",
+                "DiscordId",
+                "YoutubeChannel",
+                "TwitchChannel",
+                "Instagram",
+                "Twitter",
+                "iRacingCustomerId",
+                "Country",
+                "City",
+                "PhotoPath",
+                "TeamUUID",
+                "IsTeamInterested"
+            )
             .where({ Name: pilotName })
             .first();
 
         if (!pilot) {
-            return res.status(404).send("Пілот не знайдений");
+            return res.status(404).json({ success: false, message: "Пілот не знайдений" });
         }
 
         const teams = await db("teams").select("UUID", "Name").orderBy("Name");
@@ -872,20 +896,23 @@ app.get("/profile/:pilotName", async (req, res) => {
         pilot.TeamUUID = pilot.TeamUUID || null;
         pilot.IsTeamInterested = pilot.IsTeamInterested || false;
 
-        res.render("profile", {
-            pilot,
-            teams,
-            activeMenu: 'profile'
+        return res.json({
+            success: true,
+            data: {
+                pilot,
+                teams
+            }
         });
 
     } catch (error) {
-        console.error("[Public Profile GET] Error fetching public pilot profile:", error);
-        res.status(500).send("Помилка завантаження профілю");
+        console.error("[GET /api/profile/:pilotName] Error:", error);
+        return res.status(500).json({ success: false, message: "Помилка завантаження профілю" });
     }
 });
 
 
-app.get("/new-participants", async (req, res) => {
+
+app.get("/api/new-participants", async (req, res) => {
     try {
         const rows = await db("raceparticipants as rp")
             .join("races as r", "rp.RaceUUID", "r.UUID")
@@ -919,21 +946,24 @@ app.get("/new-participants", async (req, res) => {
             cumulativeParticipantsCount.push(allParticipants.size);
         });
 
-        res.render("new_participants", {
-            cumulativeParticipantsCount: JSON.stringify(cumulativeParticipantsCount),
-            newParticipantsCount: JSON.stringify(newParticipantsCount),
-            raceDates: JSON.stringify(raceDates),
-            activeMenu: 'new-participants'
+        res.json({
+            success: true,
+            data: {
+                cumulativeParticipantsCount,
+                newParticipantsCount,
+                raceDates
+            }
         });
 
     } catch (error) {
-        console.error("Error fetching data:", error);
-        res.status(500).send("Error fetching data");
+        console.error("Error fetching data in /api/new-participants:", error);
+        res.status(500).json({ success: false, message: "Error fetching data" });
     }
 });
 
 
-app.get("/tracks", async (req, res) => {
+
+app.get("/api/tracks", async (req, res) => {
     try {
         const tracks = await db("trackrecords as tr")
             .leftJoin("trackimages as ti", "tr.TrackName", "ti.TrackName")
@@ -989,20 +1019,23 @@ app.get("/tracks", async (req, res) => {
             BestRaceLapPilot: row.BestRaceLapPilot,
         }));
 
-        res.render("tracks", {
-            tracks: processedTracks,
-            topRaceCountPilots,
-            topWinsPilots,
-            topPodiumsPilots,
-            topPolesPilots,
-            topFastestLapsPilots,
-            activeMenu: "tracks",
+        res.json({
+            success: true,
+            data: {
+                tracks: processedTracks,
+                topRaceCountPilots,
+                topWinsPilots,
+                topPodiumsPilots,
+                topPolesPilots,
+                topFastestLapsPilots
+            }
         });
     } catch (error) {
-        console.error("Error fetching data for tracks page:", error);
-        res.status(500).send("Error fetching data for tracks page");
+        console.error("Error fetching data for /api/tracks:", error);
+        res.status(500).json({ success: false, message: "Error fetching data for tracks" });
     }
 });
+
 
 
 app.get("/api/events", async (req, res) => {
@@ -1011,12 +1044,13 @@ app.get("/api/events", async (req, res) => {
             .select("id", "date", "description", "url")
             .orderBy("date");
 
-        res.json({ events: rows });
+        res.json({ success: true, events: rows });
     } catch (error) {
         console.error("Error fetching events:", error);
-        res.status(500).send("Error fetching events");
+        res.status(500).json({ success: false, message: "Error fetching events" });
     }
 });
+
 
 
 app.get("/calendar", async (req, res) => {

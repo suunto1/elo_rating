@@ -2,54 +2,86 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>КМАМК Sim Racing - Calendar</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
-        rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/styles_calendar.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>КМАМК Sim Racing</title>
-    <link rel="stylesheet" href="/styles.css">
-    <link rel="stylesheet" href="/styles_calendar.css">
-    <link rel="icon" href="/favicon.png" type="image/png">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-    <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.31/moment-timezone-with-data.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs/plugin/utc"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs/plugin/timezone"></script>
-    <script src="https://cdn.jsdelivr.jsdelivr.net/npm/chartjs-adapter-dayjs"></script>
-    <script src="/main.js"></script>
+  <link rel="icon" href="/favicon.png" type="image/png" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.31/moment-timezone-with-data.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs/plugin/utc"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs/plugin/timezone"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-dayjs"></script>
+
+  <script src="/main.js"></script>
 </head>
 
 <body>
-    <%- include('partials/menu', { activeMenu: 'calendar' }) %>
+  <!-- Статичное меню -->
+  <nav class="menu">
+    <a href="/" >Home</a>
+    <a href="/calendar" class="active">Calendar</a>
+    <a href="/pilots">Pilots</a>
+    <a href="/events">Events</a>
+    <!-- Добавьте остальные пункты меню здесь -->
+  </nav>
 
-        <div class="container">
-            <aside class="sidebar-left">
+  <div class="container">
+    <aside class="sidebar-left"></aside>
 
-            </aside>
+    <main>
+      <div id="chart-container">
+        <div id="calendar"></div>
+      </div>
 
-            <main>
-                <div id="chart-container">
-                    <div id="calendar"></div>
-                </div>
+      <!-- Статичные партнеры (или динамические через JS) -->
+      <section id="partners">
+        <!-- Сюда вставьте партнеров -->
+      </section>
+    </main>
 
-                <%- include('partials/partners') %>
-            </main>
+    <aside class="sidebar-right"></aside>
+  </div>
 
-            <aside class="sidebar-right">
+  <!-- Статичный футер -->
+  <footer>
+    <!-- Содержимое футера -->
+  </footer>
 
-            </aside>
+  <script>
+    // Подсветка активного пункта меню
+    document.addEventListener('DOMContentLoaded', () => {
+      const currentPath = window.location.pathname;
+      document.querySelectorAll('.menu a').forEach(link => {
+        if (link.getAttribute('href') === currentPath) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      });
 
-        </div>
-        <%- include('partials/footer') %>
+      // Инициализация fullcalendar — если нужно
+      $('#calendar').fullCalendar({
+        // Здесь ваша конфигурация и события
+        events: '/api/events', // пример загрузки событий через API
+        timeZone: 'local',
+        locale: 'en',
+        header: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'month,agendaWeek,agendaDay'
+        }
+      });
+    });
+  </script>
 </body>
 
 </html>

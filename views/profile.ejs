@@ -141,7 +141,46 @@
         <%- include('partials/footer') %>
 
             <script>
-                document.addEventListener('DOMContentLoaded', () => {
+                document.addEventListener('DOMContentLoaded', async function () {
+
+                    try {
+                        const res = await fetch('https://elo-rating-1.onrender.com/api/profile', {
+                            credentials: 'include'
+                        });
+
+                        if (res.status === 401) {
+                            window.location.href = '/login';
+                            return;
+                        }
+
+                        const data = await res.json();
+                        const user = data.user;
+
+                        // Заполняем поля
+                        document.getElementById('firstNameInput').value = user.first_name || '';
+                        document.getElementById('lastNameInput').value = user.last_name || '';
+                        document.getElementById('LMUName').value = user.LMUName || '';
+                        document.getElementById('DiscordId').value = user.DiscordId || '';
+                        document.getElementById('YoutubeChannel').value = user.YoutubeChannel || '';
+                        document.getElementById('TwitchChannel').value = user.TwitchChannel || '';
+                        document.getElementById('Instagram').value = user.Instagram || '';
+                        document.getElementById('Twitter').value = user.Twitter || '';
+                        document.getElementById('iRacingCustomerId').value = user.iRacingCustomerId || '';
+                        document.getElementById('Country').value = user.Country || '';
+                        document.getElementById('City').value = user.City || '';
+                        document.getElementById('TeamUUID').value = user.TeamUUID || '';
+                        document.getElementById('IsTeamInterested').checked = user.IsTeamInterested || false;
+
+                        document.getElementById('fullNameDisplay').textContent = `${user.first_name} ${user.last_name}`;
+
+                        const profileAvatar = document.getElementById('profile-avatar');
+                        if (user.PhotoPath) {
+                            profileAvatar.src = user.PhotoPath;
+                        }
+
+                    } catch (err) {
+                        console.error('Ошибка при загрузке профиля:', err);
+                    }
 
                     const currentUserId = "<%= user.id %>";
                     const form = document.getElementById('profile-form');
