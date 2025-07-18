@@ -625,11 +625,11 @@ app.get("/profile", checkAuthenticated, async (req, res) => {
         }));
 
         res.render("profile", {
-            userProfile,
+            profileData: userProfile,
             teams: availableTeams,
             activeMenu: 'profile',
             isAuthenticated: req.isAuthenticated(),
-            user: req.user
+            currentUser: req.user
         });
 
     } catch (error) {
@@ -873,9 +873,11 @@ app.get("/profile/:pilotName", async (req, res) => {
         pilot.IsTeamInterested = pilot.IsTeamInterested || false;
 
         res.render("profile", {
-            pilot,
+            profileData: pilot,
             teams,
-            activeMenu: 'profile'
+            activeMenu: 'profile',
+            isAuthenticated: req.isAuthenticated(),
+            currentUser: req.user
         });
 
     } catch (error) {
