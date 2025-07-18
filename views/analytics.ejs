@@ -1,147 +1,86 @@
 <!DOCTYPE html>
-<html lang="uk">
-
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>КМАМК Sim Racing - Статистика відвідувань</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background-color: #f4f4f4;
-      color: #333;
-    }
+    <title>КМАМК Sim Racing</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #f4f4f4; 
+            color: #333; 
+        }
+        h1, h2, h3 { 
+            color: #0056b3; 
+        }
+        ul { 
+            list-style-type: none; 
+            padding: 0; 
+        }
+        li { 
+            background-color: #fff; 
+            margin-bottom: 5px; 
+            padding: 8px 12px; 
+            border-radius: 4px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+        }
+        p { 
+            margin-bottom: 5px; 
+        }
+        .section { 
+            background-color: #e9e9e9; 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+        }
 
-    h1,
-    h2,
-    h3 {
-      color: #0056b3;
-    }
+        .analytics-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
 
-    ul {
-      list-style-type: none;
-      padding: 0;
-    }
-
-    li {
-      background-color: #fff;
-      margin-bottom: 5px;
-      padding: 8px 12px;
-      border-radius: 4px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    p {
-      margin-bottom: 5px;
-    }
-
-    .section {
-      background-color: #e9e9e9;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-
-    .analytics-row {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    .analytics-row .section {
-      flex: 1;
-      min-width: 300px;
-    }
-  </style>
+        .analytics-row .section {
+            flex: 1;
+            min-width: 300px;
+        }
+    </style>
 </head>
-
 <body>
-  <h1>Статистика відвідувань</h1>
-
-  <div class="section" id="unique-visitors">
-    <h3>Унікальні відвідувачі (за анонімізованими IP)</h3>
-    <p>За весь час: <strong id="total-visitors">...</strong></p>
-    <h4>Поточні періоди:</h4>
-    <ul>
-      <li>За сьогодні: <strong id="visitors-today">...</strong></li>
-      <li>За цей тиждень: <strong id="visitors-this-week">...</strong></li>
-      <li>За цей місяць: <strong id="visitors-this-month">...</strong></li>
-    </ul>
-    <h4>Минулі періоди:</h4>
-    <ul>
-      <li>За минулий тиждень: <strong id="visitors-last-week">...</strong></li>
-      <li>За минулий місяць: <strong id="visitors-last-month">...</strong></li>
-      <li>За минулий рік: <strong id="visitors-last-year">...</strong></li>
-    </ul>
-  </div>
-
-  <div class="analytics-row">
-    <div class="section">
-      <h2>Унікальні відвідування за сторінками</h2>
-      <ul id="views-by-page">
-        <li>Завантаження...</li>
-      </ul>
-    </div>
+    <h1>Статистика відвідувань</h1>
 
     <div class="section">
-      <h2>Унікальні відвідування за країнами</h2>
-      <ul id="views-by-country">
-        <li>Завантаження...</li>
-      </ul>
+        <h3>Унікальні відвідувачі (за анонімізованими IP)</h3>
+        <p>За весь час: <strong><%= uniqueVisitorsCount %></strong></p>
+        <h4>Поточні періоди:</h4>
+        <ul>
+            <li>За сьогодні: <strong><%= uniqueVisitorsTodayCount %></strong></li>
+            <li>За цей тиждень: <strong><%= uniqueVisitorsThisWeekCount %></strong></li>
+            <li>За цей місяць: <strong><%= uniqueVisitorsThisMonthCount %></strong></li>
+        </ul>
+        <h4>Минулі періоди:</h4>
+        <ul>
+            <li>За минулий тиждень: <strong><%= uniqueVisitorsLastWeekCount %></strong></li>
+            <li>За минулий місяць: <strong><%= uniqueVisitorsLastMonthCount %></strong></li>
+            <li>За минулий рік: <strong><%= uniqueVisitorsLastYearCount %></strong></li>
+        </ul>
     </div>
-  </div>
-
-  <script>
-    async function fetchStats() {
-      try {
-        const res = await fetch('https://elo-rating-1.onrender.com/api/analytics/summary'); // Ваш эндпоинт API
-        if (!res.ok) throw new Error('Network response was not ok');
-        const data = await res.json();
-
-        // Заполняем данные уникальных посетителей
-        document.getElementById('total-visitors').textContent = data.uniqueVisitorsCount ?? '0';
-        document.getElementById('visitors-today').textContent = data.uniqueVisitorsTodayCount ?? '0';
-        document.getElementById('visitors-this-week').textContent = data.uniqueVisitorsThisWeekCount ?? '0';
-        document.getElementById('visitors-this-month').textContent = data.uniqueVisitorsThisMonthCount ?? '0';
-        document.getElementById('visitors-last-week').textContent = data.uniqueVisitorsLastWeekCount ?? '0';
-        document.getElementById('visitors-last-month').textContent = data.uniqueVisitorsLastMonthCount ?? '0';
-        document.getElementById('visitors-last-year').textContent = data.uniqueVisitorsLastYearCount ?? '0';
-
-        // Заполняем посещения по страницам
-        const viewsByPageUl = document.getElementById('views-by-page');
-        viewsByPageUl.innerHTML = '';
-        if (data.viewsByPage && data.viewsByPage.length) {
-          data.viewsByPage.forEach(page => {
-            const li = document.createElement('li');
-            li.textContent = `${page.page_url}: ${page.count} унікальних переглядів`;
-            viewsByPageUl.appendChild(li);
-          });
-        } else {
-          viewsByPageUl.innerHTML = '<li>Дані відсутні</li>';
-        }
-
-        // Заполняем посещения по странам
-        const viewsByCountryUl = document.getElementById('views-by-country');
-        viewsByCountryUl.innerHTML = '';
-        if (data.viewsByCountry && data.viewsByCountry.length) {
-          data.viewsByCountry.forEach(country => {
-            const li = document.createElement('li');
-            li.textContent = `${country.country}: ${country.count} унікальних відвідувачів`;
-            viewsByCountryUl.appendChild(li);
-          });
-        } else {
-          viewsByCountryUl.innerHTML = '<li>Дані відсутні</li>';
-        }
-      } catch (error) {
-        console.error('Error loading analytics data:', error);
-        document.getElementById('views-by-page').innerHTML = '<li>Помилка завантаження даних</li>';
-        document.getElementById('views-by-country').innerHTML = '<li>Помилка завантаження даних</li>';
-      }
-    }
-
-    document.addEventListener('DOMContentLoaded', fetchStats);
-  </script>
-</body>
-
+    
+    <div class="analytics-row">  <div class="section">
+            <h2>Унікальні відвідування за сторінками</h2>
+            <ul>
+                <% viewsByPage.forEach(page => { %>
+                    <li><%= page.page_url %>: <strong><%= page.count %></strong> унікальних переглядів</li>
+                <% }); %>
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h2>Унікальні відвідування за країнами</h2>
+            <ul>
+                <% viewsByCountry.forEach(country => { %>
+                    <li><%= country.country %>: <strong><%= country.count %></strong> унікальних відвідувачів</li>
+                <% }); %>
+            </ul>
+        </div>
+    </div> </body>
 </html>

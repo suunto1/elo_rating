@@ -2,172 +2,136 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
-    rel="stylesheet" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="/styles.css" />
-  <link rel="stylesheet" href="/styles_new_participants.css" />
-  <link rel="icon" href="/favicon.png" type="image/png" />
-  <title>КМАМК Sim Racing</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.31/moment-timezone-with-data.min.js"></script>
-  <script src="/main.js"></script>
+    <meta charset="UTF-8">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/styles_new_participants.css">
+    <link rel="icon" href="/favicon.png" type="image/png">
+    <title>КМАМК Sim Racing</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.31/moment-timezone-with-data.min.js"></script>
+    <script src="/main.js"></script>
 </head>
 
 <body>
-  <!-- Статичное меню сюда или динамическая подгрузка -->
-  <div id="menu-placeholder"></div>
+    <%- include('partials/menu') %>
 
-  <div class="container">
-    <aside class="sidebar-left"></aside>
+        <div class="container">
+            <aside class="sidebar-left"></aside>
 
-    <main>
-      <div id="chart-container">
-        <canvas id="participantsChart"></canvas>
-      </div>
+            <main>
+                <div id="chart-container">
+                    <canvas id="participantsChart"></canvas>
+                </div>
+                <%- include('partials/partners') %>
+            </main>
 
-      <!-- Партнеры сюда или загрузка -->
-      <div id="partners-placeholder"></div>
-    </main>
+            <aside class="sidebar-right"></aside>
 
-    <aside class="sidebar-right"></aside>
-  </div>
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const cumulativeParticipantsCount = JSON.parse('<%- cumulativeParticipantsCount %>');
+                const newParticipantsCount = JSON.parse('<%- newParticipantsCount %>');
+                const raceDates = JSON.parse('<%- raceDates %>');
 
-  <script>
-    document.addEventListener('DOMContentLoaded', async function () {
-      // Трекинг просмотра страницы
-      fetch("https://elo-rating-1.onrender.com/track-view", { method: "POST" }).catch(() => {});
-
-      // Функция загрузки данных для графика
-      async function loadParticipantsData() {
-        try {
-          // Заменить URL на реальный API, который отдаёт данные в формате:
-          // { cumulativeParticipantsCount: [...], newParticipantsCount: [...], raceDates: [...] }
-          const response = await fetch("https://elo-rating-1.onrender.com/api/new-participants-data");
-          if (!response.ok) throw new Error("Failed to fetch participants data");
-          return await response.json();
-        } catch (error) {
-          console.error("Error loading participants data:", error);
-          return null;
-        }
-      }
-
-      const data = await loadParticipantsData();
-
-      if (data && data.cumulativeParticipantsCount && data.newParticipantsCount && data.raceDates) {
-        const ctx = document.getElementById('participantsChart').getContext('2d');
-        new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: data.raceDates.map(date => new Date(date).toLocaleDateString()),
-            datasets: [
-              {
-                label: 'Overall Pilots',
-                data: data.cumulativeParticipantsCount,
-                type: 'line',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 2,
-                fill: false,
-                yAxisID: 'y-axis-1'
-              },
-              {
-                label: 'New Pilots',
-                data: data.newParticipantsCount,
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1,
-                yAxisID: 'y-axis-2'
-              }
-            ]
-          },
-          options: {
-            scales: {
-              x: {
-                title: {
-                  display: true,
-                  text: 'Race Date'
-                },
-                grid: {
-                  color: 'rgba(255, 255, 255, 0.1)'
-                },
-                ticks: {
-                  color: 'rgb(235, 235, 235)'
-                }
-              },
-              'y-axis-1': {
-                type: 'linear',
-                display: true,
-                position: 'left',
-                title: {
-                  display: true,
-                  text: 'Overall Pilots'
-                },
-                beginAtZero: true,
-                grid: {
-                  color: 'rgba(255, 255, 255, 0.1)'
-                },
-                ticks: {
-                  color: 'rgb(235, 235, 235)'
-                }
-              },
-              'y-axis-2': {
-                type: 'linear',
-                display: true,
-                position: 'right',
-                title: {
-                  display: true,
-                  text: 'New Pilots'
-                },
-                beginAtZero: true,
-                grid: {
-                  color: 'rgba(255, 255, 255, 0.1)'
-                },
-                ticks: {
-                  color: 'rgb(235, 235, 235)'
-                }
-              }
+                const ctx = document.getElementById('participantsChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: raceDates.map(date => new Date(date).toLocaleDateString()),
+                        datasets: [
+                            {
+                                label: 'Overall Pilots',
+                                data: cumulativeParticipantsCount,
+                                type: 'line',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 2,
+                                fill: false,
+                                yAxisID: 'y-axis-1'
+                            },
+                            {
+                                label: 'New Pilots',
+                                data: newParticipantsCount,
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                borderWidth: 1,
+                                yAxisID: 'y-axis-2'
+                            }
+                        ]
+                    },
+                    options: {
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Race Date'
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: 'rgb(235, 235, 235)'
+                                }
+                            },
+                            'y-axis-1': {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Overall Pilots'
+                                },
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: 'rgb(235, 235, 235)'
+                                }
+                            },
+                            'y-axis-2': {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'New Pilots'
+                                },
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: 'rgb(235, 235, 235)'
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+        </script>
+        <script>
+            var currentUrl = window.location.pathname;
+            function setActiveMenuItem() {
+                var menuItems = document.querySelectorAll('.menu a');
+                menuItems.forEach(function (item) {
+                    if (item.getAttribute('href') === currentUrl) {
+                        item.classList.add('active');
+                    }
+                });
             }
-          }
-        });
-      } else {
-        console.error("Participants data not available or incomplete.");
-      }
-    });
-
-    // Установка активного пункта меню (если нужно)
-    var currentUrl = window.location.pathname;
-    function setActiveMenuItem() {
-      var menuItems = document.querySelectorAll('.menu a');
-      menuItems.forEach(function (item) {
-        if (item.getAttribute('href') === currentUrl) {
-          item.classList.add('active');
-        }
-      });
-    }
-    window.onload = setActiveMenuItem;
-
-    // Можно добавить загрузку меню, партнеров и футера динамически
-    document.getElementById("menu-placeholder").innerHTML = `
-      <!-- Вставьте сюда статичный HTML меню -->
-    `;
-    document.getElementById("partners-placeholder").innerHTML = `
-      <!-- Вставьте сюда статичный HTML партнеров -->
-    `;
-  </script>
-
-  <!-- Футер -->
-  <div id="footer-placeholder"></div>
-  <script>
-    document.getElementById("footer-placeholder").innerHTML = `
-      <!-- Вставьте сюда статичный HTML футера -->
-    `;
-  </script>
+            window.onload = setActiveMenuItem;
+        </script>
+        <%- include('partials/footer') %>
 </body>
 
 </html>
