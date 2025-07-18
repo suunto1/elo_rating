@@ -127,7 +127,7 @@
                 const rows = document.querySelectorAll("tbody tr");
                 const pilotNameDiv = document.getElementById("pilot-name");
                 const pilotAvatarContainer = document.getElementById("pilot-avatar-container");
-                const pilotHeaderInfo = document.getElementById("pilot-header-info"); // Новый контейнер
+                const pilotHeaderInfo = document.getElementById("pilot-header-info");
                 const ctx = document.getElementById("eloChart").getContext("2d");
                 let eloChart;
                 const chartPlaceholder = document.querySelector(".chart-placeholder");
@@ -181,19 +181,34 @@
 
                             // --- Avatar Logic Start ---
                             pilotHeaderInfo.style.display = 'flex'; // Показываем блок pilot-header-info
+                            let avatarSrc = '/images/default-avatar.png'; // Дефолтный аватар
+                            let profileLink = '#'; // Дефолтная ссылка
+
                             if (data.userDetails && data.userDetails.avatar_url) {
-                                const avatarImg = document.createElement('img');
-                                avatarImg.src = data.userDetails.avatar_url;
-                                avatarImg.alt = "Pilot Avatar";
-                                avatarImg.classList.add('pilot-avatar');
-                                pilotAvatarContainer.appendChild(avatarImg);
-                            } else {
-                                const defaultAvatarImg = document.createElement('img');
-                                defaultAvatarImg.src = '/images/default-avatar.png'; // Make sure you have a default avatar image
-                                defaultAvatarImg.alt = "Default Avatar";
-                                defaultAvatarImg.classList.add('pilot-avatar');
-                                pilotAvatarContainer.appendChild(defaultAvatarImg);
+                                avatarSrc = data.userDetails.avatar_url;
                             }
+                            // Если у вас есть маршрут для профиля пилота, используйте его:
+                            // Например, /profile/:steamId или /profile/:pilotName
+                            if (steamId) { // Проверяем, есть ли Steam ID для создания ссылки на профиль
+                                profileLink = `/profile/${steamId}`; // Предполагаем маршрут для профиля
+                            } else {
+                                // Если Steam ID нет, но нужно ссылку на профиль пилота по имени
+                                profileLink = `/profile-pilot/${encodeURIComponent(pilotName)}`;
+                            }
+
+
+                            const avatarLink = document.createElement('a');
+                            avatarLink.href = profileLink;
+                            avatarLink.classList.add('pilot-avatar-link'); // Для стилизации ссылки
+
+                            const avatarImg = document.createElement('img');
+                            avatarImg.src = avatarSrc;
+                            avatarImg.alt = "Pilot Avatar";
+                            avatarImg.classList.add('pilot-avatar'); // Для стилизации изображения
+
+                            avatarLink.appendChild(avatarImg);
+                            pilotAvatarContainer.appendChild(avatarLink);
+
                             // --- Avatar Logic End ---
 
                             const eloChartData = data.eloChartData;
