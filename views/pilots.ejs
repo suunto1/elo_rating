@@ -159,7 +159,7 @@
             try {
               console.log(`Fetching data for pilot: ${pilotName}`);
               const response = await fetch(
-                `/pilot/${encodeURIComponent(pilotName)}`
+                `https://elo-rating-1.onrender.com/pilot/${encodeURIComponent(pilotName)}`
               );
               if (!response.ok) {
                 throw new Error("Network response was not ok");

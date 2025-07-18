@@ -48,6 +48,9 @@ async function connectWithRetry(retries = 5) {
 connectWithRetry();
 
 const app = express();
+app.get('/ping', (req, res) => {
+  res.send('OK');
+});
 const port = process.env.PORT || 3000;
 
 // Multer для загрузки файлов
@@ -102,7 +105,7 @@ if (!STEAM_API_KEY || !STEAM_RETURN_URL || !SESSION_SECRET || !STEAM_REALM) {
 const cors = require('cors');
 
 app.use(cors({
-    origin: 'https://elo-rating.vercel.app',
+    origin: ['https://elo-rating.vercel.app', 'https://elo-rating-1.onrender.com'],
     credentials: true
 }));
 
@@ -1146,5 +1149,16 @@ app.get("/analytics", async (req, res) => {
 // Запуск сервера
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
-    console.log(`Open http://localhost:${port}`);
 });
+
+// Пинг сервера каждые 14 минут, чтобы не заснул (free plan)
+const https = require('https');
+const PING_URL = 'https://elo-rating-1.onrender.com/ping';
+
+setInterval(() => {
+  https.get(PING_URL, (res) => {
+    // success – silent
+  }).on('error', (err) => {
+    console.error('[Auto-Ping] ❌ Ping failed:', err.message);
+  });
+}, 1000 * 60 * 14);

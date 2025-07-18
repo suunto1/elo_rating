@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (document.getElementById('calendar')) {
         console.log("Calendar element found. Initializing FullCalendar...");
-        fetch('/api/events')
+        fetch('https://elo-rating-1.onrender.com/api/events')
             .then(response => {
                 console.log("API events fetch response:", response);
                 if (!response.ok) {
@@ -105,7 +105,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function updateNearestEvent() {
         console.log("updateNearestEvent called.");
-        fetch('/api/events')
+        fetch('https://elo-rating-1.onrender.com/api/events')
             .then(response => {
                 console.log("Nearest event API response:", response);
                 if (!response.ok) {
@@ -210,7 +210,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function trackPageView() {
-    fetch('/track-view', {
+    fetch('https://elo-rating-1.onrender.com/track-view', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

@@ -9,28 +9,25 @@ const db = knex({
         password: process.env.DB_PASSWORD,
         database: process.env.DB_DATABASE,
         port: process.env.DB_PORT || 3306,
-        connectTimeout: 20000 // ⏱️ 10 сек таймаут подключения
+        connectTimeout: 20000, // ⏱️ 10 сек таймаут подключения
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 10000
     },
     pool: {
         min: 2,
-        max: 50,
+        max: 10,
         acquireTimeoutMillis: 30000, // ⏱️ ожидание свободного соединения
-        idleTimeoutMillis: 10000     // ⏱️ сколько держать неиспользуемое соединение
+        idleTimeoutMillis: 5000,     // ⏱️ сколько держать неиспользуемое соединение
+        afterCreate: (conn, done) => {
+            // Устанавливаем TCP keep-alive
+            conn.on('error', err => {
+                console.error('[MySQL] Connection error:', err);
+            });
+
+            conn.connection.stream.setKeepAlive(true, 10000); // ⏱️ 10 сек
+            done(null, conn);
+        }
     }
-});
-
-// Логирование соединений — полезно для отладки
-db.client.pool.on('acquire', (connection) => {
-    console.log(`[DB] Connection acquired (threadId: ${connection.threadId})`);
-});
-
-db.client.pool.on('release', (connection) => {
-    console.log(`[DB] Connection released (threadId: ${connection.threadId})`);
-});
-
-// Обработка ошибок пула (особенно важна!)
-db.client.pool.on('error', (err) => {
-    console.error('[DB] Pool error:', err);
 });
 
 module.exports = db;
