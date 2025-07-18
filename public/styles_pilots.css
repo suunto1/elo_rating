@@ -184,18 +184,17 @@ tbody tr.selected {
 }
 
 #pilot-name-link {
-    text-decoration: none; /* Убираем подчеркивание */
-    color: rgb(235, 235, 235); /* Цвет текста */
-    font-weight: bold; /* Делаем текст жирным, если нужно */
-    display: block; /* Делаем ссылку блочным элементом, чтобы она занимала всю ширину */
-    text-align: center; /* Центрируем текст внутри блочной ссылки */
-    transition: color 0.2s ease-in-out, transform 0.1s ease-in-out; /* Плавный переход */
+    text-decoration: none;
+    color: rgb(235, 235, 235);
+    font-weight: bold;
+    display: block;
+    text-align: center;
+    transition: text-decoration 0.3s ease-in-out, color 0.3s ease-in-out;
 }
 
 #pilot-name-link:hover {
-    color: #2563eb; /* Цвет при наведении */
     cursor: pointer;
-    transform: translateY(-2px); /* Небольшой эффект поднятия */
+    text-decoration: underline;
 }
 
 .streamer-icon-cell {
