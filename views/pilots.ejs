@@ -2,339 +2,307 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
-        rel="stylesheet" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="/styles.css" />
-    <link rel="stylesheet" href="/styles_pilots.css" />
-    <link rel="icon" href="/favicon.png" type="image/png" />
-    <title>КМАМК Sim Racing</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.31/moment-timezone-with-data.min.js"></script>
-    <script src="/main.js"></script>
+  <meta charset="UTF-8" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+    rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/styles_pilots.css" />
+  <link rel="icon" href="/favicon.png" type="image/png" />
+  <title>КМАМК Sim Racing</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.31/moment-timezone-with-data.min.js"></script>
+  <script src="/main.js"></script>
 </head>
 
 <body>
-    <%- include('partials/menu') %>
-        <div class="container">
-            <aside class="sidebar-left"></aside>
-            <main>
-                <div class="header-container">
-                    <div class="search-container">
-                        <input type="text" id="search-input" placeholder="Пошук..." />
-                    </div>
-                </div>
-                <div class="content-container">
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>No</th>
-                                    <th>Name</th>
-                                    <th>ELO Rating</th>
-                                    <th>Races</th>
-                                    <th>Avg.</th>
-                                    <th>Streamer</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <% pilots.forEach((pilot, index)=> { %>
-                                    <tr data-pilot="<%= pilot.Name %>" data-steam-id="<%= pilot.steam_id_64 %>">
-                                        <td>
-                                            <%= index + 1 %>
-                                        </td>
-                                        <td class="pilot-name">
-                                            <%= pilot.Name %>
-                                        </td>
-                                        <td>
-                                            <%= pilot.EloRanking %>
-                                        </td>
-                                        <td>
-                                            <%= pilot.RaceCount %>
-                                        </td>
-                                        <td>
-                                            <%= pilot.AverageChange.toFixed(2) %>
-                                        </td>
-                                        <td class="streamer-icon-cell">
-                                            <% if (pilot.YoutubeChannel || pilot.TwitchChannel) { %>
-                                                <% let streamerLink=pilot.YoutubeChannel || pilot.TwitchChannel; %>
-                                                    <a href="<%= streamerLink %>" target="_blank"
-                                                        class="streamer-link" aria-label="Streamer Channel">
-                                                        <img src="/images/headphones-100.png" alt="Streamer Icon"
-                                                            class="streamer-icon">
-                                                    </a>
-                                                    <% } %>
-                                        </td>
-                                    </tr>
-                                    <% }) %>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div id="chart-container">
-                        <div id="pilot-header-info">
-                            <div id="pilot-name"></div>
-                            <div id="pilot-avatar-container">
-                                </div>
-                        </div>
-                        <div class="chart-placeholder">
-                            Оберіть водія для відображення рейтингу
-                        </div>
-                        <canvas id="eloChart"></canvas>
-                        <div id="pilot-details-info">
-                            <div class="pilot-stats-grid">
-                                <div class="stat-card">
-                                    <span class="stat-label">Стартів</span>
-                                    <span class="stat-value" id="stats-starts">0</span>
-                                </div>
-                                <div class="stat-card">
-                                    <span class="stat-label">Перемог</span>
-                                    <span class="stat-value" id="stats-wins">0</span>
-                                </div>
-                                <div class="stat-card">
-                                    <span class="stat-label">Подіумів (1-3)</span>
-                                    <span class="stat-value" id="stats-podium">0</span>
-                                </div>
-                                <div class="stat-card">
-                                    <span class="stat-label">Top 5</span>
-                                    <span class="stat-value" id="stats-top5">0</span>
-                                </div>
-                                <div class="stat-card">
-                                    <span class="stat-label">Top 10</span>
-                                    <span class="stat-value" id="stats-top10">0</span>
-                                </div>
-                                <div class="stat-card">
-                                    <span class="stat-label">% подіумів</span>
-                                    <span class="stat-value" id="stats-podium-rate">0%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <%- include('partials/partners') %>
-            </main>
-            <aside class="sidebar-right"></aside>
+  <%- include('partials/menu') %>
+    <div class="container">
+      <aside class="sidebar-left"></aside>
+      <main>
+        <div class="header-container">
+          <div class="search-container">
+            <input type="text" id="search-input" placeholder="Пошук..." />
+          </div>
         </div>
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                const searchInput = document.getElementById("search-input");
-                const rows = document.querySelectorAll("tbody tr");
-                const pilotNameDiv = document.getElementById("pilot-name");
-                const pilotAvatarContainer = document.getElementById("pilot-avatar-container");
-                const pilotHeaderInfo = document.getElementById("pilot-header-info"); // Новый контейнер
-                const ctx = document.getElementById("eloChart").getContext("2d");
-                let eloChart;
-                const chartPlaceholder = document.querySelector(".chart-placeholder");
-                const pilotDetailsInfo = document.getElementById("pilot-details-info");
+        <div class="content-container">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Name</th>
+                  <th>ELO Rating</th>
+                  <th>Races</th>
+                  <th>Avg.</th>
+                  <th>Streamer</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% pilots.forEach((pilot, index)=> { %>
+                  <tr data-pilot="<%= pilot.Name %>">
+                    <td>
+                      <%= index + 1 %>
+                    </td>
+                    <td class="pilot-name">
+                      <%= pilot.Name %>
+                    </td>
+                    <td>
+                      <%= pilot.EloRanking %>
+                    </td>
+                    <td>
+                      <%= pilot.RaceCount %>
+                    </td>
+                    <td>
+                      <%= pilot.AverageChange.toFixed(2) %>
+                    </td>
+                    <td class="streamer-icon-cell">
+                      <% if (pilot.YoutubeChannel || pilot.TwitchChannel) { %>
+                        <% let streamerLink=pilot.YoutubeChannel || pilot.TwitchChannel; %>
+                          <a href="<%= streamerLink %>" target="_blank" class="streamer-link"
+                            aria-label="Streamer Channel">
+                            <img src="/images/headphones-100.png" alt="Streamer Icon" class="streamer-icon">
+                          </a>
+                          <% } %>
+                    </td>
+                  </tr>
+                  <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <div id="chart-container">
+            <div id="pilot-name"></div>
+            <div class="chart-placeholder">
+              Оберіть водія для відображення рейтингу
+            </div>
+            <canvas id="eloChart"></canvas>
+            <div id="pilot-details-info">
+              <div class="pilot-stats-grid">
+                <div class="stat-card">
+                  <span class="stat-label">Стартів</span>
+                  <span class="stat-value" id="stats-starts">0</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">Перемог</span>
+                  <span class="stat-value" id="stats-wins">0</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">Подіумів (1-3)</span>
+                  <span class="stat-value" id="stats-podium">0</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">Top 5</span>
+                  <span class="stat-value" id="stats-top5">0</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">Top 10</span>
+                  <span class="stat-value" id="stats-top10">0</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">% подіумів</span>
+                  <span class="stat-value" id="stats-podium-rate">0%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <%- include('partials/partners') %>
+      </main>
+      <aside class="sidebar-right"></aside>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const searchInput = document.getElementById("search-input");
+        const rows = document.querySelectorAll("tbody tr");
+        const pilotNameDiv = document.getElementById("pilot-name");
+        const ctx = document.getElementById("eloChart").getContext("2d");
+        let eloChart;
+        const chartPlaceholder = document.querySelector(".chart-placeholder");
+        const pilotDetailsInfo = document.getElementById("pilot-details-info");
 
-                searchInput.addEventListener("input", function () {
-                    const searchText = searchInput.value.toLowerCase();
-                    rows.forEach((row) => {
-                        const pilotName = row.getAttribute("data-pilot").toLowerCase();
-                        if (pilotName.includes(searchText)) {
-                            row.style.display = "";
-                        } else {
-                            row.style.display = "none";
-                        }
-                    });
-                });
-
-                rows.forEach((row) => {
-                    row.addEventListener("click", async function () {
-                        rows.forEach((r) => r.classList.remove("selected"));
-                        this.classList.add("selected");
-
-                        const pilotName = this.getAttribute("data-pilot");
-                        const steamId = this.getAttribute("data-steam-id");
-                        pilotNameDiv.textContent = pilotName;
-
-                        if (chartPlaceholder) {
-                            chartPlaceholder.style.display = "none";
-                        }
-
-                        document.getElementById("eloChart").style.display = "";
-
-                        if (pilotDetailsInfo) {
-                            pilotDetailsInfo.style.display = "block";
-                        }
-
-                        // Clear previous avatar
-                        pilotAvatarContainer.innerHTML = '';
-                        pilotHeaderInfo.style.display = 'none'; // Скрываем весь блок пока нет данных
-
-                        try {
-                            console.log(`Fetching data for pilot: ${pilotName}`);
-                            const response = await fetch(
-                                `https://elo-rating-1.onrender.com/pilot/${encodeURIComponent(pilotName)}`
-                            );
-                            if (!response.ok) {
-                                throw new Error("Network response was not ok");
-                            }
-                            const data = await response.json();
-                            console.log("Fetched data:", data);
-
-                            // --- Avatar Logic Start ---
-                            pilotHeaderInfo.style.display = 'flex'; // Показываем блок pilot-header-info
-                            if (data.userDetails && data.userDetails.avatar_url) {
-                                const avatarImg = document.createElement('img');
-                                avatarImg.src = data.userDetails.avatar_url;
-                                avatarImg.alt = "Pilot Avatar";
-                                avatarImg.classList.add('pilot-avatar');
-                                pilotAvatarContainer.appendChild(avatarImg);
-                            } else {
-                                const defaultAvatarImg = document.createElement('img');
-                                defaultAvatarImg.src = '/images/default-avatar.png'; // Make sure you have a default avatar image
-                                defaultAvatarImg.alt = "Default Avatar";
-                                defaultAvatarImg.classList.add('pilot-avatar');
-                                pilotAvatarContainer.appendChild(defaultAvatarImg);
-                            }
-                            // --- Avatar Logic End ---
-
-                            const eloChartData = data.eloChartData;
-                            const pilotStats = data.stats;
-
-                            document.getElementById("stats-starts").textContent = pilotStats.starts;
-                            document.getElementById("stats-wins").textContent = pilotStats.wins;
-                            document.getElementById("stats-podium").textContent = pilotStats.podiums;
-                            document.getElementById("stats-top5").textContent = pilotStats.top5;
-                            document.getElementById("stats-top10").textContent = pilotStats.top10;
-                            document.getElementById("stats-podium-rate").textContent = `${pilotStats.podiumRate}%`;
-
-                            const labels = [];
-                            const chartData = [];
-                            eloChartData.forEach((race) => {
-                                const date = new Date(race.Date);
-                                labels.push(date.toLocaleDateString("en-CA"));
-                                chartData.push(race.CumulativeElo);
-                            });
-
-                            if (eloChart) {
-                                eloChart.destroy();
-                            }
-                            eloChart = new Chart(ctx, {
-                                type: "line",
-                                data: {
-                                    labels: labels,
-                                    datasets: [
-                                        {
-                                            label: "ELO Rating",
-                                            data: chartData,
-                                            borderColor: "red",
-                                            backgroundColor: "rgba(255, 0, 0, 0.2)",
-                                            borderWidth: 2,
-                                            fill: true,
-                                        },
-                                    ],
-                                },
-                                options: {
-                                    maintainAspectRatio: false,
-                                    responsive: true,
-                                    interaction: {
-                                        mode: 'index',
-                                        intersect: false,
-                                    },
-                                    plugins: {
-                                        tooltip: {
-                                            mode: 'index',
-                                            intersect: false,
-                                            callbacks: {
-                                                title: function (context) {
-                                                    return `${context[0].label}`;
-                                                },
-                                                label: function (context) {
-                                                    return `ELO: ${context.parsed.y}`;
-                                                },
-                                                footer: function (context) {
-                                                    return '';
-                                                }
-                                            }
-                                        }
-                                    },
-                                    scales: {
-                                        x: {
-                                            type: "time",
-                                            time: {
-                                                unit: "day",
-                                                tooltipFormat: "dd.MM.yyyy",
-                                            },
-                                            title: {
-                                                display: true,
-                                                text: "Date",
-                                            },
-                                            grid: {
-                                                color: "rgba(255, 255, 255, 0.1)",
-                                            },
-                                            ticks: {
-                                                color: "rgb(235, 235, 235)",
-                                            },
-                                        },
-                                        y: {
-                                            title: {
-                                                display: true,
-                                                text: "Rating",
-                                            },
-                                            beginAtZero: false,
-                                            grid: {
-                                                color: "rgba(255, 255, 255, 0.1)",
-                                            },
-                                            ticks: {
-                                                color: "rgb(235, 235, 235)",
-                                            },
-                                        },
-                                    },
-                                },
-                            });
-                        } catch (error) {
-                            console.error("Error fetching race data:", error);
-                            if (chartPlaceholder) {
-                                chartPlaceholder.style.display = "flex";
-                            }
-                            if (pilotDetailsInfo) {
-                                pilotDetailsInfo.style.display = "none";
-                            }
-
-                            document.getElementById("eloChart").style.display = "none";
-                            pilotAvatarContainer.innerHTML = ''; // Clear avatar on error
-                            pilotHeaderInfo.style.display = 'none'; // Hide header info on error
-
-                            document.getElementById("stats-starts").textContent = "0";
-                            document.getElementById("stats-wins").textContent = "0";
-                            document.getElementById("stats-podium").textContent = "0";
-                            document.getElementById("stats-top5").textContent = "0";
-                            document.getElementById("stats-top10").textContent = "0";
-                            document.getElementById("stats-podium-rate").textContent = "0%";
-                        }
-                    });
-                });
-                if (chartPlaceholder && !eloChart) {
-                    chartPlaceholder.style.display = "flex";
-                }
-                if (pilotDetailsInfo) {
-                    pilotDetailsInfo.style.display = "none";
-                }
-                pilotHeaderInfo.style.display = 'none'; // Initially hide header info
-            });
-        </script>
-        <script>
-            var currentUrl = window.location.pathname;
-
-            function setActiveMenuItem() {
-                var menuItems = document.querySelectorAll(".menu a");
-                menuItems.forEach(function (item) {
-                    if (item.getAttribute("href") === currentUrl) {
-                        item.classList.add("active");
-                    }
-                });
+        searchInput.addEventListener("input", function () {
+          const searchText = searchInput.value.toLowerCase();
+          rows.forEach((row) => {
+            const pilotName = row.getAttribute("data-pilot").toLowerCase();
+            if (pilotName.includes(searchText)) {
+              row.style.display = "";
+            } else {
+              row.style.display = "none";
             }
-            window.onload = setActiveMenuItem;
-        </script>
-        <%- include('partials/footer') %>
+          });
+        });
+
+        rows.forEach((row) => {
+          row.addEventListener("click", async function () {
+            rows.forEach((r) => r.classList.remove("selected"));
+            this.classList.add("selected");
+
+            const pilotName = this.getAttribute("data-pilot");
+            pilotNameDiv.textContent = pilotName;
+
+            if (chartPlaceholder) {
+              chartPlaceholder.style.display = "none";
+            }
+
+            document.getElementById("eloChart").style.display = "";
+
+            if (pilotDetailsInfo) {
+              pilotDetailsInfo.style.display = "block";
+            }
+
+            try {
+              console.log(`Fetching data for pilot: ${pilotName}`);
+              const response = await fetch(
+                `https://elo-rating-1.onrender.com/pilot/${encodeURIComponent(pilotName)}`
+              );
+              if (!response.ok) {
+                throw new Error("Network response was not ok");
+              }
+              const data = await response.json();
+              console.log("Fetched data:", data);
+
+              const eloChartData = data.eloChartData;
+              const pilotStats = data.stats;
+
+              document.getElementById("stats-starts").textContent = pilotStats.starts;
+              document.getElementById("stats-wins").textContent = pilotStats.wins;
+              document.getElementById("stats-podium").textContent = pilotStats.podiums;
+              document.getElementById("stats-top5").textContent = pilotStats.top5;
+              document.getElementById("stats-top10").textContent = pilotStats.top10;
+              document.getElementById("stats-podium-rate").textContent = `${pilotStats.podiumRate}%`;
+
+              const labels = [];
+              const chartData = [];
+              eloChartData.forEach((race) => {
+                const date = new Date(race.Date);
+                labels.push(date.toLocaleDateString("en-CA"));
+                chartData.push(race.CumulativeElo);
+              });
+
+              if (eloChart) {
+                eloChart.destroy();
+              }
+              eloChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                  labels: labels,
+                  datasets: [
+                    {
+                      label: "ELO Rating",
+                      data: chartData,
+                      borderColor: "red",
+                      backgroundColor: "rgba(255, 0, 0, 0.2)",
+                      borderWidth: 2,
+                      fill: true,
+                    },
+                  ],
+                },
+                options: {
+                  maintainAspectRatio: false,
+                  responsive: true,
+                  interaction: {
+                    mode: 'index',
+                    intersect: false,
+                  },
+                  plugins: {
+                    tooltip: {
+                      mode: 'index',
+                      intersect: false,
+                      callbacks: {
+                        title: function (context) {
+                          return `${context[0].label}`;
+                        },
+                        label: function (context) {
+                          return `ELO: ${context.parsed.y}`;
+                        },
+                        footer: function (context) {
+                          return '';
+                        }
+                      }
+                    }
+                  },
+                  scales: {
+                    x: {
+                      type: "time",
+                      time: {
+                        unit: "day",
+                        tooltipFormat: "dd.MM.yyyy",
+                      },
+                      title: {
+                        display: true,
+                        text: "Date",
+                      },
+                      grid: {
+                        color: "rgba(255, 255, 255, 0.1)",
+                      },
+                      ticks: {
+                        color: "rgb(235, 235, 235)",
+                      },
+                    },
+                    y: {
+                      title: {
+                        display: true,
+                        text: "Rating",
+                      },
+                      beginAtZero: false,
+                      grid: {
+                        color: "rgba(255, 255, 255, 0.1)",
+                      },
+                      ticks: {
+                        color: "rgb(235, 235, 235)",
+                      },
+                    },
+                  },
+                },
+              });
+            } catch (error) {
+              console.error("Error fetching race data:", error);
+              if (chartPlaceholder) {
+                chartPlaceholder.style.display = "flex";
+              }
+              if (pilotDetailsInfo) {
+                pilotDetailsInfo.style.display = "none";
+              }
+
+              document.getElementById("eloChart").style.display = "none";
+
+              document.getElementById("stats-starts").textContent = "0";
+              document.getElementById("stats-wins").textContent = "0";
+              document.getElementById("stats-podium").textContent = "0";
+              document.getElementById("stats-top5").textContent = "0";
+              document.getElementById("stats-top10").textContent = "0";
+              document.getElementById("stats-podium-rate").textContent = "0%";
+            }
+          });
+        });
+        if (chartPlaceholder && !eloChart) {
+          chartPlaceholder.style.display = "flex";
+        }
+        if (pilotDetailsInfo) {
+          pilotDetailsInfo.style.display = "none";
+        }
+      });
+    </script>
+    <script>
+      var currentUrl = window.location.pathname;
+
+      function setActiveMenuItem() {
+        var menuItems = document.querySelectorAll(".menu a");
+        menuItems.forEach(function (item) {
+          if (item.getAttribute("href") === currentUrl) {
+            item.classList.add("active");
+          }
+        });
+      }
+      window.onload = setActiveMenuItem;
+    </script>
+    <%- include('partials/footer') %>
 </body>
 
 </html>
