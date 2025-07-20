@@ -293,20 +293,18 @@
                         console.log('Отправляемые данные формы:', formData);
 
                         try {
-                            const fetchResponse = await fetch('https://elo-rating-1.onrender.com/profile/update', {
+                            const response = await fetch('https://elo-rating-1.onrender.com/profile/update', {
                                 method: 'POST',
                                 credentials: 'include',
                                 headers: {
                                     'Content-Type': 'application/json',
-                                    'Cache-Control': 'no-cache'
                                 },
-                                body: JSON.stringify(formData)
+                                body: JSON.stringify(formData),
                             });
 
-                            console.log('Response headers:', [...fetchResponse.headers.entries()]);
-                            const data = await fetchResponse.json();
+                            const data = await response.json();
 
-                            if (fetchResponse.ok) {
+                            if (response.ok) {
                                 showStatusMessage(data.message, 'success');
                                 fullNameDisplay.textContent = `${newFirstName} ${newLastName}`;
                                 fullNameDisplay.style.display = 'block';
@@ -317,12 +315,12 @@
                                     document.querySelector('.profile-title h2:last-of-type').textContent = data.updatedUser.username;
                                 }
                             } else {
-                                console.error('Ошибка от сервера при обновлении профиля:', data.message || fetchResponse.statusText);
+                                console.error('Ошибка от сервера при обновлении профиля:', data.message || response.statusText);
                                 showStatusMessage('Помилка: ' + (data.message || 'Невiдома помилка'), 'error', 5000);
                             }
                         } catch (error) {
                             console.error('Помилка при оновленні профілю (сеть/Fetch API):', error);
-                            showStatusMessage('Помилка при оновленні профілю. Перевiрте з\'єднання.', 'error', 5000);
+                            showStatusMessage('Помилка при оновленні профілю.', 'error', 5000);
                         }
                     });
 

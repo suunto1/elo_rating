@@ -232,16 +232,14 @@ app.use(session({
     saveUninitialized: false,
     store: new KnexSessionStore({
         knex,
-        tablename: 'sessions',
-        createtable: true,
-        clearInterval: 1000 * 60 * 60 
+        tablename: 'sessions'
     }),
     cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: true,
+        sameSite: 'none',
         httpOnly: true,
-        domain: process.env.NODE_ENV === 'production' ? 'elo-rating-1.onrender.com' : undefined
+        domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
     }
 }));
 
@@ -250,10 +248,6 @@ app.use(passport.session());
 
 // Middleware для добавления информации о пользователе в res.locals для EJS
 app.use((req, res, next) => {
-    console.log('Session ID:', req.sessionID);
-    console.log('Authenticated:', req.isAuthenticated());
-    console.log('User:', req.user);
-    next();
     if (req.isAuthenticated() && req.user) {
         if (req.user.first_name && req.user.first_name.trim().length > 0 &&
             req.user.last_name && req.user.last_name.trim().length > 0) {
@@ -657,24 +651,18 @@ app.get("/profile", checkAuthenticated, async (req, res) => {
 
 
 app.post('/profile/update', async (req, res) => {
-    console.log('Session:', req.session);
+    console.log('Cookies:', req.headers.cookie);
     console.log('Session ID:', req.sessionID);
-    console.log('Authenticated:', req.isAuthenticated());
+    console.log('Authenticated:', req.isAuthenticated && req.isAuthenticated());
     console.log('User:', req.user);
     if (!req.isAuthenticated() || !req.isAuthenticated()) {
-        console.error('Session data:', {
-            id: req.sessionID,
-            cookie: req.session.cookie,
-            passport: req.session.passport
-        });
+        console.error('Попытка неавторизованного доступа - нет валидной сессии');
         return res.status(401).json({ 
             success: false, 
             message: "Не авторизован. Пожалуйста, войдите.",
-            sessionDebug: {
-                id: req.sessionID,
-                exists: !!req.session,
-                passport: req.session?.passport
-            }
+            isAuthenticated: req.isAuthenticated(),
+            sessionExists: !!req.session,
+            userId: req.user?.id 
         });
     }
 
