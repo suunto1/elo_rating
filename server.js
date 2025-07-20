@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require("express");
+const KnexSessionStore = require('connect-session-knex')(session);
 const path = require("path");
 const fs = require("fs");
 const passport = require("passport");
@@ -7,7 +8,6 @@ const SteamStrategy = require("passport-steam").Strategy;
 const cors = require('cors');
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
-const KnexSessionStore = require('connect-session-knex')(session);
 const geoip = require("geoip-lite");
 
 const db = require("./db");
