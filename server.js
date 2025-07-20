@@ -105,9 +105,19 @@ if (!STEAM_API_KEY || !STEAM_RETURN_URL || !SESSION_SECRET || !STEAM_REALM) {
 }
 
 const cors = require('cors');
-
+const allowedOrigins = [
+    'https://elo-rating.vercel.app',
+    'https://elo-rating-1.onrender.com'
+];
 app.use(cors({
-    origin: ['https://elo-rating.vercel.app', 'https://elo-rating-1.onrender.com'],
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        } else {
+            return callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true
 }));
 
@@ -223,7 +233,6 @@ const store = new KnexSessionStore({
 
 app.set('trust proxy', 1);
 
-// Настройка сессий
 app.use(session({
     secret: process.env.SESSION_SECRET || 'secret',
     resave: false,
@@ -233,10 +242,9 @@ app.use(session({
         tablename: 'sessions'
     }),
     cookie: {
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 днів
-        secure: true,           // true для HTTPS (Render)
-        sameSite: 'none',        // ОБЯЗАТЕЛЬНО, если домены разные
-        httpOnly: true
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        secure: true,
+        sameSite: 'none',
     }
 }));
 
