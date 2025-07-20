@@ -3,6 +3,7 @@ const express = require("express");
 const session = require("express-session");
 const { ConnectSessionKnexStore } = require("connect-session-knex");
 const KnexSessionStore = ConnectSessionKnexStore;
+
 const path = require("path");
 const fs = require("fs");
 const passport = require("passport");
@@ -11,6 +12,7 @@ const cookieParser = require("cookie-parser");
 const geoip = require("geoip-lite");
 
 const db = require("./db");
+const knex = db;
 // 🛡️ Защита от необработанных ошибок
 process.on('unhandledRejection', (reason, promise) => {
     console.error('❌ Unhandled Rejection:', reason);
