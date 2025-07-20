@@ -108,9 +108,7 @@ const cors = require('cors');
 
 app.use(cors({
     origin: ['https://elo-rating.vercel.app', 'https://elo-rating-1.onrender.com'],
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
-    exposedHeaders: ['set-cookie']
+    credentials: true
 }));
 
 passport.serializeUser((user, done) => {
@@ -235,11 +233,10 @@ app.use(session({
         tablename: 'sessions'
     }),
     cookie: {
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        secure: true,
-        sameSite: 'none',
-        httpOnly: true,
-        domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 днів
+        secure: true,           // true для HTTPS (Render)
+        sameSite: 'none',        // ОБЯЗАТЕЛЬНО, если домены разные
+        httpOnly: true
     }
 }));
 
@@ -656,14 +653,7 @@ app.post('/profile/update', async (req, res) => {
     console.log('Authenticated:', req.isAuthenticated && req.isAuthenticated());
     console.log('User:', req.user);
     if (!req.isAuthenticated() || !req.isAuthenticated()) {
-        console.error('Попытка неавторизованного доступа - нет валидной сессии');
-        return res.status(401).json({ 
-            success: false, 
-            message: "Не авторизован. Пожалуйста, войдите.",
-            isAuthenticated: req.isAuthenticated(),
-            sessionExists: !!req.session,
-            userId: req.user?.id 
-        });
+        return res.status(401).json({ success: false, message: "Не авторизовано. Будь ласка, увійдіть." });
     }
 
     const userId = req.user.id;
