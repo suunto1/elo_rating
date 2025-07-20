@@ -1,14 +1,13 @@
 require('dotenv').config();
 const express = require("express");
-const session = require("express-session");
-const { ConnectSessionKnexStore } = require("connect-session-knex");
-const KnexSessionStore = ConnectSessionKnexStore;
-
+const KnexSessionStore = require('connect-session-knex')(session);
 const path = require("path");
 const fs = require("fs");
 const passport = require("passport");
 const SteamStrategy = require("passport-steam").Strategy;
+const cors = require('cors');
 const cookieParser = require("cookie-parser");
+const session = require("express-session");
 const geoip = require("geoip-lite");
 
 const db = require("./db");
@@ -104,7 +103,7 @@ if (!STEAM_API_KEY || !STEAM_RETURN_URL || !SESSION_SECRET || !STEAM_REALM) {
     process.exit(1);
 }
 
-const cors = require('cors');
+
 const allowedOrigins = [
     'https://elo-rating.vercel.app',
     'https://elo-rating-1.onrender.com'
@@ -233,7 +232,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-const store = new KnexSessionStore({
+const sessionStore  = new KnexSessionStore({
     knex: db,
     tablename: 'sessions',
     createtable: true,
@@ -241,17 +240,14 @@ const store = new KnexSessionStore({
     clearInterval: false
 });
 
-
 app.set('trust proxy', 1);
 
 app.use(session({
+    name: 'connect.sid',
     secret: process.env.SESSION_SECRET || 'secret',
     resave: false,
     saveUninitialized: false,
-    store: new KnexSessionStore({
-        knex,
-        tablename: 'sessions'
-    }),
+    store: sessionStore,
     cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000,
         secure: true,
