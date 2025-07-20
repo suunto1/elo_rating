@@ -1,18 +1,19 @@
 require('dotenv').config();
 const express = require("express");
+const cors = require('cors');
+const session = require("express-session");
+const { ConnectSessionKnexStore } = require("connect-session-knex");
+const KnexSessionStore = ConnectSessionKnexStore;
 
 const path = require("path");
 const fs = require("fs");
 const passport = require("passport");
 const SteamStrategy = require("passport-steam").Strategy;
-const cors = require('cors');
 const cookieParser = require("cookie-parser");
-const session = require("express-session");
-const { default: connectSessionKnex } = require("connect-session-knex");
-const KnexSessionStore = connectSessionKnex(session);
 const geoip = require("geoip-lite");
 
 const db = require("./db");
+const knex = db;
 // 🛡️ Защита от необработанных ошибок
 process.on('unhandledRejection', (reason, promise) => {
     console.error('❌ Unhandled Rejection:', reason);
@@ -121,17 +122,6 @@ app.use(cors({
     credentials: true
 }));
 
-app.options('*', cors({
-    origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true
-}));
-
 passport.serializeUser((user, done) => {
     done(null, user.id);
 });
@@ -233,7 +223,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-const sessionStore  = new KnexSessionStore({
+const store = new KnexSessionStore({
     knex: db,
     tablename: 'sessions',
     createtable: true,
@@ -241,14 +231,17 @@ const sessionStore  = new KnexSessionStore({
     clearInterval: false
 });
 
+
 app.set('trust proxy', 1);
 
 app.use(session({
-    name: 'connect.sid',
     secret: process.env.SESSION_SECRET || 'secret',
     resave: false,
     saveUninitialized: false,
-    store: sessionStore,
+    store: new KnexSessionStore({
+        knex,
+        tablename: 'sessions'
+    }),
     cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000,
         secure: true,
