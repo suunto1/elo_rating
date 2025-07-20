@@ -121,6 +121,17 @@ app.use(cors({
     credentials: true
 }));
 
+app.options('*', cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true
+}));
+
 passport.serializeUser((user, done) => {
     done(null, user.id);
 });
