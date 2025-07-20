@@ -8,7 +8,7 @@ const SteamStrategy = require("passport-steam").Strategy;
 const cors = require('cors');
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
-const KnexSessionStore = require("connect-session-knex");
+const KnexSessionStore = require("connect-session-knex")(session);
 const geoip = require("geoip-lite");
 
 const db = require("./db");
