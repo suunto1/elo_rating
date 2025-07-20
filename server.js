@@ -235,7 +235,8 @@ app.use(session({
   cookie: {
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 днів
     secure: true,           // true для HTTPS (Render)
-    sameSite: 'none'        // ОБЯЗАТЕЛЬНО, если домены разные
+    sameSite: 'none',        // ОБЯЗАТЕЛЬНО, если домены разные
+    httpOnly: true 
   }
 }));
 
