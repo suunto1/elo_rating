@@ -3,7 +3,6 @@ const express = require("express");
 const session = require("express-session");
 const { ConnectSessionKnexStore } = require("connect-session-knex");
 const KnexSessionStore = ConnectSessionKnexStore;
-
 const path = require("path");
 const fs = require("fs");
 const passport = require("passport");
@@ -157,6 +156,7 @@ passport.use(new SteamStrategy({
             let pilotUuidToLink = pilotRows.length > 0 ? pilotRows[0].UUID : null;
 
             if (user) {
+                console.log("[SteamStrategy] Existing user found in `users` table:", user.id);
                 if (!user.pilot_uuid && pilotUuidToLink) {
                     await db('users').where('id', user.id).update({ pilot_uuid: pilotUuidToLink });
                     user.pilot_uuid = pilotUuidToLink;
@@ -180,6 +180,7 @@ passport.use(new SteamStrategy({
                 });
 
             } else {
+                console.log("[SteamStrategy] New Steam user. Creating new entry in `users` table.");
                 const [newUserId] = await db('users').insert({
                     steam_id_64: steamId64,
                     username: steamDisplayName,
@@ -217,7 +218,7 @@ const store = new KnexSessionStore({
     tablename: 'sessions',
     createtable: true,
     sidfieldname: 'sid',
-    clearInterval: false
+    clearInterval: 600000 // Очистка просроченных сессий каждые 10 мин
 });
 
 
@@ -225,18 +226,12 @@ app.set('trust proxy', 1);
 
 // Настройка сессий
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'secret',
+    secret: process.env.SESSION_SECRET || 'defaultsecret',
     resave: false,
     saveUninitialized: false,
-    store: new KnexSessionStore({
-        knex,
-        tablename: 'sessions'
-    }),
+    store: store,
     cookie: {
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 днів
-        secure: true,           // true для HTTPS (Render)
-        sameSite: 'none',        // ОБЯЗАТЕЛЬНО, если домены разные
-        httpOnly: true
+        maxAge: 1000 * 60 * 60 * 24 * 7 // 7 дней
     }
 }));
 
@@ -507,18 +502,9 @@ app.post("/complete-profile", checkAuthenticated, async (req, res) => {
 
 app.get("/", async (req, res) => {
     try {
-        const rows = await db('pilots as p')
-            .select(
-                'p.Name',
-                'p.EloRanking',
-                'p.RaceCount',
-                'p.UUID',
-                'p.AverageChange',
-                'u.YoutubeChannel',
-                'u.TwitchChannel'
-            )
-            .leftJoin('users as u', 'p.steam_id_64', 'u.steam_id_64') // LEFT JOIN по steam_id_64
-            .orderBy('p.EloRanking', 'desc');
+        const rows = await db('pilots')
+            .select('Name', 'EloRanking', 'RaceCount', 'UUID', 'AverageChange')
+            .orderBy('EloRanking', 'desc');
 
         res.render("pilots", { pilots: rows, activeMenu: 'pilots' });
     } catch (error) {
