@@ -8,12 +8,11 @@ const SteamStrategy = require("passport-steam").Strategy;
 const cors = require('cors');
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
-const { default: knexSessionStore } = require("connect-session-knex");
-const KnexSessionStore = knexSessionStore(session);
+const connectSessionKnex = require("connect-session-knex");
+const KnexSessionStore = connectSessionKnex(session);
 const geoip = require("geoip-lite");
 
 const db = require("./db");
-const knex = db;
 // 🛡️ Защита от необработанных ошибок
 process.on('unhandledRejection', (reason, promise) => {
     console.error('❌ Unhandled Rejection:', reason);
