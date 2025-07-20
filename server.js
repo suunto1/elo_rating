@@ -51,7 +51,7 @@ connectWithRetry();
 
 const app = express();
 app.get('/ping', (req, res) => {
-  res.send('OK');
+    res.send('OK');
 });
 const port = process.env.PORT || 3000;
 
@@ -107,7 +107,7 @@ if (!STEAM_API_KEY || !STEAM_RETURN_URL || !SESSION_SECRET || !STEAM_REALM) {
 const cors = require('cors');
 
 app.use(cors({
-    origin: ['https://elo-rating.vercel.app'],
+    origin: 'https://elo-rating.vercel.app',
     credentials: true
 }));
 
@@ -225,19 +225,19 @@ app.set('trust proxy', 1);
 
 // Настройка сессий
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'secret',
-  resave: false,
-  saveUninitialized: false,
-  store: new KnexSessionStore({
-    knex,
-    tablename: 'sessions'
-  }),
-  cookie: {
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 днів
-    secure: true,           // true для HTTPS (Render)
-    sameSite: 'none',        // ОБЯЗАТЕЛЬНО, если домены разные
-    httpOnly: true 
-  }
+    secret: process.env.SESSION_SECRET || 'secret',
+    resave: false,
+    saveUninitialized: false,
+    store: new KnexSessionStore({
+        knex,
+        tablename: 'sessions'
+    }),
+    cookie: {
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 днів
+        secure: true,           // true для HTTPS (Render)
+        sameSite: 'none',        // ОБЯЗАТЕЛЬНО, если домены разные
+        httpOnly: true
+    }
 }));
 
 app.use(passport.initialize());
@@ -648,7 +648,11 @@ app.get("/profile", checkAuthenticated, async (req, res) => {
 
 
 app.post('/profile/update', async (req, res) => {
-    if (!req.isAuthenticated() || !req.user) {
+    console.log('Cookies:', req.headers.cookie);
+    console.log('Session ID:', req.sessionID);
+    console.log('Authenticated:', req.isAuthenticated && req.isAuthenticated());
+    console.log('User:', req.user);
+    if (!req.isAuthenticated() || !req.isAuthenticated()) {
         return res.status(401).json({ success: false, message: "Не авторизовано. Будь ласка, увійдіть." });
     }
 
@@ -1168,9 +1172,9 @@ const https = require('https');
 const PING_URL = 'https://elo-rating-1.onrender.com/ping';
 
 setInterval(() => {
-  https.get(PING_URL, (res) => {
-    // success – silent
-  }).on('error', (err) => {
-    console.error('[Auto-Ping] ❌ Ping failed:', err.message);
-  });
+    https.get(PING_URL, (res) => {
+        // success – silent
+    }).on('error', (err) => {
+        console.error('[Auto-Ping] ❌ Ping failed:', err.message);
+    });
 }, 1000 * 60 * 14);
