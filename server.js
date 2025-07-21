@@ -105,20 +105,8 @@ if (!STEAM_API_KEY || !STEAM_RETURN_URL || !SESSION_SECRET || !STEAM_REALM) {
     process.exit(1);
 }
 
-
-const allowedOrigins = [
-    'https://elo-rating.vercel.app',
-    'https://elo-rating-1.onrender.com'
-];
 app.use(cors({
-    origin: function (origin, callback) {
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        } else {
-            return callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: 'https://elo-rating.vercel.app',
     credentials: true
 }));
 
@@ -223,15 +211,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-const store = new KnexSessionStore({
-    knex: db,
-    tablename: 'sessions',
-    createtable: true,
-    sidfieldname: 'sid',
-    clearInterval: false
-});
-
-
 app.set('trust proxy', 1);
 
 app.use(session({
@@ -239,11 +218,14 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     store: new KnexSessionStore({
-        knex,
-        tablename: 'sessions'
+        knex: knex,  // или knex, если эта переменная уже определена
+        tablename: 'sessions',
+        createtable: true,
+        sidfieldname: 'sid',
+        clearInterval: false
     }),
     cookie: {
-        maxAge: 30 * 24 * 60 * 60 * 1000,
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 дней
         secure: true,
         sameSite: 'none',
     }
@@ -275,7 +257,8 @@ app.use((req, res, next) => {
 
 // Middleware для проверки, заполнено ли имя пользователя (для новых Steam-пользователей)
 const checkUsernameCompletion = async (req, res, next) => {
-    if (!req.isAuthenticated()) {
+    if (!req.user) {
+        console.warn("[checkUsernameCompletion] req.user is undefined despite isAuthenticated() potentially being true. Skipping check.");
         return next();
     }
 
@@ -671,14 +654,14 @@ app.get("/profile", checkAuthenticated, async (req, res) => {
 
 
 app.post('/profile/update', async (req, res) => {
-    console.log('Cookies:', req.headers.cookie);
-    console.log('Session ID:', req.sessionID);
-    console.log('Authenticated:', req.isAuthenticated && req.isAuthenticated());
-    console.log('User:', req.user);
-    if (!req.isAuthenticated() || !req.isAuthenticated()) {
+    console.log(`[profile/update POST] Path: ${req.path}`);
+    console.log(`[profile/update POST] isAuthenticated(): ${req.isAuthenticated()}`);
+    console.log(`[profile/update POST] req.user:`, req.user);
+    console.log(`[profile/update POST] req.body:`, req.body);
+    if (!req.isAuthenticated() || !req.user) {
+        console.warn("[profile/update POST] User not authenticated or user object missing. Sending 401.");
         return res.status(401).json({ success: false, message: "Не авторизовано. Будь ласка, увійдіть." });
     }
-
     const userId = req.user.id;
     const {
         iRacingCustomerId,
@@ -710,62 +693,93 @@ app.post('/profile/update', async (req, res) => {
     const finalTeamUUID = (TeamUUID === '' || TeamUUID === undefined || TeamUUID === null) ? null : DOMPurify.sanitize(TeamUUID).trim();
 
     if (sanitizedIRacingCustomerId && !/^[0-9]+$/.test(sanitizedIRacingCustomerId)) {
+        console.warn(`[profile/update POST] Invalid iRacingCustomerId: ${sanitizedIRacingCustomerId}`);
         return res.status(400).json({ success: false, message: 'Поле "iRacing Customer ID" повинно містити лише цифри.' });
     }
 
     const latinRegex = /^[a-zA-Z]+$/;
-    if (!sanitizedFirstName || !latinRegex.test(sanitizedFirstName)) {
-        return res.status(400).json({ success: false, message: 'Ім\'я повинно містити лише латинські літери і не бути пустим.' });
+    if (!sanitizedFirstName) {
+        console.warn("[profile/update POST] First name is empty.");
+        return res.status(400).json({ success: false, message: 'Ім\'я не може бути пустим.' });
     }
-    if (!sanitizedLastName || !latinRegex.test(sanitizedLastName)) {
-        return res.status(400).json({ success: false, message: 'Прізвище повинно містити лише латинські літери і не бути пустим.' });
+    if (!latinRegex.test(sanitizedFirstName)) {
+        console.warn(`[profile/update POST] Invalid first name: ${sanitizedFirstName}`);
+        return res.status(400).json({ success: false, message: 'Ім\'я повинно містити лише латинські літери.' });
+    }
+    if (!sanitizedLastName) {
+        console.warn("[profile/update POST] Last name is empty.");
+        return res.status(400).json({ success: false, message: 'Прізвище не може бути пустим.' });
+    }
+    if (!latinRegex.test(sanitizedLastName)) {
+        console.warn(`[profile/update POST] Invalid last name: ${sanitizedLastName}`);
+        return res.status(400).json({ success: false, message: 'Прізвище повинно містити лише латинські літери.' });
     }
 
     const newUsername = `${sanitizedFirstName} ${sanitizedLastName}`;
 
     let finalIsTeamInterested = (IsTeamInterested === true || IsTeamInterested === 'on' || IsTeamInterested === 1) ? 1 : 0;
-    if (finalTeamUUID) finalIsTeamInterested = 0;
+    if (finalTeamUUID) {
+        finalIsTeamInterested = 0;
+        console.log(`[profile/update POST] TeamUUID is present, setting IsTeamInterested to 0.`);
+    } else {
+        console.log(`[profile/update POST] TeamUUID is NOT present, IsTeamInterested is: ${finalIsTeamInterested}`);
+    }
 
-    const updateData = {
-        first_name: sanitizedFirstName,
-        last_name: sanitizedLastName,
-        username: newUsername,
-        iRacingCustomerId: sanitizedIRacingCustomerId,
-        LMUName: sanitizedLMUName,
-        DiscordId: sanitizedDiscordId,
-        YoutubeChannel: sanitizedYoutubeChannel,
-        TwitchChannel: sanitizedTwitchChannel,
-        Instagram: sanitizedInstagram,
-        Twitter: sanitizedTwitter,
-        Country: sanitizedCountry,
-        City: sanitizedCity,
-        TeamUUID: finalTeamUUID,
-        IsTeamInterested: finalIsTeamInterested
-    };
-
+    let connection;
     try {
-        const result = await db('users')
-            .where({ id: userId })
-            .update(updateData);
-
-        if (result === 0) {
+        connection = await pool.getConnection();
+        const updateFields = [];
+        const updateValues = [];
+        updateFields.push('first_name = ?'); updateValues.push(sanitizedFirstName);
+        updateFields.push('last_name = ?'); updateValues.push(sanitizedLastName);
+        updateFields.push('username = ?'); updateValues.push(newUsername);
+        updateFields.push('iRacingCustomerId = ?'); updateValues.push(sanitizedIRacingCustomerId);
+        updateFields.push('LMUName = ?'); updateValues.push(sanitizedLMUName);
+        updateFields.push('DiscordId = ?'); updateValues.push(sanitizedDiscordId);
+        updateFields.push('YoutubeChannel = ?'); updateValues.push(sanitizedYoutubeChannel);
+        updateFields.push('TwitchChannel = ?'); updateValues.push(sanitizedTwitchChannel);
+        updateFields.push('Instagram = ?'); updateValues.push(sanitizedInstagram);
+        updateFields.push('Twitter = ?'); updateValues.push(sanitizedTwitter);
+        updateFields.push('Country = ?'); updateValues.push(sanitizedCountry);
+        updateFields.push('City = ?'); updateValues.push(sanitizedCity);
+        updateFields.push('TeamUUID = ?'); updateValues.push(finalTeamUUID);
+        updateFields.push('IsTeamInterested = ?'); updateValues.push(finalIsTeamInterested);
+        const query = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
+        updateValues.push(userId);
+        console.log("[profile/update POST] Executing update query:", query, "with values:", updateValues);
+        const [result] = await connection.execute(query, updateValues);
+        if (result.affectedRows === 0) {
+            console.warn(`[profile/update POST] No rows updated for user ID: ${userId}. User might not exist or no changes were made.`);
             return res.status(404).json({ success: false, message: "Користувач не знайдений або немає змін для збереження" });
         }
-
-        // Обновляем req.user
-        Object.assign(req.user, updateData);
+        req.user.iRacingCustomerId = sanitizedIRacingCustomerId;
+        req.user.LMUName = sanitizedLMUName;
+        req.user.DiscordId = sanitizedDiscordId;
+        req.user.YoutubeChannel = sanitizedYoutubeChannel;
+        req.user.TwitchChannel = sanitizedTwitchChannel;
+        req.user.Instagram = sanitizedInstagram;
+        req.user.Twitter = sanitizedTwitter;
+        req.user.Country = sanitizedCountry;
+        req.user.City = sanitizedCity;
+        req.user.TeamUUID = finalTeamUUID;
+        req.user.IsTeamInterested = finalIsTeamInterested;
+        req.user.first_name = sanitizedFirstName;
+        req.user.last_name = sanitizedLastName;
+        req.user.username = newUsername;
 
         req.session.save((err) => {
             if (err) {
                 console.error("[profile/update POST] Error saving session:", err);
                 return res.status(500).json({ success: false, message: "Помилка збереження сесії." });
             }
+            console.log(`[profile/update POST] User ${userId} profile updated successfully and session saved.`);
             res.json({ success: true, message: "Профіль оновлено" });
         });
-
     } catch (error) {
         console.error("[profile/update POST] Error updating user profile:", error);
         res.status(500).json({ success: false, message: "Помилка сервера при оновленні профілю" });
+    } finally {
+        if (connection) connection.release();
     }
 });
 

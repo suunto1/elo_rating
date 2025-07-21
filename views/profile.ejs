@@ -293,7 +293,7 @@
                         console.log('Отправляемые данные формы:', formData);
 
                         try {
-                            const response = await fetch('https://elo-rating-1.onrender.com/profile/update', {
+                            const response = await fetch('/profile/update', {
                                 method: 'POST',
                                 credentials: 'include',
                                 headers: {
