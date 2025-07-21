@@ -418,7 +418,7 @@ app.get('/auth/steam/return',
                 httpOnly: true,
                 secure: true,
                 sameSite: 'none',
-                domain: 'elo-rating-1.onrender.com',
+                domain: '.onrender.com.onrender.com',
                 maxAge: 30 * 24 * 60 * 60 * 1000,
             });
 
