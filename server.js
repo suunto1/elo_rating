@@ -414,6 +414,12 @@ app.get('/auth/steam/return',
                 console.log(`[auth/steam/return] User ${req.user.id} is authenticated but not linked to a pilot. Redirecting to /profile.`);
             }
 
+            console.log('Устанавливаю куки для SteamID:', req.user.id, {
+                domain: '.onrender.com',
+                secure: true,
+                sameSite: 'none'
+            });
+
             res.cookie('session', req.user.id, {
                 httpOnly: true,
                 secure: true,
