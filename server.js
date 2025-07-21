@@ -725,9 +725,7 @@ app.post('/profile/update', async (req, res) => {
         console.log(`[profile/update POST] TeamUUID is NOT present, IsTeamInterested is: ${finalIsTeamInterested}`);
     }
 
-    let connection;
     try {
-        connection = await pool.getConnection();
         const updateFields = [];
         const updateValues = [];
         updateFields.push('first_name = ?'); updateValues.push(sanitizedFirstName);
@@ -747,7 +745,7 @@ app.post('/profile/update', async (req, res) => {
         const query = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
         updateValues.push(userId);
         console.log("[profile/update POST] Executing update query:", query, "with values:", updateValues);
-        const [result] = await connection.execute(query, updateValues);
+        const result = await db.raw(query, updateValues);
         if (result.affectedRows === 0) {
             console.warn(`[profile/update POST] No rows updated for user ID: ${userId}. User might not exist or no changes were made.`);
             return res.status(404).json({ success: false, message: "Користувач не знайдений або немає змін для збереження" });
@@ -778,8 +776,6 @@ app.post('/profile/update', async (req, res) => {
     } catch (error) {
         console.error("[profile/update POST] Error updating user profile:", error);
         res.status(500).json({ success: false, message: "Помилка сервера при оновленні профілю" });
-    } finally {
-        if (connection) connection.release();
     }
 });
 
