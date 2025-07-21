@@ -414,6 +414,14 @@ app.get('/auth/steam/return',
                 console.log(`[auth/steam/return] User ${req.user.id} is authenticated but not linked to a pilot. Redirecting to /profile.`);
             }
 
+            res.cookie('session', req.user.id, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'none',
+                domain: 'elo-rating-1.onrender.com',
+                maxAge: 30 * 24 * 60 * 60 * 1000,
+            });
+
             return res.redirect(redirectPath);
 
         } catch (error) {
