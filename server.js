@@ -654,10 +654,6 @@ app.get("/profile", checkAuthenticated, async (req, res) => {
 
 
 app.post('/profile/update', async (req, res) => {
-    console.log(`[profile/update POST] Path: ${req.path}`);
-    console.log(`[profile/update POST] isAuthenticated(): ${req.isAuthenticated()}`);
-    console.log(`[profile/update POST] req.user:`, req.user);
-    console.log(`[profile/update POST] req.body:`, req.body);
     if (!req.isAuthenticated() || !req.user) {
         console.warn("[profile/update POST] User not authenticated or user object missing. Sending 401.");
         return res.status(401).json({ success: false, message: "Не авторизовано. Будь ласка, увійдіть." });
@@ -726,44 +722,31 @@ app.post('/profile/update', async (req, res) => {
     }
 
     try {
-        const updateFields = [];
-        const updateValues = [];
-        updateFields.push('first_name = ?'); updateValues.push(sanitizedFirstName);
-        updateFields.push('last_name = ?'); updateValues.push(sanitizedLastName);
-        updateFields.push('username = ?'); updateValues.push(newUsername);
-        updateFields.push('iRacingCustomerId = ?'); updateValues.push(sanitizedIRacingCustomerId);
-        updateFields.push('LMUName = ?'); updateValues.push(sanitizedLMUName);
-        updateFields.push('DiscordId = ?'); updateValues.push(sanitizedDiscordId);
-        updateFields.push('YoutubeChannel = ?'); updateValues.push(sanitizedYoutubeChannel);
-        updateFields.push('TwitchChannel = ?'); updateValues.push(sanitizedTwitchChannel);
-        updateFields.push('Instagram = ?'); updateValues.push(sanitizedInstagram);
-        updateFields.push('Twitter = ?'); updateValues.push(sanitizedTwitter);
-        updateFields.push('Country = ?'); updateValues.push(sanitizedCountry);
-        updateFields.push('City = ?'); updateValues.push(sanitizedCity);
-        updateFields.push('TeamUUID = ?'); updateValues.push(finalTeamUUID);
-        updateFields.push('IsTeamInterested = ?'); updateValues.push(finalIsTeamInterested);
-        const query = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
-        updateValues.push(userId);
-        console.log("[profile/update POST] Executing update query:", query, "with values:", updateValues);
-        const result = await db.raw(query, updateValues);
-        if (result.affectedRows === 0) {
-            console.warn(`[profile/update POST] No rows updated for user ID: ${userId}. User might not exist or no changes were made.`);
+        const updateData = {
+            first_name: sanitizedFirstName,
+            last_name: sanitizedLastName,
+            username: newUsername,
+            iRacingCustomerId: sanitizedIRacingCustomerId || null,
+            LMUName: sanitizedLMUName || null,
+            DiscordId: sanitizedDiscordId || null,
+            YoutubeChannel: sanitizedYoutubeChannel || null,
+            TwitchChannel: sanitizedTwitchChannel || null,
+            Instagram: sanitizedInstagram || null,
+            Twitter: sanitizedTwitter || null,
+            Country: sanitizedCountry || null,
+            City: sanitizedCity || null,
+            TeamUUID: finalTeamUUID,
+            IsTeamInterested: finalIsTeamInterested
+        };
+
+        const result = await db('users').where({ id: userId }).update(updateData);
+
+        if (result === 0) {
+            console.warn(`[profile/update POST] No rows updated for user ID: ${userId}.`);
             return res.status(404).json({ success: false, message: "Користувач не знайдений або немає змін для збереження" });
         }
-        req.user.iRacingCustomerId = sanitizedIRacingCustomerId;
-        req.user.LMUName = sanitizedLMUName;
-        req.user.DiscordId = sanitizedDiscordId;
-        req.user.YoutubeChannel = sanitizedYoutubeChannel;
-        req.user.TwitchChannel = sanitizedTwitchChannel;
-        req.user.Instagram = sanitizedInstagram;
-        req.user.Twitter = sanitizedTwitter;
-        req.user.Country = sanitizedCountry;
-        req.user.City = sanitizedCity;
-        req.user.TeamUUID = finalTeamUUID;
-        req.user.IsTeamInterested = finalIsTeamInterested;
-        req.user.first_name = sanitizedFirstName;
-        req.user.last_name = sanitizedLastName;
-        req.user.username = newUsername;
+
+        Object.assign(req.user, updateData);
 
         req.session.save((err) => {
             if (err) {
