@@ -35,7 +35,7 @@
                     <div class="profile-card">
                         <div class="profile-header">
                             <div class="profile-avatar-container">
-                                <img id="profile-avatar" src="<%= profileData.PhotoPath %>" alt="Аватар пилота">
+                                <img id="profile-avatar" src="<%= user.PhotoPath %>" alt="Аватар пилота">
                                 <!-- <button id="upload-avatar-btn" class="upload-btn">Завантажити</button> -->
                                 <input type="file" id="avatar-input" accept="image/*" style="display: none;">
                                 <% const defaultAvatarPath='/avatars/default_avatar_64.png' ; %>
@@ -60,9 +60,6 @@
                                         <span class="edit-icon">✏️</span>
                                     </button>
                                 </div>
-                                <!-- <h2>
-                                    <%= user.username %>
-                                </h2> -->
                             </div>
                         </div>
 
@@ -71,51 +68,51 @@
                                 <div class="form-group">
                                     <label for="iRacingCustomerId">iRacing Customer ID</label>
                                     <input type="text" id="iRacingCustomerId" name="iRacingCustomerId"
-                                        value="<%= user.iRacingCustomerId || '' %>" pattern="[0-9]*"
+                                        value="<%= profileData.iRacingCustomerId || '' %>" pattern="[0-9]*"
                                         title="Повинно містити лише цифри">
                                 </div>
                                 <div class="form-group">
                                     <label for="LMUName">LMU Name</label>
-                                    <input type="text" id="LMUName" name="LMUName" value="<%= user.LMUName || '' %>">
+                                    <input type="text" id="LMUName" name="LMUName" value="<%= profileData.LMUName || '' %>">
                                 </div>
                                 <div class="form-group">
                                     <label for="DiscordId">Discord ID</label>
                                     <input type="text" id="DiscordId" name="DiscordId"
-                                        value="<%= user.DiscordId || '' %>">
+                                        value="<%= profileData.DiscordId || '' %>">
                                 </div>
                                 <div class="form-group">
                                     <label for="YoutubeChannel">YouTube Channel URL</label>
                                     <input type="url" id="YoutubeChannel" name="YoutubeChannel"
-                                        value="<%= user.YoutubeChannel || '' %>">
+                                        value="<%= profileData.YoutubeChannel || '' %>">
                                 </div>
                                 <div class="form-group">
                                     <label for="TwitchChannel">Twitch Channel URL</label>
                                     <input type="url" id="TwitchChannel" name="TwitchChannel"
-                                        value="<%= user.TwitchChannel || '' %>">
+                                        value="<%= profileData.TwitchChannel || '' %>">
                                 </div>
                                 <div class="form-group">
                                     <label for="Instagram">Instagram URL</label>
                                     <input type="url" id="Instagram" name="Instagram"
-                                        value="<%= user.Instagram || '' %>">
+                                        value="<%= profileData.Instagram || '' %>">
                                 </div>
                                 <div class="form-group">
                                     <label for="Country">Країна</label>
-                                    <input type="text" id="Country" name="Country" value="<%= user.Country || '' %>">
+                                    <input type="text" id="Country" name="Country" value="<%= profileData.Country || '' %>">
                                 </div>
                                 <div class="form-group">
                                     <label for="Twitter">Twitter URL</label>
-                                    <input type="url" id="Twitter" name="Twitter" value="<%= user.Twitter || '' %>">
+                                    <input type="url" id="Twitter" name="Twitter" value="<%= profileData.Twitter || '' %>">
                                 </div>
                                 <div class="form-group">
                                     <label for="City">Мiсто / Село</label>
-                                    <input type="text" id="City" name="City" value="<%= user.City || '' %>">
+                                    <input type="text" id="City" name="City" value="<%= profileData.City || '' %>">
                                 </div>
                                 <div class="form-group">
                                     <label for="TeamUUID">Учасник команди</label>
                                     <select id="TeamUUID" name="TeamUUID">
                                         <option value="">-- Вибрати --</option>
                                         <% teams.forEach(function(team) { %>
-                                            <option value="<%= team.UUID %>" <%=user.TeamUUID===team.UUID ? 'selected'
+                                            <option value="<%= team.UUID %>" <%=profileData.TeamUUID===team.UUID ? 'selected'
                                                 : '' %>>
                                                 <%= team.Name %>
                                             </option>
@@ -124,8 +121,8 @@
                                 </div>
                                 <div class="form-group checkbox-group">
                                     <input type="checkbox" id="IsTeamInterested" name="IsTeamInterested"
-                                        <%=user.IsTeamInterested ? 'checked' : '' %>
-                                    <%= user.TeamUUID ? 'disabled' : '' %>> <label for="IsTeamInterested">Зацікавлений у
+                                        <%=profileData.IsTeamInterested ? 'checked' : '' %>
+                                    <%= profileData.TeamUUID ? 'disabled' : '' %>> <label for="IsTeamInterested">Зацікавлений у
                                             створенні команди / Приєднанні
                                             до існуючої команди</label>
                                 </div>
