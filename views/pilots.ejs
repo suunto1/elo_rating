@@ -46,7 +46,7 @@
               </thead>
               <tbody>
                 <% pilots.forEach((pilot, index)=> { %>
-                  <tr data-pilot="<%= pilot.Name %>">
+                  <tr data-pilot="<%= pilot.Name %>" data-username="<%= pilot.username %>">
                     <td>
                       <%= index + 1 %>
                     </td>
@@ -155,7 +155,8 @@
             const pilotName = this.getAttribute("data-pilot");
             pilotNameDiv.textContent = pilotName;
 
-            pilotNameLink.href = `/profile/${encodeURIComponent(pilotName)}`;
+            const username = this.getAttribute("data-username");
+            pilotNameLink.href = `/profile/${encodeURIComponent(username)}`;
 
             pilotNameWrapper.style.display = 'block';
 

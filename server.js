@@ -520,6 +520,7 @@ app.get("/", async (req, res) => {
                 'p.RaceCount',
                 'p.UUID',
                 'p.AverageChange',
+                'u.username',
                 'u.YoutubeChannel',
                 'u.TwitchChannel'
             )
