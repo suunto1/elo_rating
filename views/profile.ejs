@@ -35,7 +35,7 @@
                     <div class="profile-card">
                         <div class="profile-header">
                             <div class="profile-avatar-container">
-                                <img id="profile-avatar" src="<%= user.PhotoPath %>" alt="Аватар пилота">
+                                <img id="profile-avatar" src="<%= profileData.PhotoPath %>" alt="Аватар пилота">
                                 <!-- <button id="upload-avatar-btn" class="upload-btn">Завантажити</button> -->
                                 <input type="file" id="avatar-input" accept="image/*" style="display: none;">
                                 <% const defaultAvatarPath='/avatars/default_avatar_64.png' ; %>
@@ -45,14 +45,14 @@
                             <div class="profile-title">
                                 <div class="name-edit-container">
                                     <h3 id="fullNameDisplay" class="editable-name">
-                                        <%= user.first_name %>
-                                            <%= user.last_name %>
+                                        <%= profileData.first_name %>
+                                            <%= profileData.last_name %>
                                     </h3>
                                     <div id="nameEditFields" class="name-edit-fields" style="display: none;">
-                                        <input type="text" id="firstNameInput" value="<%= user.first_name %>"
+                                        <input type="text" id="firstNameInput" value="<%= profileData.first_name %>"
                                             pattern="[a-zA-Z]+" title="Лише латинські літери (A-Z, a-z)"
                                             placeholder="Ім'я">
-                                        <input type="text" id="lastNameInput" value="<%= user.last_name %>"
+                                        <input type="text" id="lastNameInput" value="<%= profileData.last_name %>"
                                             pattern="[a-zA-Z]+" title="Лише латинські літери (A-Z, a-z)"
                                             placeholder="Прізвище">
                                     </div>
