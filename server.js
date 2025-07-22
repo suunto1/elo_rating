@@ -814,47 +814,47 @@ app.post('/profile/update', async (req, res) => {
     }
 });
 
-app.get("/profile/:pilotName", async (req, res) => {
-    const pilotName = req.params.pilotName;
+// app.get("/profile/:pilotName", async (req, res) => {
+//     const pilotName = req.params.pilotName;
 
-    try {
-        const pilot = await db("pilots")
-            .select("Name", "DiscordId", "YoutubeChannel", "TwitchChannel", "Instagram", "Twitter", "iRacingCustomerId", "Country", "City", "PhotoPath", "TeamUUID", "IsTeamInterested")
-            .where({ Name: pilotName })
-            .first();
+//     try {
+//         const pilot = await db("pilots")
+//             .select("Name", "DiscordId", "YoutubeChannel", "TwitchChannel", "Instagram", "Twitter", "iRacingCustomerId", "Country", "City", "PhotoPath", "TeamUUID", "IsTeamInterested")
+//             .where({ Name: pilotName })
+//             .first();
 
-        if (!pilot) {
-            return res.status(404).send("Пілот не знайдений");
-        }
+//         if (!pilot) {
+//             return res.status(404).send("Пілот не знайдений");
+//         }
 
-        const teams = await db("teams").select("UUID", "Name").orderBy("Name");
+//         const teams = await db("teams").select("UUID", "Name").orderBy("Name");
 
-        // Подставляем значения по умолчанию
-        pilot.PhotoPath = pilot.PhotoPath || '/avatars/default_avatar_64.png';
-        pilot.DiscordId = pilot.DiscordId || '';
-        pilot.YoutubeChannel = pilot.YoutubeChannel || '';
-        pilot.TwitchChannel = pilot.TwitchChannel || '';
-        pilot.Instagram = pilot.Instagram || '';
-        pilot.Twitter = pilot.Twitter || '';
-        pilot.iRacingCustomerId = pilot.iRacingCustomerId || '';
-        pilot.Country = pilot.Country || '';
-        pilot.City = pilot.City || '';
-        pilot.TeamUUID = pilot.TeamUUID || null;
-        pilot.IsTeamInterested = pilot.IsTeamInterested || false;
+//         // Подставляем значения по умолчанию
+//         pilot.PhotoPath = pilot.PhotoPath || '/avatars/default_avatar_64.png';
+//         pilot.DiscordId = pilot.DiscordId || '';
+//         pilot.YoutubeChannel = pilot.YoutubeChannel || '';
+//         pilot.TwitchChannel = pilot.TwitchChannel || '';
+//         pilot.Instagram = pilot.Instagram || '';
+//         pilot.Twitter = pilot.Twitter || '';
+//         pilot.iRacingCustomerId = pilot.iRacingCustomerId || '';
+//         pilot.Country = pilot.Country || '';
+//         pilot.City = pilot.City || '';
+//         pilot.TeamUUID = pilot.TeamUUID || null;
+//         pilot.IsTeamInterested = pilot.IsTeamInterested || false;
 
-        res.render("profile", {
-            profileData: pilot,
-            teams,
-            activeMenu: 'profile',
-            isAuthenticated: req.isAuthenticated(),
-            currentUser: req.user
-        });
+//         res.render("profile", {
+//             profileData: pilot,
+//             teams,
+//             activeMenu: 'profile',
+//             isAuthenticated: req.isAuthenticated(),
+//             currentUser: req.user
+//         });
 
-    } catch (error) {
-        console.error("[Public Profile GET] Error fetching public pilot profile:", error);
-        res.status(500).send("Помилка завантаження профілю");
-    }
-});
+//     } catch (error) {
+//         console.error("[Public Profile GET] Error fetching public pilot profile:", error);
+//         res.status(500).send("Помилка завантаження профілю");
+//     }
+// });
 
 
 // app.post("/profile/upload-photo", upload.single('photo'), async (req, res) => {
