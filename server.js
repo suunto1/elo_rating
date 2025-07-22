@@ -611,6 +611,7 @@ app.get("/profile/:username", async (req, res) => {
     try {
         const userRows = await db('users')
             .select(
+                'id',
                 'username',
                 'first_name',
                 'last_name',
@@ -641,12 +642,15 @@ app.get("/profile/:username", async (req, res) => {
             name: team.Name
         }));
 
+        const isOwnProfile = req.isAuthenticated() && req.user && req.user.id === profileData.id;
+
         res.render("profile", {
             profileData,
             teams: availableTeams,
             activeMenu: null,
             isAuthenticated: req.isAuthenticated(),
-            currentUser: req.user
+            currentUser: req.user,
+            isOwnProfile: isOwnProfile
         });
 
     } catch (error) {
