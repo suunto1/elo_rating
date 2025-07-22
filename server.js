@@ -403,13 +403,13 @@ app.get('/auth/steam/return',
                 sameSite: 'none'
             });
 
-            res.cookie('session', req.user.id, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'none',
-                domain: '.onrender.com.onrender.com',
-                maxAge: 30 * 24 * 60 * 60 * 1000,
-            });
+            // res.cookie('session', req.user.id, {
+            //     httpOnly: true,
+            //     secure: true,
+            //     sameSite: 'none',
+            //     domain: '.onrender.com.onrender.com',
+            //     maxAge: 30 * 24 * 60 * 60 * 1000,
+            // });
 
             return res.redirect(redirectPath);
 
