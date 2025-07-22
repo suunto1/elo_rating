@@ -605,6 +605,57 @@ app.get("/pilot/:name", async (req, res) => {
     }
 });
 
+app.get("/profile/:username", async (req, res) => {
+    const username = req.params.username;
+
+    try {
+        const userRows = await db('users')
+            .select(
+                'username',
+                'first_name',
+                'last_name',
+                'DiscordId',
+                'YoutubeChannel',
+                'TwitchChannel',
+                'Instagram',
+                'Twitter',
+                'iRacingCustomerId',
+                'Country',
+                'City',
+                'PhotoPath',
+                'TeamUUID',
+                'IsTeamInterested'
+            )
+            .where({ username })
+            .limit(1);
+
+        if (userRows.length === 0) {
+            return res.status(404).send("Користувача не знайдено");
+        }
+
+        const profileData = userRows[0];
+
+        const teamRows = await db('teams').select('UUID', 'Name');
+        const availableTeams = teamRows.map(team => ({
+            uuid: team.UUID,
+            name: team.Name
+        }));
+
+        res.render("profile", {
+            profileData,
+            teams: availableTeams,
+            activeMenu: null,
+            isAuthenticated: req.isAuthenticated(),
+            currentUser: req.user
+        });
+
+    } catch (error) {
+        console.error("[GET /profile/:username] Error fetching user profile:", error);
+        res.status(500).send("Помилка при завантаженні профілю");
+    }
+});
+
+
 app.get("/profile", checkAuthenticated, async (req, res) => {
     if (!req.isAuthenticated()) {
         return res.redirect("/login");
