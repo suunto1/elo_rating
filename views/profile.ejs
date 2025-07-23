@@ -27,122 +27,58 @@
     <div id="global-pop-up-message" class="pop-up-message"></div>
     <%- include('partials/menu') %>
 
-    <div class="main-content-wrapper">
-        <aside class="sidebar-left"></aside>
-        <main class="profile-main">
-            <div class="profile-background-section">
-                <h2>Профiль</h2>
-                <div class="profile-card">
-                    <div class="profile-header">
-                        <div class="profile-avatar-container">
-                            <img id="profile-avatar" src="<%= profileData.PhotoPath %>" alt="Аватар пилота">
-                            <% if (isOwnProfile) { %>
-                            <button id="upload-avatar-btn" class="upload-btn">Завантажити</button>
-                            <input type="file" id="avatar-input" accept="image/*" style="display: none;">
-                            <% if (profileData.PhotoPath !=='/avatars/default_avatar_64.png' ) { %>
-                            <button id="delete-avatar-btn" class="delete-btn">Видалити</button>
-                            <% } %>
-                            <% } %>
-                        </div>
-                        <div class="profile-title">
-                            <div class="name-edit-container">
-                                <h3 id="fullNameDisplay" class="editable-name">
-                                    <%= profileData.first_name %>
-                                    <%= profileData.last_name %>
-                                </h3>
-                                <div id="nameEditFields" class="name-edit-fields" style="display: none;">
-                                    <input type="text" id="firstNameInput" value="<%= profileData.first_name %>"
-                                        pattern="[a-zA-Z]+" title="Лише латинські літери (A-Z, a-z)"
-                                        placeholder="Ім'я" <%= isOwnProfile ? '' : 'readonly' %>>
-                                    <input type="text" id="lastNameInput" value="<%= profileData.last_name %>"
-                                        pattern="[a-zA-Z]+" title="Лише латинські літери (A-Z, a-z)"
-                                        placeholder="Прізвище" <%= isOwnProfile ? '' : 'readonly' %>>
-                                </div>
+        <div class="main-content-wrapper">
+            <aside class="sidebar-left"></aside>
+            <main class="profile-main">
+                <div class="profile-background-section">
+                    <h2>Профiль</h2>
+                    <div class="profile-card">
+                        <div class="profile-header">
+                            <div class="profile-avatar-container">
+                                <img id="profile-avatar" src="<%= profileData.PhotoPath %>" alt="Аватар пилота">
                                 <% if (isOwnProfile) { %>
-                                <button id="editNameBtn" class="edit-icon-btn" aria-label="Редагувати ім'я">
-                                    <span class="edit-icon">✏️</span>
-                                </button>
-                                <% } %>
+                                    <button id="upload-avatar-btn" class="upload-btn">Завантажити</button>
+                                    <input type="file" id="avatar-input" accept="image/*" style="display: none;">
+                                    <% if (profileData.PhotoPath !=='/avatars/default_avatar_64.png' ) { %>
+                                        <button id="delete-avatar-btn" class="delete-btn">Видалити</button>
+                                        <% } %>
+                                            <% } %>
+                            </div>
+                            <div class="profile-title">
+                                <div class="name-edit-container">
+                                    <h3 id="fullNameDisplay" class="editable-name">
+                                        <%= profileData.first_name %>
+                                            <%= profileData.last_name %>
+                                    </h3>
+                                    <div id="nameEditFields" class="name-edit-fields" style="display: none;">
+                                        <input type="text" id="firstNameInput" value="<%= profileData.first_name %>"
+                                            pattern="[a-zA-Z]+" title="Лише латинські літери (A-Z, a-z)"
+                                            placeholder="Ім'я">
+                                        <input type="text" id="lastNameInput" value="<%= profileData.last_name %>"
+                                            pattern="[a-zA-Z]+" title="Лише латинські літери (A-Z, a-z)"
+                                            placeholder="Прізвище">
+                                    </div>
+                                    <% if (isOwnProfile) { %>
+                                        <button id="editNameBtn" class="edit-icon-btn" aria-label="Редагувати ім'я">
+                                            <span class="edit-icon">✏️</span>
+                                        </button>
+                                        <% } %>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="profile-section">
-                        <form id="profile-form">
-                            <div class="form-group">
-                                <label for="DiscordId">Discord ID:</label>
-                                <input type="text" id="DiscordId" value="<%= profileData.DiscordId %>"
-                                    <%= isOwnProfile ? '' : 'readonly' %>>
-                            </div>
-                            <div class="form-group">
-                                <label for="YoutubeChannel">YouTube Канал:</label>
-                                <input type="url" id="YoutubeChannel" value="<%= profileData.YoutubeChannel %>"
-                                    <%= isOwnProfile ? '' : 'readonly' %>>
-                            </div>
-                            <div class="form-group">
-                                <label for="TwitchChannel">Twitch Канал:</label>
-                                <input type="url" id="TwitchChannel" value="<%= profileData.TwitchChannel %>"
-                                    <%= isOwnProfile ? '' : 'readonly' %>>
-                            </div>
-                            <div class="form-group">
-                                <label for="Instagram">Instagram:</label>
-                                <input type="url" id="Instagram" value="<%= profileData.Instagram %>"
-                                    <%= isOwnProfile ? '' : 'readonly' %>>
-                            </div>
-                            <div class="form-group">
-                                <label for="Twitter">Twitter:</label>
-                                <input type="url" id="Twitter" value="<%= profileData.Twitter %>"
-                                    <%= isOwnProfile ? '' : 'readonly' %>>
-                            </div>
-                            <div class="form-group">
-                                <label for="iRacingCustomerId">iRacing Customer ID:</label>
-                                <input type="text" id="iRacingCustomerId" value="<%= profileData.iRacingCustomerId %>"
-                                    <%= isOwnProfile ? '' : 'readonly' %>>
-                            </div>
-                            <div class="form-group">
-                                    <label for="LMUName">LMU Name</label>
-                                    <input type="text" id="LMUName" value="<%= profileData.LMUName %>"
-                                    <%= isOwnProfile ? '' : 'readonly' %>>
-                                </div>
-                            <div class="form-group">
-                                <label for="Country">Країна:</label>
-                                <input type="text" id="Country" value="<%= profileData.Country %>"
-                                    <%= isOwnProfile ? '' : 'readonly' %>>
-                            </div>
-                            <div class="form-group">
-                                <label for="City">Місто:</label>
-                                <input type="text" id="City" value="<%= profileData.City %>"
-                                    <%= isOwnProfile ? '' : 'readonly' %>>
-                            </div>
-                            <div class="form-group">
-                                <label for="TeamUUID">Команда:</label>
-                                <select id="TeamUUID" <%= isOwnProfile ? '' : 'disabled' %>>
-                                    <option value="">Без команди</option>
-                                    <% teams.forEach(team => { %>
-                                    <option value="<%= team.uuid %>"
-                                        <%= profileData.TeamUUID === team.uuid ? 'selected' : '' %>>
-                                        <%= team.name %>
-                                    </option>
-                                    <% }); %>
-                                </select>
-                            </div>
-                            <div class="form-group checkbox-group">
-                                <input type="checkbox" id="IsTeamInterested"
-                                    <%= profileData.IsTeamInterested ? 'checked' : '' %>
-                                    <%= isOwnProfile ? '' : 'disabled' %>>
-                                <label for="IsTeamInterested">Цікавить вступ до команди</label>
-                            </div>
-
-                            <% if (isOwnProfile) { %>
-                            <button type="submit" class="save-btn">Зберегти</button>
-                            <% } %>
-                        </form>
+                        <div class="profile-section">
+                            <form id="profile-form">
+                                <% if (isOwnProfile) { %>
+                                    <button type="submit" class="save-btn">Зберегти</button>
+                                    <% } %>
+                            </form>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </main>
-        <aside class="sidebar-right"></aside>
-    </div>
+            </main>
+            <aside class="sidebar-right"></aside>
+        </div>
 
         <%- include('partials/footer') %>
 
@@ -217,6 +153,7 @@
                     }
 
                     if (isCurrentUserProfile) {
+                        // Разблокируем все поля формы для редактирования
                         const allFormInputs = form.querySelectorAll('input[type="text"], input[type="url"], select, input[type="checkbox"]');
                         allFormInputs.forEach(input => {
                             if (input.tagName === 'SELECT' || input.type === 'checkbox') {
@@ -225,14 +162,15 @@
                                 input.removeAttribute('readonly');
                             }
                         });
-                        saveButton.style.display = 'block';
+                        saveButton.style.display = 'block'; // Показываем кнопку "Сохранить"
 
                         teamUUIDSelect.addEventListener('change', updateIsTeamInterestedState);
-                        updateIsTeamInterestedState();
+                        updateIsTeamInterestedState(); // Вызываем для начального состояния
+
 
                         let isEditingName = false;
 
-                        if (editNameBtn) {
+                        if (editNameBtn) { // Проверяем, существует ли кнопка (она существует только для isOwnProfile)
                             editNameBtn.addEventListener('click', () => {
                                 isEditingName = !isEditingName;
                                 if (isEditingName) {
@@ -260,6 +198,7 @@
                             editNameBtn.style.display = 'none'; // Изначально скрываем кнопку, пока не наведем
                         }
                     } else {
+                        // --- НОВОЕ: Если это не собственный профиль, убедимся, что все кнопки скрыты ---
                         if (uploadAvatarBtn) uploadAvatarBtn.style.display = 'none';
                         if (deleteAvatarBtn) deleteAvatarBtn.style.display = 'none';
                         if (editNameBtn) editNameBtn.style.display = 'none';
