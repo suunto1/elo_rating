@@ -35,14 +35,12 @@
                     <div class="profile-card">
                         <div class="profile-header">
                             <div class="profile-avatar-container">
-                                <img id="profile-avatar" src="<%= profileData.PhotoPath %>" alt="Аватар пилота">
-                                <% if (isOwnProfile) { %>
-                                    <button id="upload-avatar-btn" class="upload-btn">Завантажити</button>
-                                    <input type="file" id="avatar-input" accept="image/*" style="display: none;">
-                                    <% if (profileData.PhotoPath !=='/avatars/default_avatar_64.png' ) { %>
-                                        <button id="delete-avatar-btn" class="delete-btn">Видалити</button>
-                                        <% } %>
-                                            <% } %>
+                                <img id="profile-avatar" src="<%= user.PhotoPath %>" alt="Аватар пилота">
+                                <!-- <button id="upload-avatar-btn" class="upload-btn">Завантажити</button> -->
+                                <input type="file" id="avatar-input" accept="image/*" style="display: none;">
+                                <% const defaultAvatarPath='/avatars/default_avatar_64.png' ; %>
+                                    <!-- <button id="delete-avatar-btn" class="delete-btn"
+                                        style="display: none;">Видалити</button> -->
                             </div>
                             <div class="profile-title">
                                 <div class="name-edit-container">
@@ -58,20 +56,77 @@
                                             pattern="[a-zA-Z]+" title="Лише латинські літери (A-Z, a-z)"
                                             placeholder="Прізвище">
                                     </div>
-                                    <% if (isOwnProfile) { %>
-                                        <button id="editNameBtn" class="edit-icon-btn" aria-label="Редагувати ім'я">
-                                            <span class="edit-icon">✏️</span>
-                                        </button>
-                                        <% } %>
+                                    <button id="editNameBtn" class="edit-icon-btn" aria-label="Редагувати ім'я">
+                                        <span class="edit-icon">✏️</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
                         <div class="profile-section">
                             <form id="profile-form">
-                                <% if (isOwnProfile) { %>
-                                    <button type="submit" class="save-btn">Зберегти</button>
-                                    <% } %>
+                                <div class="form-group">
+                                    <label for="iRacingCustomerId">iRacing Customer ID</label>
+                                    <input type="text" id="iRacingCustomerId" name="iRacingCustomerId"
+                                        value="<%= profileData.iRacingCustomerId || '' %>" pattern="[0-9]*"
+                                        title="Повинно містити лише цифри">
+                                </div>
+                                <div class="form-group">
+                                    <label for="LMUName">LMU Name</label>
+                                    <input type="text" id="LMUName" name="LMUName" value="<%= profileData.LMUName || '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="DiscordId">Discord ID</label>
+                                    <input type="text" id="DiscordId" name="DiscordId"
+                                        value="<%= profileData.DiscordId || '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="YoutubeChannel">YouTube Channel URL</label>
+                                    <input type="url" id="YoutubeChannel" name="YoutubeChannel"
+                                        value="<%= profileData.YoutubeChannel || '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="TwitchChannel">Twitch Channel URL</label>
+                                    <input type="url" id="TwitchChannel" name="TwitchChannel"
+                                        value="<%= profileData.TwitchChannel || '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="Instagram">Instagram URL</label>
+                                    <input type="url" id="Instagram" name="Instagram"
+                                        value="<%= profileData.Instagram || '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="Country">Країна</label>
+                                    <input type="text" id="Country" name="Country" value="<%= profileData.Country || '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="Twitter">Twitter URL</label>
+                                    <input type="url" id="Twitter" name="Twitter" value="<%= profileData.Twitter || '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="City">Мiсто / Село</label>
+                                    <input type="text" id="City" name="City" value="<%= profileData.City || '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="TeamUUID">Учасник команди</label>
+                                    <select id="TeamUUID" name="TeamUUID">
+                                        <option value="">-- Вибрати --</option>
+                                        <% teams.forEach(function(team) { %>
+                                            <option value="<%= team.UUID %>" <%=profileData.TeamUUID===team.UUID ? 'selected'
+                                                : '' %>>
+                                                <%= team.Name %>
+                                            </option>
+                                            <% }); %>
+                                    </select>
+                                </div>
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" id="IsTeamInterested" name="IsTeamInterested"
+                                        <%=profileData.IsTeamInterested ? 'checked' : '' %>
+                                    <%= profileData.TeamUUID ? 'disabled' : '' %>> <label for="IsTeamInterested">Зацікавлений у
+                                            створенні команди / Приєднанні
+                                            до існуючої команди</label>
+                                </div>
+                                <button type="submit" class="save-btn">Зберегти</button>
                             </form>
                         </div>
                     </div>
@@ -85,7 +140,7 @@
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
 
-                    const isCurrentUserProfile = <%= isOwnProfile %>;
+                    const currentUserId = "<%= user.id %>";
                     const form = document.getElementById('profile-form');
                     const profileAvatar = document.getElementById('profile-avatar');
                     const uploadAvatarBtn = document.getElementById('upload-avatar-btn');
@@ -103,7 +158,6 @@
                     const firstNameInput = document.getElementById('firstNameInput');
                     const lastNameInput = document.getElementById('lastNameInput');
                     const editNameBtn = document.getElementById('editNameBtn');
-                    const saveButton = form.querySelector('.save-btn');
 
                     if (!form) {
                         console.error('Ошибка: Форма с ID "profile-form" не найдена в DOM!');
@@ -143,7 +197,6 @@
                     // updateDeleteButtonVisibility();
 
                     function updateIsTeamInterestedState() {
-                        if (!isCurrentUserProfile) return;
                         if (teamUUIDSelect.value) {
                             isTeamInterestedCheckbox.checked = false;
                             isTeamInterestedCheckbox.disabled = true;
@@ -152,67 +205,40 @@
                         }
                     }
 
-                    if (isCurrentUserProfile) {
-                        // Разблокируем все поля формы для редактирования
-                        const allFormInputs = form.querySelectorAll('input[type="text"], input[type="url"], select, input[type="checkbox"]');
-                        allFormInputs.forEach(input => {
-                            if (input.tagName === 'SELECT' || input.type === 'checkbox') {
-                                input.removeAttribute('disabled');
-                            } else {
-                                input.removeAttribute('readonly');
-                            }
-                        });
-                        saveButton.style.display = 'block'; // Показываем кнопку "Сохранить"
+                    updateIsTeamInterestedState();
 
-                        teamUUIDSelect.addEventListener('change', updateIsTeamInterestedState);
-                        updateIsTeamInterestedState(); // Вызываем для начального состояния
+                    teamUUIDSelect.addEventListener('change', updateIsTeamInterestedState);
 
+                    let isEditingName = false;
 
-                        let isEditingName = false;
-
-                        if (editNameBtn) { // Проверяем, существует ли кнопка (она существует только для isOwnProfile)
-                            editNameBtn.addEventListener('click', () => {
-                                isEditingName = !isEditingName;
-                                if (isEditingName) {
-                                    fullNameDisplay.style.display = 'none';
-                                    nameEditFields.style.display = 'flex';
-                                    firstNameInput.focus();
-                                } else {
-                                    // Имя обновляется при отправке формы, здесь просто переключаем UI
-                                    fullNameDisplay.textContent = `${firstNameInput.value.trim()} ${lastNameInput.value.trim()}`;
-                                    fullNameDisplay.style.display = 'block';
-                                    nameEditFields.style.display = 'none';
-                                }
-                            });
-
-                            nameEditContainer.addEventListener('mouseenter', () => {
-                                editNameBtn.style.display = 'inline-block';
-                            });
-
-                            nameEditContainer.addEventListener('mouseleave', () => {
-                                if (!isEditingName) {
-                                    editNameBtn.style.display = 'none';
-                                }
-                            });
-
-                            editNameBtn.style.display = 'none'; // Изначально скрываем кнопку, пока не наведем
+                    editNameBtn.addEventListener('click', () => {
+                        isEditingName = !isEditingName;
+                        if (isEditingName) {
+                            fullNameDisplay.style.display = 'none';
+                            nameEditFields.style.display = 'flex';
+                            firstNameInput.focus();
+                        } else {
+                            fullNameDisplay.textContent = `${firstNameInput.value.trim()} ${lastNameInput.value.trim()}`;
+                            fullNameDisplay.style.display = 'block';
+                            nameEditFields.style.display = 'none';
                         }
-                    } else {
-                        // --- НОВОЕ: Если это не собственный профиль, убедимся, что все кнопки скрыты ---
-                        if (uploadAvatarBtn) uploadAvatarBtn.style.display = 'none';
-                        if (deleteAvatarBtn) deleteAvatarBtn.style.display = 'none';
-                        if (editNameBtn) editNameBtn.style.display = 'none';
-                        saveButton.style.display = 'none';
-                    }
+                    });
 
+                    nameEditContainer.addEventListener('mouseenter', () => {
+                        editNameBtn.style.display = 'inline-block';
+                    });
+
+                    nameEditContainer.addEventListener('mouseleave', () => {
+                        if (!isEditingName) {
+                            editNameBtn.style.display = 'none';
+                        }
+                    });
+
+                    editNameBtn.style.display = 'none';
 
                     form.addEventListener('submit', async (e) => {
                         e.preventDefault();
-
-                        if (!isCurrentUserProfile) {
-                            showStatusMessage('У вас нема прав для редаагування профилю.', 'error', 5000);
-                            return;
-                        }
+                        console.log('Кнопка "Зберегти" нажата. Обработчик submit запущен.');
 
                         const iRacingCustomerIdInput = document.getElementById('iRacingCustomerId');
                         let clientErrorMessage = '';
@@ -261,6 +287,8 @@
                             IsTeamInterested: isTeamInterestedCheckbox.checked
                         };
 
+                        console.log('Отправляемые данные формы:', formData);
+
                         try {
                             const response = await fetch('/profile/update', {
                                 method: 'POST',
@@ -279,7 +307,10 @@
                                 fullNameDisplay.style.display = 'block';
                                 nameEditFields.style.display = 'none';
                                 isEditingName = false;
-                                if (editNameBtn) editNameBtn.style.display = 'none';
+                                editNameBtn.style.display = 'none';
+                                if (data.updatedUser && data.updatedUser.username) {
+                                    document.querySelector('.profile-title h2:last-of-type').textContent = data.updatedUser.username;
+                                }
                             } else {
                                 console.error('Ошибка от сервера при обновлении профиля:', data.message || response.statusText);
                                 showStatusMessage('Помилка: ' + (data.message || 'Невiдома помилка'), 'error', 5000);
