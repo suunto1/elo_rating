@@ -218,7 +218,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     store: new KnexSessionStore({
-        knex: knex,  // или knex, если эта переменная уже определена
+        knex: knex,
         tablename: 'sessions',
         createtable: true,
         sidfieldname: 'sid',
@@ -257,8 +257,7 @@ app.use((req, res, next) => {
 
 // Middleware для проверки, заполнено ли имя пользователя (для новых Steam-пользователей)
 const checkUsernameCompletion = async (req, res, next) => {
-    if (!req.user) {
-        console.warn("[checkUsernameCompletion] req.user is undefined despite isAuthenticated() potentially being true. Skipping check.");
+    if (!req.isAuthenticated() || !req.user) {
         return next();
     }
 
@@ -284,9 +283,14 @@ const checkUsernameCompletion = async (req, res, next) => {
         '/api/tracks',
         '/new-participants',
         '/analytics',
+        '/profile',
+        '/profile/',
+        '/profile/:username'
     ];
 
-    const isAllowedPath = allowedPaths.some(path => req.path === path || req.path.startsWith(path + '/'));
+    const isAllowedPath = allowedPaths.some(path => {
+        return req.path === path || (path.endsWith('/') && req.path.startsWith(path)) || (path.startsWith('/profile/:') && req.path.startsWith('/profile/'));
+    });
 
     if (!req.user.first_name || req.user.first_name.trim().length === 0 ||
         !req.user.last_name || req.user.last_name.trim().length === 0) {
@@ -303,7 +307,7 @@ function checkAuthenticated(req, res, next) {
     if (req.isAuthenticated()) {
         return next();
     }
-    res.redirect("/login");
+    res.redirect("/auth/steam");
 }
 
 app.get('/auth/steam',
@@ -314,8 +318,8 @@ app.get('/auth/steam/return',
     async (req, res) => {
 
         try {
-            const steamId64 = req.user.id;
-            const steamDisplayName = req.user.displayName;
+            const steamId64 = req.user.id || req.user.steam_id_64;
+            const steamDisplayName = req.user.displayName || req.user.username;
             const defaultPhotoPath = '/avatars/default_avatar_64.png';
             let currentPilotUuid = null;
             let updates = {};
@@ -605,7 +609,7 @@ app.get("/pilot/:name", async (req, res) => {
     }
 });
 
-app.get("/profile/:username", async (req, res) => {
+app.get("/profile/:username", checkAuthenticated, async (req, res) => {
     const username = req.params.username;
 
     try {
@@ -642,13 +646,13 @@ app.get("/profile/:username", async (req, res) => {
             name: team.Name
         }));
 
-        const isOwnProfile = req.isAuthenticated() && req.user && req.user.id === profileData.id;
+        const isOwnProfile = req.user && req.user.id === profileData.id;
 
         res.render("profile", {
             profileData,
             teams: availableTeams,
             activeMenu: null,
-            isAuthenticated: req.isAuthenticated(),
+            isAuthenticated: true,
             currentUser: req.user,
             isOwnProfile: isOwnProfile
         });
