@@ -9,15 +9,15 @@ const db = knex({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
     port: process.env.DB_PORT || 3306,
-    timezone: 'UTC',
+    timezone: 'Z', // ✅ исправлено
     connectTimeout: 10000,
     decimalNumbers: true,
     supportBigNumbers: true,
     bigNumberStrings: true
   },
   pool: {
-    min: 1,
-    max: 5,
+    min: 2,
+    max: 20, // ✅ увеличено
     acquireTimeoutMillis: 30000,
     idleTimeoutMillis: 30000,
     reapIntervalMillis: 1000,
@@ -37,6 +37,12 @@ setInterval(async () => {
     console.error('DB Health-Check Failed:', err.message);
   }
 }, 300000);
+
+// Optional: debug pool usage
+setInterval(() => {
+  const pool = db.client.pool;
+  console.log(`Pool usage: used=${pool.numUsed()}, free=${pool.numFree()}, pending=${pool.numPendingAcquires()}`);
+}, 60000);
 
 process.on('SIGTERM', async () => {
   await db.destroy();
