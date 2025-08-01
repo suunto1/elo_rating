@@ -336,9 +336,7 @@ app.get('/auth/steam',
 app.get('/auth/steam/return',
     passport.authenticate('steam', { failureRedirect: '/' }),
     async (req, res) => {
-    let connection;
         try {
-            connection = await db.acquireConnection();
             const steamId64 = req.user.id;
             const steamDisplayName = req.user.displayName;
             const defaultPhotoPath = '/avatars/default_avatar_64.png';
@@ -440,8 +438,6 @@ app.get('/auth/steam/return',
 
         } catch (error) {
             return res.redirect('/');
-        }finally {
-            if (connection) await connection.release();
         }
     }
 );
@@ -485,9 +481,7 @@ app.get('/complete-profile', (req, res) => {
 });
 
 app.post("/complete-profile", checkAuthenticated, async (req, res) => {
-    let connection;
     try {
-        connection = await db.acquireConnection();
         const { first_name, last_name } = req.body;
         const userId = req.user.id;
         const username = `${first_name} ${last_name}`;
@@ -537,15 +531,11 @@ app.post("/complete-profile", checkAuthenticated, async (req, res) => {
             message: "Помилка збереження даних. Спробуйте ще раз.",
             messageType: "danger"
         });
-    } finally {
-        if (connection) await connection.release();
     }
 });
 
 app.get("/", async (req, res) => {
-    let connection;
     try {
-        connection = await db.acquireConnection();
         const rows = await db('pilots as p')
             .select(
                 'p.Name',
@@ -564,18 +554,14 @@ app.get("/", async (req, res) => {
     } catch (error) {
         console.error("[Root GET] Error fetching data:", error);
         res.status(500).send("Error fetching data");
-    } finally {
-        if (connection) await connection.release();
     }
 });
 
 
 app.get("/pilot/:name", async (req, res) => {
     const pilotName = req.params.name;
-    let connection;
 
     try {
-        connection = await db.acquireConnection();
         const pilotLookupRows = await db('pilots')
             .select('UUID')
             .where('Name', pilotName);
@@ -639,16 +625,12 @@ app.get("/pilot/:name", async (req, res) => {
     } catch (error) {
         console.error("[Pilot Profile GET] Error fetching pilot data:", error);
         res.status(500).send("Error fetching pilot data");
-    } finally {
-        if (connection) await connection.release();
     }
 });
 
 app.get("/profile/:username", async (req, res) => {
     const username = req.params.username;
-    let connection;
     try {
-        connection = await db.acquireConnection();
         const userRows = await db('users')
             .select(
                 'id',
@@ -696,8 +678,6 @@ app.get("/profile/:username", async (req, res) => {
     } catch (error) {
         console.error("[GET /profile/:username] Error fetching user profile:", error);
         res.status(500).send("Помилка при завантаженні профілю");
-    } finally {
-        if (connection) await connection.release();
     }
 });
 
@@ -708,10 +688,8 @@ app.get("/profile", checkAuthenticated, async (req, res) => {
     }
 
     const userId = req.user.id;
-    let connection;
 
     try {
-        connection = await db.acquireConnection();
         const userRows = await db('users')
             .select(
                 'LMUName',
@@ -749,8 +727,6 @@ app.get("/profile", checkAuthenticated, async (req, res) => {
     } catch (error) {
         console.error("Error fetching user profile:", error);
         res.status(500).send("Error fetching user profile data.");
-    } finally {
-        if (connection) await connection.release();
     }
 });
 
@@ -761,7 +737,6 @@ app.post('/profile/update', async (req, res) => {
         return res.status(401).json({ success: false, message: "Не авторизовано. Будь ласка, увійдіть." });
     }
     const userId = req.user.id;
-    let connection;
     const {
         iRacingCustomerId,
         LMUName,
@@ -825,7 +800,6 @@ app.post('/profile/update', async (req, res) => {
     }
 
     try {
-        connection = await db.acquireConnection();
         const updateData = {
             first_name: sanitizedFirstName,
             last_name: sanitizedLastName,
@@ -863,8 +837,6 @@ app.post('/profile/update', async (req, res) => {
     } catch (error) {
         console.error("[profile/update POST] Error updating user profile:", error);
         res.status(500).json({ success: false, message: "Помилка сервера при оновленні профілю" });
-    } finally {
-        if (connection) await connection.release();
     }
 });
 
@@ -1024,9 +996,7 @@ app.post('/profile/update', async (req, res) => {
 
 
 app.get("/new-participants", async (req, res) => {
-    let connection;
     try {
-        connection = await db.acquireConnection();
         const rows = await db("raceparticipants as rp")
             .join("races as r", "rp.RaceUUID", "r.UUID")
             .select("rp.PilotUUID", "rp.RaceUUID", "r.StartDate")
@@ -1069,16 +1039,12 @@ app.get("/new-participants", async (req, res) => {
     } catch (error) {
         console.error("Error fetching data:", error);
         res.status(500).send("Error fetching data");
-    } finally {
-        if (connection) await connection.release();
     }
 });
 
 
 app.get("/tracks", async (req, res) => {
-    let connection;
     try {
-        connection = await db.acquireConnection();
         const tracks = await db("trackrecords as tr")
             .leftJoin("trackimages as ti", "tr.TrackName", "ti.TrackName")
             .select(
@@ -1145,16 +1111,12 @@ app.get("/tracks", async (req, res) => {
     } catch (error) {
         console.error("Error fetching data for tracks page:", error);
         res.status(500).send("Error fetching data for tracks page");
-    } finally {
-        if (connection) await connection.release();
     }
 });
 
 
 app.get("/api/events", async (req, res) => {
-    let connection;
     try {
-        connection = await db.acquireConnection();
         const rows = await db("events")
             .select("id", "date", "description", "url")
             .orderBy("date");
@@ -1163,16 +1125,12 @@ app.get("/api/events", async (req, res) => {
     } catch (error) {
         console.error("Error fetching events:", error);
         res.status(500).send("Error fetching events");
-    } finally {
-        if (connection) await connection.release();
     }
 });
 
 
 app.get("/calendar", async (req, res) => {
-    let connection;
     try {
-        connection = await db.acquireConnection();
         const rows = await db("events")
             .select("id", "date", "description", "url")
             .orderBy("date");
@@ -1181,16 +1139,12 @@ app.get("/calendar", async (req, res) => {
     } catch (error) {
         console.error("Error fetching data:", error);
         res.status(500).send("Error fetching data");
-    } finally {
-        if (connection) await connection.release();
     }
 });
 
 
 app.post("/track-view", async (req, res) => {
-    let connection;
     try {
-        connection = await db.acquireConnection();
         const ip = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
         const userAgent = req.headers['user-agent'];
         const pageUrl = req.headers.referer || req.headers.referrer || req.originalUrl;
@@ -1221,16 +1175,12 @@ app.post("/track-view", async (req, res) => {
     } catch (error) {
         console.error("Error tracking view:", error);
         res.status(500).send("Error tracking view");
-    } finally {
-        if (connection) await connection.release();
     }
 });
 
 
 app.get("/analytics", async (req, res) => {
-    let connection;
     try {
-        connection = await db.acquireConnection();
         const uniqueVisitorsResult = await db('page_views')
             .countDistinct('ip_address as count');
         const uniqueVisitorsCount = uniqueVisitorsResult[0].count;
@@ -1302,8 +1252,6 @@ app.get("/analytics", async (req, res) => {
     } catch (error) {
         console.error("Error fetching analytics data:", error);
         res.status(500).send("Error fetching analytics data");
-    } finally {
-        if (connection) await connection.release();
     }
 });
 
