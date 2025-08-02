@@ -1250,4 +1250,3 @@ setInterval(() => {
         console.error('[Auto-Ping] ❌ Ping failed:', err.message);
     });
 }, 1000 * 60 * 14);
-//test
