@@ -5,6 +5,7 @@
       "use": "@vercel/node"
     }
   ],
+
   "routes": [
     {
       "src": "/api/(.*)",
@@ -18,6 +19,7 @@
       }
     }
   ],
+
   "headers": [
     {
       "source": "/images/(.*.(png|jpg|jpeg|webp|svg))",

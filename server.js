@@ -201,8 +201,6 @@ passport.use(new SteamStrategy({
         }
     }));
 
-
-
 // --- Middleware ---
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
