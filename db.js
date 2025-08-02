@@ -9,7 +9,7 @@ const db = knex({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
     port: process.env.DB_PORT || 3306,
-    timezone: 'Z', // ✅ исправлено
+    timezone: 'Z',
     connectTimeout: 10000,
     decimalNumbers: true,
     supportBigNumbers: true,
@@ -17,7 +17,7 @@ const db = knex({
   },
   pool: {
     min: 2,
-    max: 20, // ✅ увеличено
+    max: 10,
     acquireTimeoutMillis: 30000,
     idleTimeoutMillis: 30000,
     reapIntervalMillis: 1000,
