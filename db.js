@@ -17,7 +17,7 @@ const db = knex({
   },
   pool: {
     min: 2,
-    max: 20, // ✅ увеличено
+    max: 10, // ✅ увеличено
     acquireTimeoutMillis: 30000,
     idleTimeoutMillis: 30000,
     reapIntervalMillis: 1000,
