@@ -9,7 +9,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (document.getElementById('calendar')) {
         console.log("Calendar element found. Initializing FullCalendar...");
-        fetch('https://elo-rating-1.onrender.com/api/events')
+        fetch('https://elo-rating-1.onrender.com/api/events', {
+            method: 'GET',
+            credentials: 'include'
+        })
             .then(response => {
                 console.log("API events fetch response:", response);
                 if (!response.ok) {
@@ -105,7 +108,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function updateNearestEvent() {
         console.log("updateNearestEvent called.");
-        fetch('https://elo-rating-1.onrender.com/api/events')
+        fetch('https://elo-rating-1.onrender.com/api/events', {
+            method: 'GET',
+            credentials: 'include'
+        })
             .then(response => {
                 console.log("Nearest event API response:", response);
                 if (!response.ok) {
@@ -215,15 +221,16 @@ function trackPageView() {
         headers: {
             'Content-Type': 'application/json'
         },
+        credentials: 'include'
     })
-    .then(response => {
-        if (!response.ok) {
-            console.error('Failed to track page view');
-        } else {
-            console.log('Page view tracked successfully');
-        }
-    })
-    .catch(error => {
-        console.error('Error sending tracking data:', error);
-    });
+        .then(response => {
+            if (!response.ok) {
+                console.error('Failed to track page view');
+            } else {
+                console.log('Page view tracked successfully');
+            }
+        })
+        .catch(error => {
+            console.error('Error sending tracking data:', error);
+        });
 }
