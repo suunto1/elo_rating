@@ -48,4 +48,8 @@ process.on('SIGTERM', async () => {
   await db.destroy();
 });
 
+process.on('exit', async () => {
+  await db.destroy();
+});
+
 module.exports = db;
