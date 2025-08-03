@@ -217,13 +217,13 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'secret',
     resave: false,
     saveUninitialized: false,
-    // store: new KnexSessionStore({
-    //     knex: knex,  // или knex, если эта переменная уже определена
-    //     tablename: 'sessions',
-    //     createtable: true,
-    //     sidfieldname: 'sid',
-    //     clearInterval: 60000 // 60 секунд — будет удалять просроченные сессии
-    // }),
+    store: new KnexSessionStore({
+        knex: knex,  // или knex, если эта переменная уже определена
+        tablename: 'sessions',
+        createtable: true,
+        sidfieldname: 'sid',
+        clearInterval: 60000 // 60 секунд — будет удалять просроченные сессии
+    }),
     cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 дней
         secure: true,
