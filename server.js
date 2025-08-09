@@ -106,7 +106,7 @@ if (!STEAM_API_KEY || !STEAM_RETURN_URL || !SESSION_SECRET || !STEAM_REALM) {
 }
 
 app.use(cors({
-    origin: 'https://elo-rating.vercel.app',
+    origin: ['https://elo-rating.vercel.app', 'http://localhost:3000'],
     credentials: true
 }));
 
